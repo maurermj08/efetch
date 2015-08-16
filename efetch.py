@@ -13,6 +13,7 @@ global port
 global default_case
 global output_dir
 global max_cache
+global icon_dir
 
 def main(argv):
 	try: 
@@ -27,13 +28,21 @@ def main(argv):
 	global default_case
 	global output_dir
 	global max_cache
+	global icon_dir
 
 	_debug = 0
 	default_image = ""
 	port = 8080
-	default_case = int(time.time())
-	output_dir = ""
-
+	default_case = str(int(time.time()))
+	curr_dir = os.path.dirname(os.path.realpath(__file__))
+	output_dir = curr_dir + "/cache/"
+	if not os.path.isdir(output_dir):
+		os.mkdir(output_dir)
+	icon_dir = curr_dir + "/icons/"
+	if not os.path.isdir(icon_dir):
+		print("ERROR: icon directory missing")
+		sys.exit(2)
+	
 	for opt, arg in opts:
 		if opt in ("-h", "--help"):
 			usage()
@@ -55,10 +64,6 @@ def main(argv):
 			usage()
 			sys.exit(2)
 	
-	if not output_dir:
-		usage()
-		sys.exit(2)
-
 	if not output_dir.endswith("/"):
 		output_dir = output_dir + "/"
 	if not os.path.isdir(output_dir):
@@ -76,13 +81,12 @@ def usage():
 	print "evidence_rest_server is a simple webserver that can return files and thumbnails from an image."
 	print "!!!WARNING!!! there are major known security issues if this is run as root and externally facing!"
 	print ""
-	print "required arguments:"
-	print "  -o, --output		directory to store output files"
 	print "optional arguments:"
 	print "  -h, --help		shows this help message and exits"
 	print "  -p, --port 		sets the port this server runs on, defaults to 8080"
 	print "  -i, --image		default evidence IMAGE to use, if not specified in the request"
 	print "  -c, --case		default case to use, if not specified in the request"
+	print "  -o, --output		directory to store output files"
 	print "  -s, --size		the max size of cache storage, defaults to 1GB [NOT IMPLEMENTED]"
 	print "  -d, --debug		displays debug output"
 	print 
@@ -155,7 +159,7 @@ def get_image(metaaddress):
 			print extension
 
 	if file_type == "directory":
-    		return static_file("_folder.png", root='/cases/icons/', mimetype='image/png')
+    		return static_file("_folder.png", root=icon_dir, mimetype='image/png')
 
 	if (extension == "jpg" or extension == "jpeg" or extension == "jfif" or extension == "jpe"):
 		mime_type = 'image/jpeg'
@@ -170,17 +174,17 @@ def get_image(metaaddress):
 	elif (extension == "tif" or extension == "tiff"):
 		mime_type = 'image/tiff'
 	else:
-		if not os.path.isfile('/cases/icons/' + extension + ".png"):
-    			return static_file("_blank.png", root='/cases/icons/', mimetype='image/png')
+		if not os.path.isfile(icon_dir + extension + ".png"):
+    			return static_file("_blank.png", root=icon_dir, mimetype='image/png')
 		else:
-			return static_file(extension + ".png", root='/cases/icons/', mimetype='image/png')
+			return static_file(extension + ".png", root=icon_dir, mimetype='image/png')
 
 	load_files(True, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension)
 	
-	if os.path.isfile('/cases/' + case  + '/thumbnails/' + metaaddress + '.' + extension):
-		return static_file(metaaddress + '.' + extension, root='/cases/' + case  + '/thumbnails/', mimetype=mime_type)
+	if os.path.isfile(case_directory + '/thumbnails/' + metaaddress + '.' + extension):
+		return static_file(metaaddress + '.' + extension, root=thumbnails_dir, mimetype=mime_type)
 	else:
-		return static_file('_missing.png', root='/cases/icons/', mimetype='image/png')
+		return static_file('_missing.png', root=icon_dir, mimetype='image/png')
 		
 
 @route('/file/<metaaddress>')
@@ -208,9 +212,9 @@ def get_file(metaaddress):
 	load_files(False, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension)
 	
 	if mime_type: 
-    		return static_file(file_name + '.' + extension, root='/cases/' + case  + '/files/' + metaaddress + '/', mimetype=mime_type)
+    		return static_file(file_name + '.' + extension, root=case_directory + '/files/' + metaaddress + '/', mimetype=mime_type)
 	else:
-    		return static_file(file_name + '.' + extension, root='/cases/' + case  + '/files/' + metaaddress + '/', download=True)
+    		return static_file(file_name + '.' + extension, root=case_directory + '/files/' + metaaddress + '/', download=True)
 
 
 def get_mime_type(extension):
