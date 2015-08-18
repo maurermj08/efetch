@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+if [ "$#" -ne 2 ]
+then
+	echo "ERROR: Requires exactly 2 paramters"
+	echo "create_metadata_timeline [case] [image]"
+fi
+
+case_name=$1
+image=$2
+
+sudo fls -lpr $image | awk -v c=$case_name -v i=$image -F $'\t' '{ print $3 "\tModify\t" $1 "\t/" $2 "\t" $7 "\t" $8 "\t" $9 "\t" c "\t" i "\n" $4 "\tAccess\t" $1 "\t/" $2 "\t" $7 "\t" $8 "\t" $9 "\t" c "\t" i "\n" $5 "\tChange\t" $1 "\t/" $2 "\t" $7 "\t" $8 "\t" $9 "\t" c "\t" i "\n" $6 "\tCreate\t" $1 "\t/" $2 "\t" $7 "\t" $8 "\t" $9 "\t" c "\t" i}' > /cases/timeline/$case_name.txt
+
+
+
