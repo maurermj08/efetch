@@ -97,26 +97,50 @@ class DfvfsUtil(object):
 					return found
 				continue
 
-	#TODO
 	def SearchForFiles(self, file_name, path='/'):
 		"""Returns the path of all files with the given name, default search starts at root"""
+		paths = path.split('/')
+		curr = 1
+		file_list = []
 		for base_path_spec in self.base_path_specs:
 			file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
 			file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)	 
 			if file_entry is None:
 				logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
 			else:
+				if path == '/' or path == '':
+					file_list.extend(self._SearchForFilesSub(file_name, file_entry, '/'))
+				else:
+					file_list.extend(self._SearchForFiles(curr, paths, file_name, file_entry, '/'))
+				
 				continue
-	#TODO
+		if file_list:
+			return file_list
+		else:
+			return None
+
 	def SearchForDirs(self, dir_name, path='/'):
 		"""Returns the path of all directories with the given name, default search starts at root"""
+		paths = path.split('/')
+		curr = 1
+		dir_list = []
 		for base_path_spec in self.base_path_specs:
 			file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
 			file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)	 
 			if file_entry is None:
 				logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
 			else:
+				if dir_name == '/' or dir_name == '':
+					return ['/']
+				if path == '/' or path == '':
+					dir_list.extend(self._SearchForDirsSub(dir_name, file_entry, '/'))
+				else:
+					dir_list.extend(self._SearchForDirs(curr, paths, dir_name, file_entry, '/'))
 				continue
+		if dir_list:
+			return dir_list
+		else:
+			return None
 	
 	def _GetFile(self, curr, paths, file_entry, ignore_case):
 		"""Gets a file_object from a file_entry"""
@@ -170,6 +194,46 @@ class DfvfsUtil(object):
 					return self._DirExists(curr + 1, paths, sub_file_entry)
 		return False
 
+	def _SearchForFiles(self, curr, paths, file_name, file_entry, curr_path):
+		"""Gets the full path of the file being searched for"""
+		for sub_file_entry in file_entry.sub_file_entries:
+			if curr == (len(paths) - 1) and sub_file_entry.IsDirectory() and sub_file_entry.name == paths[curr]:
+				return self._SearchForFilesSub(file_name, sub_file_entry, curr_path + sub_file_entry.name + '/')
+			if sub_file_entry.IsDirectory() and sub_file_entry.name == paths[curr]:
+				return self._SearchForFiles(curr + 1, paths, file_name, sub_file_entry, curr_path + sub_file_entry.name + '/')
+		return None
+
+	def _SearchForFilesSub(self, file_name, file_entry, curr_path):
+		"""Returns a list of all files with the file_name for every sub_file_entry"""
+		file_list = []
+		for sub_file_entry in file_entry.sub_file_entries:
+			if sub_file_entry.IsFile() and sub_file_entry.name == file_name:
+				file_list.append(curr_path + sub_file_entry.name)
+			elif sub_file_entry.IsDirectory():
+				file_list.extend(self._SearchForFilesSub(file_name, sub_file_entry, curr_path + sub_file_entry.name + '/'))
+
+		return file_list	
+	
+	def _SearchForDirs(self, curr, paths, dir_name, file_entry, curr_path):
+		"""Gets the full path of the dir being searched for"""
+		for sub_file_entry in file_entry.sub_file_entries:
+			if curr == (len(paths) - 1) and sub_file_entry.IsDirectory() and sub_file_entry.name == paths[curr]:
+				return self._SearchForDirsSub(dir_name, sub_file_entry, curr_path + sub_file_entry.name + '/')
+			if sub_file_entry.IsDirectory() and sub_file_entry.name == paths[curr]:
+				return self._SearchForDirs(curr + 1, paths, dir_name, sub_file_entry, curr_path + sub_file_entry.name + '/')
+		return None
+
+	def _SearchForDirsSub(self, dir_name, file_entry, curr_path):
+		"""Returns a list of all directories with the dir_name for every sub_file_entry"""
+		dir_list = []
+		for sub_file_entry in file_entry.sub_file_entries:
+			if sub_file_entry.IsDirectory() and sub_file_entry.name == dir_name:
+				dir_list.append(curr_path + sub_file_entry.name + '/')
+			if sub_file_entry.IsDirectory():
+				dir_list.extend(self._SearchForDirsSub(dir_name, sub_file_entry, curr_path + sub_file_entry.name + '/'))
+
+		return dir_list	
+	
 	def _FormatHumanReadableSize(self, size):
 		"""Formats the size as a human readable string.
 		Args:
@@ -761,6 +825,22 @@ def Main():
 		else:
 			print("7 Failed for FileExists")
 
+		#TEST SEARCH FOR FILES true
+		found = dfvfs_util.SearchForFiles('hosts', '/WINDOWS/system32/drivers')
+		if found:
+			print("\n\t".join(found))
+			print("8 Success for search for files")
+		else:
+			print("8 Failed for search for files")
+
+		#TEST SEARCH FOR DIRS true
+		found = dfvfs_util.SearchForDirs('drivers', '/WINDOWS')
+		if found:
+			print("\n\t".join(found))
+			print("9 Success for search for directories")
+		else:
+			print("9 Failed for search for directories")
+		
 		print(u'')
 		print(u'Completed.')
 
