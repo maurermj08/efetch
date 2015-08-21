@@ -1,0 +1,10 @@
+[Core]
+Name = Strings
+Module = fa_strings
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Lists strings in a file
+Copyright = 2015

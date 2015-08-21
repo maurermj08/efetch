@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <style>
+
+#header {
+
+    background-color:#3a3a3a;
+
+    color:#3a3a3a;
+
+    text-align:left;
+
+    height: 40px;
+
+}
+
+a {
+    color: #FFFFFF;
+    padding-left: 10px;
+    text-decoration: initial;
+}
+
+#nav {
+
+    line-height:30px;
+
+    background-color:#5F5F5F;
+
+    height:100%;
+
+    width:100px;
+
+    float:left;	      
+
+}
+
+#main {
+ 	position: relative;
+
+	background-color: #bbbbbb;
+
+	height:90%;
+
+	width: 100%;
+
+	float: bottom;
+
+        font-family: Arial, Helvetica, sans-serif;
+}
+
+#section {
+
+    width:350px;
+
+    float:left;
+
+    padding:10px;	 	 
+
+}
+
+#footer {
+
+    background-color:black;
+
+    color:white;
+
+    clear:both;
+
+    text-align:center;
+
+   padding:5px;	 	 
+
+}
+
+#iframe {
+	position: absolute;
+
+	top: 0px;
+	
+	right: 0px;
+
+	left: 100px;
+
+	height: 100%;
+
+	width: calc(100% - 100px);
+
+	border: none;
+}
+
+</style>
+    <title>fileanalyzer.html</title>
+  </head>
+  <body>
+    <div id="header">
+<img src="http://localhost:8180/resource/DiFT_Header.jpg" alt="DiFT" style="width:200px;height:40px;">
+    </div>
+    <div id="main">
+      <div id="nav">
+        <a href="foo.html" target="frame">Dashboard</a><br>
+	<!-- Links -->
+	<!-- Links End -->
+      </div>
+      <iframe name="frame" id="iframe" src="http://google.com">
+      </iframe> </div>
+  </body>
+</html>
