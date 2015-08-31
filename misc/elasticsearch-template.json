@@ -1,5 +1,5 @@
 {
-  "template" : "log2timeline",
+  "template" : "*",
   "settings" : {
     "index.refresh_interval" : "5s"
   },

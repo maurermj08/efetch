@@ -6,8 +6,19 @@ import getopt
 import time
 import pytsk3
 import logging
+import magic
 from PIL import Image
 from yapsy.PluginManager import PluginManager
+
+#TODO: Get plugin iFrames working
+#TODO: Put cache in case folder 
+#TODO: Update menu
+#TODO: Add more basic configuration
+#TODO: Add logging
+#TODO: Updated Error handling
+#TODO: Add case management page
+#TODO: Add MetaDataTimeline ability
+#TODO: Proper string escaping and filtering
 
 global _debug
 global default_image
@@ -18,6 +29,9 @@ global max_cache
 global icon_dir
 global curr_dir
 global plugin_manager
+global thumbnail_size
+global max_download_size
+global my_magic
 
 def main(argv):
     try: 
@@ -25,6 +39,8 @@ def main(argv):
     except getopt.GetoptError:
         usage()
         sys.exit(2)
+
+    logging.getLogger('yapsy').setLevel(logging.DEBUG)
 
     global _debug
     global default_image
@@ -36,8 +52,14 @@ def main(argv):
     global curr_dir
     global resource_dir
     global plugin_manager
+    global thumbnail_size
+    global max_download_size
+    global my_magic
 
-    _debug = 0
+    my_magic = magic.Magic()
+    max_download_size = 100 #In MB #TODO: this should be configurable
+    thumbnail_size = 128, 128 #TODO: This should be a configurable value
+    _debug = 0 
     default_image = ""
     port = 8080
     default_case = str(int(time.time()))
@@ -47,6 +69,8 @@ def main(argv):
         os.mkdir(output_dir)
     icon_dir = curr_dir + "/icons/"
     resource_dir = curr_dir + "/resources/"
+    thumbnail_dir = output_dir + "/thumbnails/"
+    file_cache_dir = output_dir + "/files/"
     if not os.path.isdir(icon_dir):
         print("ERROR: icon directory missing")
         sys.exit(2)
@@ -107,6 +131,7 @@ def usage():
     print("")
 
 def icat(image, metaaddress, output_file):
+    """Returns the specified file using image file, meta or inode address, and outputfile"""
     out = open(output_file, 'wb')
     img = pytsk3.Img_Info(image)
     fs = pytsk3.FS_Info(img)
@@ -121,8 +146,9 @@ def icat(image, metaaddress, output_file):
         offset += len(data)
         out.write(data)
     out.close()
-
+    
 def fls(image, metaaddress, output_file):
+    """Lists all files in a directory"""
     out = open(output_file, 'w')
     img = pytsk3.Img_Info(image)
     fs = pytsk3.FS_Info(img)
@@ -131,9 +157,8 @@ def fls(image, metaaddress, output_file):
         out.write(entry.info.name.name + "\n")
     out.close()
 
-def load_files(is_image, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension):
-    thumbnail_size = 128, 128
-    
+def cache_file(is_image, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension):
+    """Caches the provided file"""
     if not os.path.isdir(thumbnails_dir):
         os.makedirs(thumbnails_dir)
 
@@ -160,29 +185,68 @@ def get_resource(name):
         return
     return static_file(name, root=resource_dir, mimetype='image/jpg')
 
+#OS File caching will deal with image for us, so just create new object
+# ?ext=.xml&case=democase&image=/mnt/ewf_mount1/ewf1&type=Regular File&filename=Agent_WKS-WINXP32BIT
 #TODO: icat file, get mimetype of file + store info, add gets (name, fullpath, size), add check before adding link
 @route('/analyze/<metaaddress>')
 def analyze_file(metaaddress):
+    extension = str(request.query.ext).replace(".","").lower() or "none"
+    case = str(request.query.case).strip() or default_case
+    image = str(request.query.image).strip() or default_image    
+    file_type = str(request.query.type).strip().lower()
+    file_name = str(request.query.filename).strip().lower() or "unknown"
+    file_size = str(request.query.size).strip().lower() or "0"
+    file_path = output_dir + case + '/' + 'files/' + metaaddress + '/' + file_name + "." + extension
+    mimetype = get_mime_type(extension)
     global plugin_manager
     plugins = []
-    for plugin in plugin_manager.getAllPlugins():
-        plugins.append('<a href="http://localhost:8180/plugins/' + plugin.name + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
-    print(plugin_manager.getAllPlugins())
+
+    if _debug:
+        print("[DEBUG] Analyzing file " + file_name)
+        print("[DEBUG] Found the following plugins - " + str(plugin_manager.getAllPlugins()))
+    
+    if int(file_size) / 1000000 <= max_download_size:
+        if _debug:
+            print("[DEBUG] File is smaller than max size")
+        icat(image, metaaddress, file_path)
+        actual_mimetype = my_magic.id_filename(file_path)
+        actual_size = os.path.getsize(file_path)
+        gets = "?file=" + file_path + "&mimetype=" + actual_mimetype + "&size=" + str(actual_size)
+        for plugin in plugin_manager.getAllPlugins():
+            if _debug:
+                print("[DEBUG] Checking plugin " + plugin.plugin_object.name())
+            if plugin.plugin_object.check(actual_mimetype, actual_size):
+                if _debug:
+                    print("[DEBUG] Adding!")
+                plugins.append('<a href="http://localhost:' + port + '/plugins/' + plugin.name + gets + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
+    
+    #TODO: REMOVE
     html = ""
     template = open(curr_dir + '/template.html', 'r')
     html = template.read()
     html = str(html).replace('<!-- Links -->', "\n".join(plugins))
 
     return html
-    #return static_file('template.html', root=curr_dir, mimetype='text/html')
 
 @route('/plugins/<name>')
 def plugin(name):
+    """Returns the iframe of the given plugin for the given file"""
+    file_path = str(request.query.file) or None
+    mimetype = str(request.query.mimetype) or my_magic.id_filename(file_path)
+    file_size = str(request.query.size) or os.path.getsize(file_path)
+    
+    if not file_path:
+        return "ERROR: File required"
+
+    curr_file = open(file_path, "rb")
+
     plugin = plugin_manager.getPluginByName(name)
-    return plugin.name
+    
+    return plugin.get(curr_file, mimetype, file_size)
 
 @route('/image/<metaaddress>')
-def get_image(metaaddress):
+def get_thumbnail(metaaddress):
+    """Returns a thumbnail of the given file"""
     metaaddress = str(metaaddress).replace(',','')
     extension = str(request.query.ext).replace(".","").lower() or "_blank"
     case = str(request.query.case).strip() or default_case
@@ -194,14 +258,6 @@ def get_image(metaaddress):
     files_dir = case_directory + 'files/'
     curr_file_dir = files_dir + metaaddress + '/'
     mime_type = ""
-
-    if not file_name:
-        full_name = os.popen("basename \"`ffind " + image + " " + metaaddress.split("-")[0] + "`\"" ).read()
-        parts = full_name.split(".",1)
-        if len(parts) > 1:
-            file_name = parts[0]
-            extension = str(parts[1]).strip().lower()
-            print(extension)
 
     if file_type == "directory":
         return static_file("_folder.png", root=icon_dir, mimetype='image/png')
@@ -224,7 +280,7 @@ def get_image(metaaddress):
         else:
             return static_file(extension + ".png", root=icon_dir, mimetype='image/png')
 
-    load_files(True, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension)
+    cache_file(True, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension)
     
     if os.path.isfile(case_directory + '/thumbnails/' + metaaddress + '.' + extension):
         return static_file(metaaddress + '.' + extension, root=thumbnails_dir, mimetype=mime_type)
@@ -243,7 +299,7 @@ def get_file(metaaddress):
     thumbnails_dir = case_directory + 'thumbnails/'
     files_dir = case_directory + 'files/'
     curr_file_dir = files_dir + metaaddress + '/'
-    
+ 
     if file_type == "directory":
         if not os.path.isdir(curr_file_dir):
             os.makedirs(curr_file_dir)
@@ -254,7 +310,7 @@ def get_file(metaaddress):
     mime_type = ""
     mime_type = get_mime_type(extension)
         
-    load_files(False, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension)
+    cache_file(False, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension)
     
     if mime_type: 
         return static_file(file_name + '.' + extension, root=case_directory + '/files/' + metaaddress + '/', mimetype=mime_type)
