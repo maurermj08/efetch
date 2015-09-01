@@ -1,0 +1,10 @@
+[Core]
+Name = Hexdump
+Module = fa_hexdump
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Hexdump a file
+Copyright = 2015

@@ -40,7 +40,8 @@ def main(argv):
         usage()
         sys.exit(2)
 
-    logging.getLogger('yapsy').setLevel(logging.DEBUG)
+    #logging.getLogger('yapsy').setLevel(logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
 
     global _debug
     global default_image
@@ -56,7 +57,7 @@ def main(argv):
     global max_download_size
     global my_magic
 
-    my_magic = magic.Magic()
+    my_magic = magic.Magic(flags=magic.MAGIC_MIME_TYPE)
     max_download_size = 100 #In MB #TODO: this should be configurable
     thumbnail_size = 128, 128 #TODO: This should be a configurable value
     _debug = 0 
@@ -214,7 +215,7 @@ def analyze_file(metaaddress):
         gets = "?file=" + file_path + "&mimetype=" + actual_mimetype + "&size=" + str(actual_size)
         for plugin in plugin_manager.getAllPlugins():
             if _debug:
-                print("[DEBUG] Checking plugin " + plugin.plugin_object.name())
+                print("[DEBUG] Checking plugin " + plugin.plugin_object.display_name())
             if plugin.plugin_object.check(actual_mimetype, actual_size):
                 if _debug:
                     print("[DEBUG] Adding!")
@@ -242,7 +243,7 @@ def plugin(name):
 
     plugin = plugin_manager.getPluginByName(name)
     
-    return plugin.get(curr_file, mimetype, file_size)
+    return plugin.plugin_object.get(curr_file, file_path, mimetype, file_size)
 
 @route('/image/<metaaddress>')
 def get_thumbnail(metaaddress):

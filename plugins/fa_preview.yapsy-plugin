@@ -1,0 +1,10 @@
+[Core]
+Name = Preview
+Module = fa_preview
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Previews a file
+Copyright = 2015

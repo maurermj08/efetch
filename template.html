@@ -36,10 +36,21 @@ a {
 
 }
 
+body {
+    margin-left: 0px;
+    
+    margin-top: 0px;
+    
+    margin-right: 0px;
+    
+    margin-bottom: 0px;
+}
+
+
 #main {
  	position: relative;
 
-	background-color: #bbbbbb;
+	background-color: #FFFFFF;
 
 	height:90%;
 
@@ -47,7 +58,7 @@ a {
 
 	float: bottom;
 
-        font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 #section {
@@ -99,11 +110,11 @@ a {
     </div>
     <div id="main">
       <div id="nav">
-        <a href="foo.html" target="frame">Dashboard</a><br>
+        <a href="http://localhost:5601/#/dashboard/Advance-View?embed&_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-5y,mode:quick,to:now))&_a=(filters:!(),panels:!((col:1,id:Action-Type,row:4,size_x:3,size_y:2,type:visualization),(col:4,id:Top-15-Extensions,row:4,size_x:3,size_y:2,type:visualization),(col:7,id:Inner-Reallocated-Outer-Deleted,row:4,size_x:3,size_y:2,type:visualization),(col:10,id:Inner-Meta-Structure-Outer-File-Structure,row:4,size_x:3,size_y:2,type:visualization),(col:1,columns:!(thumbnail,file_full_path,size,file_link),id:Standard-Search,row:6,size_x:12,size_y:6,sort:!('@timestamp',desc),type:search),(col:1,id:Date-Histogram-with-Common-Extensions,row:1,size_x:12,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,query:'*')),title:'Advance%20View')" target="frame">Dashboard</a><br>
 	<!-- Links -->
 	<!-- Links End -->
       </div>
-      <iframe name="frame" id="iframe" src="http://google.com">
+      <iframe name="frame" id="iframe" src="http://localhost:5601/#/dashboard/Advance-View?embed&_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-5y,mode:quick,to:now))&_a=(filters:!(),panels:!((col:1,id:Action-Type,row:4,size_x:3,size_y:2,type:visualization),(col:4,id:Top-15-Extensions,row:4,size_x:3,size_y:2,type:visualization),(col:7,id:Inner-Reallocated-Outer-Deleted,row:4,size_x:3,size_y:2,type:visualization),(col:10,id:Inner-Meta-Structure-Outer-File-Structure,row:4,size_x:3,size_y:2,type:visualization),(col:1,columns:!(thumbnail,file_full_path,size,file_link),id:Standard-Search,row:6,size_x:12,size_y:6,sort:!('@timestamp',desc),type:search),(col:1,id:Date-Histogram-with-Common-Extensions,row:1,size_x:12,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,query:'*')),title:'Advance%20View')">
       </iframe> </div>
   </body>
 </html>
