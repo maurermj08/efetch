@@ -198,6 +198,10 @@ def analyze_file(metaaddress):
     file_name = str(request.query.filename).strip().lower() or "unknown"
     file_size = str(request.query.size).strip().lower() or "0"
     file_path = output_dir + case + '/' + 'files/' + metaaddress + '/' + file_name + "." + extension
+    case_directory = output_dir + case + '/'
+    thumbnails_dir = case_directory + 'thumbnails/'
+    files_dir = case_directory + 'files/'
+    curr_file_dir = files_dir + metaaddress + '/'
     mimetype = get_mime_type(extension)
     global plugin_manager
     plugins = []
@@ -209,7 +213,7 @@ def analyze_file(metaaddress):
     if int(file_size) / 1000000 <= max_download_size:
         if _debug:
             print("[DEBUG] File is smaller than max size")
-        icat(image, metaaddress, file_path)
+        cache_file(False, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension)
         actual_mimetype = my_magic.id_filename(file_path)
         actual_size = os.path.getsize(file_path)
         gets = "?file=" + file_path + "&mimetype=" + actual_mimetype + "&size=" + str(actual_size)
@@ -225,6 +229,9 @@ def analyze_file(metaaddress):
     html = ""
     template = open(curr_dir + '/template.html', 'r')
     html = template.read()
+    html = str(html).replace('<!-- File -->', file_name) 
+    html = str(html).replace('<!-- Mimetype -->', actual_mimetype)
+    html = str(html).replace('<!-- Size -->', str(actual_size))
     html = str(html).replace('<!-- Links -->', "\n".join(plugins))
 
     return html
