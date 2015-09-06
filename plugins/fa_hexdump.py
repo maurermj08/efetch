@@ -6,7 +6,6 @@ from yapsy.IPlugin import IPlugin
 
 class FaHexdump(IPlugin):
 
-    
     def __init__(self):
         IPlugin.__init__(self)
 
@@ -33,6 +32,10 @@ class FaHexdump(IPlugin):
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
+
+    def popularity(self):
+        """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
+        return 5
 
     def get(self, input_file, path_on_disk, mimetype, size):
         """Returns the result of this plugin to be displayed in a browser"""

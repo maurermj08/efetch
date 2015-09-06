@@ -1,147 +1,88 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-  <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=us-ascii" />
     <style>
+        a {
+            display:block;
+            color: #FFFFFF;
+            padding-left: 10px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
 
-#header {
+        a:hover, a:active {
+            background-color: #7bc157;
+        }
 
-    background-color:#3a3a3a;
+        p {
+            line-height:20px;
+            color: #FFFFFF;
+            padding-left: 1px;
+            text-decoration: initial;
+            margin:0
+        }
 
-    color:#3a3a3a;
+        #nav {
+            line-height:20px;
+            background-color:#5F5F5F;
+            height:100%;
+            width:180px;
+            float:left;          
+        }
 
-    text-align:left;
+        body {
+            margin-left: 0px;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+        }
 
-    height: 40px;
+        #main {
+            position: absolute;
+            background-color: #FFFFFF;
+            height: 100%;
+            width: calc(100% - 80px);
+            float: bottom;
+            font-family: Arial, Helvetica, sans-serif;
+        }
 
-}
-
-a {
-    display:block;
-    color: #FFFFFF;
-    padding-left: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-a:hover, a:active {
-    background-color: #7bc157;
-}
-
-p {
-    line-height:20px;
-    color: #FFFFFF;
-    padding-left: 1px;
-    text-decoration: initial;
-    margin:0
-}
-
-
-#nav {
-
-    line-height:20px;
-
-    background-color:#5F5F5F;
-
-    height:100%;
-
-    width:180px;
-
-    float:left;	      
-
-}
-
-body {
-    margin-left: 0px;
-    
-    margin-top: 0px;
-    
-    margin-right: 0px;
-    
-    margin-bottom: 0px;
-}
-
-
-#main {
- 	position: relative;
-
-	background-color: #FFFFFF;
-
-	height:90%;
-
-	width: 100%;
-
-	float: bottom;
-
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-#section {
-
-    width:350px;
-
-    float:left;
-
-    padding:10px;	 	 
-
-}
-
-#footer {
-
-    background-color:black;
-
-    color:white;
-
-    clear:both;
-
-    text-align:center;
-
-   padding:5px;	 	 
-
-}
-
-#iframe {
-	position: absolute;
-
-	top: 0px;
-	
-	right: 0px;
-
-	left: 180px;
-
-	height: 100%;
-
-	width: calc(100% - 100px);
-
-	border: none;
-}
-
-</style>
+        #iframe {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            left: 180px;
+            height: 100%;
+            width: calc(100% - 100px);
+            border: none;
+        }
+    </style>
     <title>fileanalyzer.html</title>
-  </head>
-  <body>
-    <div id="header">
-<img src="http://localhost:8180/resource/DiFT_Header.jpg" alt="DiFT" style="width:200px;height:40px;">
-    </div>
+</head>
+
+<body>
     <div id="main">
-      <div id="nav">
-<p>
-<b><!-- File --></b><br>
-<p align="right">
-<!-- Mimetype --> <br>
-<!-- Size --> <br>
-<hr>
-</p>
-<br>
-</p>
-        <a href="http://localhost:5601/#/dashboard/Advance-View?embed&_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-5y,mode:quick,to:now))&_a=(filters:!(),panels:!((col:1,id:Action-Type,row:4,size_x:3,size_y:2,type:visualization),(col:4,id:Top-15-Extensions,row:4,size_x:3,size_y:2,type:visualization),(col:7,id:Inner-Reallocated-Outer-Deleted,row:4,size_x:3,size_y:2,type:visualization),(col:10,id:Inner-Meta-Structure-Outer-File-Structure,row:4,size_x:3,size_y:2,type:visualization),(col:1,columns:!(thumbnail,file_full_path,size,file_link),id:Standard-Search,row:6,size_x:12,size_y:6,sort:!('@timestamp',desc),type:search),(col:1,id:Date-Histogram-with-Common-Extensions,row:1,size_x:12,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,query:'*')),title:'Advance%20View')" target="frame">Dashboard</a><br>
-	<!-- Links -->
-	<!-- Links End -->
-      </div>
-      <iframe name="frame" id="iframe" src="http://localhost:5601/#/dashboard/Advance-View?embed&_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-5y,mode:quick,to:now))&_a=(filters:!(),panels:!((col:1,id:Action-Type,row:4,size_x:3,size_y:2,type:visualization),(col:4,id:Top-15-Extensions,row:4,size_x:3,size_y:2,type:visualization),(col:7,id:Inner-Reallocated-Outer-Deleted,row:4,size_x:3,size_y:2,type:visualization),(col:10,id:Inner-Meta-Structure-Outer-File-Structure,row:4,size_x:3,size_y:2,type:visualization),(col:1,columns:!(thumbnail,file_full_path,size,file_link),id:Standard-Search,row:6,size_x:12,size_y:6,sort:!('@timestamp',desc),type:search),(col:1,id:Date-Histogram-with-Common-Extensions,row:1,size_x:12,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,query:'*')),title:'Advance%20View')">
-      </iframe> </div>
-  </body>
+        <div id="nav">
+            <p><b>
+            <!-- File -->
+            </b><br /></p>
+            <p align="right">
+            <!-- Mimetype -->
+            <br />
+            <!-- Size -->
+            <br /></p>
+            <hr />
+            <br />
+            <!-- Links -->
+            <!-- Links End -->
+        </div>
+        <iframe name="frame" id="iframe" src="<!-- Home -->"></iframe>
+    </div>
+</body>
 </html>
+

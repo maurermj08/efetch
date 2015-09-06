@@ -7,10 +7,10 @@ import time
 import pytsk3
 import logging
 import magic
+from pydblite import Base
 from PIL import Image
 from yapsy.PluginManager import PluginManager
 
-#TODO: Get plugin iFrames working
 #TODO: Put cache in case folder 
 #TODO: Update menu
 #TODO: Add more basic configuration
@@ -32,10 +32,11 @@ global plugin_manager
 global thumbnail_size
 global max_download_size
 global my_magic
+global database
 
 def main(argv):
     try: 
-        opts, args = getopt.getopt(argv, "hp:i:c:o:s:d", ["help", "port=", "image=", "case=", "output=", "size=", "debug"])
+        opts, args = getopt.getopt(argv, "hp:i:c:o:s:dD:", ["help", "port=", "image=", "case=", "output=", "size=", "debug", "database="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -56,6 +57,7 @@ def main(argv):
     global thumbnail_size
     global max_download_size
     global my_magic
+    global database
 
     my_magic = magic.Magic(flags=magic.MAGIC_MIME_TYPE)
     max_download_size = 100 #In MB #TODO: this should be configurable
@@ -72,6 +74,8 @@ def main(argv):
     resource_dir = curr_dir + "/resources/"
     thumbnail_dir = output_dir + "/thumbnails/"
     file_cache_dir = output_dir + "/files/"
+    database_file = None
+    
     if not os.path.isdir(icon_dir):
         print("ERROR: icon directory missing")
         sys.exit(2)
@@ -80,8 +84,6 @@ def main(argv):
         if opt in ("-h", "--help"):
             usage()
             sys.exit()
-        elif opt == '-d':
-            _debug = 1
         elif opt in ("-p", "--port"):
             port = arg
         elif opt in ("-i", "--image"):
@@ -92,6 +94,10 @@ def main(argv):
             output_dir = arg
         elif opt in ("-s", "--size"):
             max_cache = arg    
+        elif opt in ("-D", "--database"):
+            database_file = arg
+        elif opt == '-d':
+            _debug = 1
         else:
             print("Unknown argument " + opt)
             usage()
@@ -105,6 +111,37 @@ def main(argv):
     if default_image and not os.path.isfile(default_image):
         print("ERROR: image file specified not found")
         sys.exit(2)    
+    if database_file and not os.path.isfile(database_file):
+        print("ERROR: database not found")
+        sys.exit(2)
+
+    if database_file != None:
+        database = Base(database_file)
+        if database.exists():
+            database.open()
+            database.create(mode='open')
+        else:
+            print("[ERROR] - Failed to open Database " + database_file)
+            sys.exit(2)
+    else:
+        if _debug:
+            print("[DEBUG] - Creating database")
+        database = Base(default_case + '.pd1')
+        image = pytsk3.Img_Info(url=default_image)
+        file_system = pytsk3.FS_Info(image)
+        if database.exists():
+            database.open()
+        else:
+            database.create('case', 'image', 'offset', 'name', 'dir', 'file_type', 'inode', 'mod', 'acc', 'chg', 'cre', 'size', 'uid', 'gid')
+        load_database(file_system, default_case, default_image, 0, database, "/")
+        database.create_index('inode')
+        database.create_index('name')
+        database.create_index('dir')
+        if _debug:
+            print("[DEBUG] - Done creating database")
+        database.commit()
+        if _debug:
+            print("[DEBUG] - Saved database")
 
     # Basic Plugin Management
     plugin_manager = PluginManager()
@@ -115,23 +152,7 @@ def main(argv):
 
     run(host='localhost', port=port)
     
-def usage():
-    print("usage: evidence_rest_server.py [-h] [-p PORT] [-i IMAGE] [-c CASE] [-o DIR ] [-s SIZE] [-d]")
-    print("")
-    print("evidence_rest_server is a simple webserver that can return files and thumbnails from an image.")
-    print("!!!WARNING!!! there are major known security issues if this is run as root and externally facing!")
-    print("")
-    print("optional arguments:")
-    print("  -h, --help        shows this help message and exits")
-    print("  -p, --port         sets the port this server runs on, defaults to 8080")
-    print("  -i, --image        default evidence IMAGE to use, if not specified in the request")
-    print("  -c, --case        default case to use, if not specified in the request")
-    print("  -o, --output        directory to store output files")
-    print("  -s, --size        the max size of cache storage, defaults to 1GB [NOT IMPLEMENTED]")
-    print("  -d, --debug        displays debug output")
-    print("")
-
-def icat(image, metaaddress, output_file):
+def icat(image, metaaddress, output_file, offset=0):
     """Returns the specified file using image file, meta or inode address, and outputfile"""
     out = open(output_file, 'wb')
     img = pytsk3.Img_Info(image)
@@ -146,16 +167,6 @@ def icat(image, metaaddress, output_file):
         if not data: break
         offset += len(data)
         out.write(data)
-    out.close()
-    
-def fls(image, metaaddress, output_file):
-    """Lists all files in a directory"""
-    out = open(output_file, 'w')
-    img = pytsk3.Img_Info(image)
-    fs = pytsk3.FS_Info(img)
-    directory = fs.open_dir(inode = int(metaaddress.split('-')[0]))
-    for entry in directory:
-        out.write(entry.info.name.name + "\n")
     out.close()
 
 def cache_file(is_image, thumbnails_dir, curr_file_dir, image, metaaddress, file_name, extension):
@@ -177,18 +188,6 @@ def cache_file(is_image, thumbnails_dir, curr_file_dir, image, metaaddress, file
         except IOError:
             print("[WARN] Failed to parse image " + file_name + "." + extension)
 
-@route('/resource/<name>')
-def get_resource(name):
-    if not name:
-        return
-    name = str(name)
-    if '/' in name or name == '.' or name == '..':
-        return
-    return static_file(name, root=resource_dir, mimetype='image/jpg')
-
-#OS File caching will deal with image for us, so just create new object
-# ?ext=.xml&case=democase&image=/mnt/ewf_mount1/ewf1&type=Regular File&filename=Agent_WKS-WINXP32BIT
-#TODO: icat file, get mimetype of file + store info, add gets (name, fullpath, size), add check before adding link
 @route('/analyze/<metaaddress>')
 def analyze_file(metaaddress):
     extension = str(request.query.ext).replace(".","").lower() or "none"
@@ -210,6 +209,9 @@ def analyze_file(metaaddress):
         print("[DEBUG] Analyzing file " + file_name)
         print("[DEBUG] Found the following plugins - " + str(plugin_manager.getAllPlugins()))
     
+    plugins.append('<a href="http://localhost:' + port + '/directory?dir=' + database._inode[metaaddress.split('-')[0]][0]['dir'] + '" target="frame">Directory</a><br>')
+
+
     if int(file_size) / 1000000 <= max_download_size:
         if _debug:
             print("[DEBUG] File is smaller than max size")
@@ -217,22 +219,24 @@ def analyze_file(metaaddress):
         actual_mimetype = my_magic.id_filename(file_path)
         actual_size = os.path.getsize(file_path)
         gets = "?file=" + file_path + "&mimetype=" + actual_mimetype + "&size=" + str(actual_size)
-        for plugin in plugin_manager.getAllPlugins():
-            if _debug:
-                print("[DEBUG] Checking plugin " + plugin.plugin_object.display_name())
-            if plugin.plugin_object.check(actual_mimetype, actual_size):
-                if _debug:
-                    print("[DEBUG] Adding!")
-                plugins.append('<a href="http://localhost:' + port + '/plugins/' + plugin.name + gets + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
+        for pop in reversed(range(1, 11)):
+            for plugin in plugin_manager.getAllPlugins():    
+                if plugin.plugin_object.popularity() == pop:
+                    if _debug:
+                        print("[DEBUG] Checking plugin " + plugin.plugin_object.display_name())
+                    if plugin.plugin_object.check(actual_mimetype, actual_size):
+                        if _debug:
+                            print("[DEBUG] Adding!")
+                        plugins.append('<a href="http://localhost:' + port + '/plugins/' + plugin.name + gets + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
     
-    #TODO: REMOVE
     html = ""
     template = open(curr_dir + '/template.html', 'r')
-    html = template.read()
-    html = str(html).replace('<!-- File -->', file_name) 
-    html = str(html).replace('<!-- Mimetype -->', actual_mimetype)
-    html = str(html).replace('<!-- Size -->', str(actual_size))
-    html = str(html).replace('<!-- Links -->', "\n".join(plugins))
+    html = str(template.read())
+    html = html.replace('<!-- Home -->', "http://localhost:" + port + "/directory?dir=" + database._inode[metaaddress.split('-')[0]][0]['dir'])
+    html = html.replace('<!-- File -->', file_name) 
+    html = html.replace('<!-- Mimetype -->', actual_mimetype)
+    html = html.replace('<!-- Size -->', str(actual_size) + " Bytes")
+    html = html.replace('<!-- Links -->', "\n".join(plugins))
 
     return html
 
@@ -242,7 +246,7 @@ def plugin(name):
     file_path = str(request.query.file) or None
     mimetype = str(request.query.mimetype) or my_magic.id_filename(file_path)
     file_size = str(request.query.size) or os.path.getsize(file_path)
-    
+
     if not file_path:
         return "ERROR: File required"
 
@@ -252,21 +256,69 @@ def plugin(name):
     
     return plugin.plugin_object.get(curr_file, file_path, mimetype, file_size)
 
+@route('/directory')
+def directory():
+    """Returns a directory listing for the given path"""
+    dir_path = str(request.query.dir) or None
+
+    if not dir_path:
+        return "ERROR: Must pass a directory"
+
+    listing = []
+#(case, image, offset, directory + name, directory, str(file_type), inode, mod, acc, chg, cre, size, uid, gid)
+    #TODO: Change localtime to case time, specifically what is supplied to sleuthkit
+    for item in database._dir[dir_path]:        
+        listing.append("    <tr>")  
+        listing.append('        <td><img src="http://localhost:' + port + '/image/' + item['inode'] + '" alt="-" style="width:32px;height:32px;"></td>')
+        listing.append('        <td><a href="http://localhost:' + port + '/analyze/' + item['inode'] + '" target="_top">' + os.path.basename(item['name']) + "</a></td>")
+        if (item['mod']):
+            listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(item['mod']))) + "</td>")
+        else:
+            listing.append("        <td> - </td>")
+        if (item['acc']):
+            listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(item['acc']))) + "</td>")
+        else:
+            listing.append("        <td> - </td>")
+        if (item['chg']):
+            listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(item['chg']))) + "</td>")
+        else:
+            listing.append("        <td> - </td>")
+        if (item['cre']):
+            listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(item['cre']))) + "</td>")
+        else:
+            listing.append("        <td> - </td>")
+        listing.append("        <td>" + item['size'] + "</td>")
+        listing.append("    </tr>")  
+
+    html = ""
+    template = open(curr_dir + '/dir_template.html', 'r')
+    html = str(template.read())
+    html = html.replace('<!-- Table -->', '\n'.join(listing))
+
+    return html
+
 @route('/image/<metaaddress>')
 def get_thumbnail(metaaddress):
     """Returns a thumbnail of the given file"""
     metaaddress = str(metaaddress).replace(',','')
-    extension = str(request.query.ext).replace(".","").lower() or "_blank"
+    file_db = database._inode[metaaddress][0]
+    extension = str(request.query.ext).replace(".","").lower() or os.path.splitext(file_db['name'])[1][1:]
     case = str(request.query.case).strip() or default_case
     image = str(request.query.image).strip() or default_image
-    file_type = str(request.query.type).strip().lower() or "regular"
-    file_name = str(request.query.filename).strip().lower() or ""
+    file_type = str(request.query.type).strip().lower() or None
+    file_name = str(request.query.filename).strip().lower() or os.path.basename(os.path.splitext(file_db['name'])[0])
     case_directory = output_dir + case + '/'
     thumbnails_dir = case_directory + 'thumbnails/'
     files_dir = case_directory + 'files/'
     curr_file_dir = files_dir + metaaddress + '/'
     mime_type = ""
 
+    if not file_type:
+        if file_db['file_type'] == 'TSK_FS_META_TYPE_DIR':
+            file_type = "directory"
+        else:
+            file_type = "regular"
+    
     if file_type == "directory":
         return static_file("_folder.png", root=icon_dir, mimetype='image/png')
 
@@ -325,6 +377,14 @@ def get_file(metaaddress):
     else:
         return static_file(file_name + '.' + extension, root=case_directory + '/files/' + metaaddress + '/', download=True)
 
+@route('/resource/<name>')
+def get_resource(name):
+    if not name:
+        return
+    name = str(name)
+    if '/' in name or name == '.' or name == '..':
+        return
+    return static_file(name, root=resource_dir, mimetype='image/jpg')
 
 def get_mime_type(extension):
     types_map = {
@@ -459,6 +519,55 @@ def get_mime_type(extension):
         return types_map[extension]
     else:
         return "" 
+
+def load_database(fs, case, image, offset, db, directory):
+    for directory_entry in fs.open_dir(directory):
+        name =  directory_entry.info.name.name.decode("utf8")
+        if directory_entry.info.meta == None:
+            file_type = ''
+            inode = ''
+            mod = ''
+            acc = ''
+            chg = ''
+            cre = ''
+            size = ''
+            uid = ''
+            gid = ''
+        else:
+            file_type = directory_entry.info.meta.type
+            inode = str(directory_entry.info.meta.addr)
+            mod = str(directory_entry.info.meta.mtime)
+            acc = str(directory_entry.info.meta.atime)
+            chg = str(directory_entry.info.meta.ctime)
+            cre = str(directory_entry.info.meta.crtime)
+            size = str(directory_entry.info.meta.size)
+            uid = str(directory_entry.info.meta.uid)
+            gid = str(directory_entry.info.meta.gid)
+        
+        db.insert(case, image, offset, directory + name, directory, str(file_type), inode, mod, acc, chg, cre, size, uid, gid)
+
+        if file_type == pytsk3.TSK_FS_META_TYPE_DIR and name != "." and name != "..":
+            try:
+                load_database(fs, case, image, offset, db, directory + name + "/")
+            except:
+                print("[WARNING] - Failed to parse directory " + directory + name + "/")
+
+def usage():
+    print("usage: evidence_rest_server.py [-h] [-p PORT] [-i IMAGE] [-c CASE] [-o DIR ] [-s SIZE] [-d] [-D database]")
+    print("")
+    print("evidence_rest_server is a simple webserver that can return files and thumbnails from an image.")
+    print("!!!WARNING!!! there are major known security issues if this is run as root and externally facing!")
+    print("")
+    print("optional arguments:")
+    print("  -h, --help        shows this help message and exits")
+    print("  -p, --port         sets the port this server runs on, defaults to 8080")
+    print("  -i, --image        default evidence IMAGE to use, if not specified in the request")
+    print("  -c, --case        default case to use, if not specified in the request")
+    print("  -o, --output        directory to store output files")
+    print("  -s, --size        the max size of cache storage, defaults to 1GB [NOT IMPLEMENTED]")
+    print("  -d, --debug        displays debug output")
+    print("  -D, --database     use an existing database file")
+    print("")
 
 if __name__=="__main__":
     main(sys.argv[1:])

@@ -32,6 +32,10 @@ class FaDownload(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return mimetype
 
+    def popularity(self):
+        """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
+        return 1
+
     def get(self, input_file, path_on_disk, mimetype, size):
         """Returns the result of this plugin to be displayed in a browser"""
         return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk), download=os.path.basename(path_on_disk))
