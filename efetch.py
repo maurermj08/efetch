@@ -95,7 +95,7 @@ def main(argv):
         logging.error("Could not find database file " + database_file)
         sys.exit(2)
 
-    if database_file != None:
+    if database_file:
         database = Base(database_file)
         if database.exists():
             database.open()
@@ -180,6 +180,7 @@ def add_image(image_id, offset, image_path):
     try:
         image = pytsk3.Img_Info(url=image_path)
         file_system = pytsk3.FS_Info(image)
+        database.insert(image_id + "/" + offset, image_id + '/' + offset + '/', image_id + '/' + offset + '/-1', image_id, offset, image_path, '/', '', '', '', 'TSK_FS_META_TYPE_DIR', -1, 0, 0, 0, 0, 0, 0, 0)
         load_database(file_system, image_id, offset, image_path, database, "/")
         database.commit()
     except:
@@ -187,7 +188,8 @@ def add_image(image_id, offset, image_path):
         abort(500, "Failed to parse image, please check your sector offset")
 
 @route('/analyze/<image_id>/<offset>/<input_type>/<path_or_inode:path>')
-def analyze(image_id, offset, input_type, path_or_inode):
+@route('/analyze/<image_id>/<offset>/<input_type>/')
+def analyze(image_id, offset, input_type, path_or_inode = '/'):
     """Provides a web view with all applicable plugins, defaults to most popular"""
     #Get file from database
     curr_file = get_file(image_id, offset, input_type, path_or_inode)
@@ -206,7 +208,7 @@ def analyze(image_id, offset, input_type, path_or_inode):
     plugins.append('<a href="http://' + address + ':' + port + '/directory/' + curr_file['image_id'] + '/' + curr_file['offset']  + '/p' + curr_file['path'] + '" target="frame">Directory</a><br>')
 
     #If file is less than max download (cache) size, cache it and analyze it
-    if int(curr_file['size']) / 1000000 <= max_download_size:
+    if curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and int(curr_file['size']) / 1000000 <= max_download_size:
         cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
         actual_mimetype = my_magic.id_filename(file_cache_path)
         actual_size = os.path.getsize(file_cache_path)
@@ -226,10 +228,16 @@ def analyze(image_id, offset, input_type, path_or_inode):
     template = open(curr_dir + '/template.html', 'r')
     html = str(template.read())
     html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/directory/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/p' + curr_file['path'])
-    html = html.replace('<!-- File -->', curr_file['name']) 
-    html = html.replace('<!-- Mimetype -->', actual_mimetype)
-    html = html.replace('<!-- Size -->', str(actual_size) + " Bytes")
-    html = html.replace('<!-- Links -->', "\n".join(plugins))
+    if curr_file['file_type'] == 'TSK_FS_META_TYPE_DIR':
+        html = html.replace('<!-- File -->', curr_file['name']) 
+        html = html.replace('<!-- Mimetype -->', 'Directory')
+        html = html.replace('<!-- Size -->', str(curr_file['size']) + " Bytes")
+        html = html.replace('<!-- Links -->', "\n".join(plugins))
+    else: 
+        html = html.replace('<!-- File -->', curr_file['name']) 
+        html = html.replace('<!-- Mimetype -->', actual_mimetype)
+        html = html.replace('<!-- Size -->', str(actual_size) + " Bytes")
+        html = html.replace('<!-- Links -->', "\n".join(plugins))
 
     return html
     
@@ -263,6 +271,8 @@ def plugin(name, image_id, offset, input_type, path_or_inode):
     #Return plugins frame
     return plugin.plugin_object.get(curr_file, file_cache_path, actual_mimetype, actual_size)
 
+@route('/directory/<image_id>/<offset>/<input_type>')
+@route('/directory/<image_id>/<offset>/<input_type>/')
 @route('/directory/<image_id>/<offset>/<input_type>/<path_or_inode:path>')
 def directory(image_id, offset, input_type, path_or_inode="/"):
     """Returns a formatted directory listing for the given path"""
@@ -276,7 +286,7 @@ def directory(image_id, offset, input_type, path_or_inode="/"):
     thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
 
     #Check if file has been cached, if not cache it
-    if not os.path.isfile(file_cache_path):
+    if curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and not os.path.isfile(file_cache_path):
         thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
         cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
    
@@ -574,7 +584,7 @@ def load_database(fs, image_id, offset, image_path, db, directory):
         
         dir_ref = image_id + "/" + offset + directory + name
         inode_ref = image_id + "/" + offset + "/" + inode
-        ext = os.path.split(name)[1][1:] or ""
+        ext = os.path.splitext(name)[1][1:] or ""
 
         db.insert(image_id + "/" + offset, dir_ref, inode_ref, image_id, offset, image_path, name, directory + name, ext, directory, str(file_type), inode, mod, acc, chg, cre, size, uid, gid)
 
