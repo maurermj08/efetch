@@ -44,9 +44,12 @@ def main(argv):
     global my_magic
     global database
 
-    #Instantiate Globals
-    my_magic = magic.Magic(flags=magic.MAGIC_MIME_TYPE)
-    
+    #Just in case support both magic libs
+    try:
+        my_magic = magic.Magic(mime = True)
+    except:
+        my_magic = magic.Magic(flags=magic.MAGIC_MIME_TYPE)
+
     #Default Values
     max_download_size = 100 #In MegaBytes
     _debug = 0 
@@ -58,7 +61,7 @@ def main(argv):
         os.mkdir(output_dir)
     icon_dir = curr_dir + "/icons/"
     database_file = None
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     
     if not os.path.isdir(icon_dir):
         logging.error("Could not find icon directory " + icon_dir) 
@@ -101,7 +104,7 @@ def main(argv):
             database.open()
             database.create(mode='open')
         else:
-            print("[ERROR] - Failed to open Database " + database_file)
+            logging.error("Failed to open Database " + database_file)
             sys.exit(2)
     else:
         database = Base(str(int(round(time.time() * 1000))) + '.pd1')
@@ -115,7 +118,7 @@ def main(argv):
             database.create_index('image_id')
             database.create_index('dir')
         if _debug:
-            print("[DEBUG] - Saved database")
+            logging.debug("Saved database")
 
     #TODO MOVE TO analyze
     # Basic Plugin Management
@@ -126,6 +129,13 @@ def main(argv):
         plugin_manager.activatePluginByName(plugin.name)
 
     run(host=address, port=port)
+
+def get_mimetype(file_path):
+    """Returns the mimetype for the given file"""
+    try:
+        return my_magic.from_file(fle_path)
+    except:
+        return my_magic.id_filename(file_path)
 
 def get_file(image_id, offset, input_type, path_or_inode, abort_on_error=True):
     """Returns the file object for the given file in the database"""
@@ -210,7 +220,7 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
     #If file is less than max download (cache) size, cache it and analyze it
     if curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and int(curr_file['size']) / 1000000 <= max_download_size:
         cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
-        actual_mimetype = my_magic.id_filename(file_cache_path)
+        actual_mimetype = get_mimetype(file_cache_path)
         actual_size = os.path.getsize(file_cache_path)
         #Order Plugins by populatiry from highest to lowest
         for pop in reversed(range(1, 11)):
@@ -259,7 +269,7 @@ def plugin(name, image_id, offset, input_type, path_or_inode):
         cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
 
     #Get mimetype and size
-    actual_mimetype = my_magic.id_filename(file_cache_path)
+    actual_mimetype = get_mimetype(file_cache_path)
     actual_size = os.path.getsize(file_cache_path)
 
     #Open file
@@ -301,7 +311,10 @@ def directory(image_id, offset, input_type, path_or_inode="/"):
     for item in database._dir[curr_folder]:        
         listing.append("    <tr>")  
         listing.append('        <td><img src="http://' + address + ':' + port + '/thumbnail/' + item['image_id'] + '/' + item['offset'] + '/p' + item['path'] + '" alt="-" style="width:32px;height:32px;"></td>')
-        listing.append('        <td><a href="http://' + address + ':' + port + '/analyze/' + item['image_id'] + '/' + item['offset'] + '/p' + item['path'] + '" target="_top">' + item['name'] + "</a></td>")
+        if item['file_type'] == 'TSK_FS_META_TYPE_DIR':
+            listing.append('        <td><a href="http://' + address + ':' + port + '/directory/' + item['image_id'] + '/' + item['offset'] + '/p' + item['path'] + '" target="_self">' + item['name'] + "</a></td>")
+        else:
+            listing.append('        <td><a href="http://' + address + ':' + port + '/analyze/' + item['image_id'] + '/' + item['offset'] + '/p' + item['path'] + '" target="_top">' + item['name'] + "</a></td>")
         if (item['mod']):
             listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(item['mod']))) + "</td>")
         else:
@@ -343,12 +356,13 @@ def files(image_id, offset, input_type, path_or_inode):
         thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
         cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
     
-    actual_mimetype = my_magic.id_filename(file_cache_path)
+    actual_mimetype = get_mimetype(file_cache_path)
     
     return static_file(curr_file['name'], root=file_cache_dir, mimetype=actual_mimetype)
 
+@route('/thumbnail/<image_id>/<offset>/<input_type>/')
 @route('/thumbnail/<image_id>/<offset>/<input_type>/<path_or_inode:path>')
-def thumbnail(image_id, offset, input_type, path_or_inode):
+def thumbnail(image_id, offset, input_type, path_or_inode='/'):
     """Returns either an icon or thumbnail of the provided file"""
     #Get file from database
     curr_file = get_file(image_id, offset, input_type, path_or_inode)
@@ -365,18 +379,18 @@ def thumbnail(image_id, offset, input_type, path_or_inode):
         #Caching variables
         file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
         file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
+        thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
+        thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
     
         #Check if file has been cached, if not cache it
-        if not os.path.isfile(file_cache_path):
-            thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
-            thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
-            cache_file(True, thumbnail_cache_path, file_cache_path, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
-    
+        if not os.path.isfile(file_cache_path) or not os.path.isfile(thumbnail_cache_path):
+            cache_file(True, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
+   	 
         #TODO: If this is always a jpeg just state it, should save some time
-        thumbnail_mimetype = my_magic.id_filename(thumbnail_cache_path)
+        thumbnail_mimetype = get_mimetype(thumbnail_cache_path)
         
-        if os.path.isfile(thumbnail_cache_dir):
-            return static_file(curr_file['name'], root=thumbnail_cache_dir, mimetype=actual_mimetype)
+        if os.path.isfile(thumbnail_cache_path):
+            return static_file(curr_file['name'], root=thumbnail_cache_dir, mimetype=thumbnail_mimetype)
         else:
             return static_file('_missing.png', root=icon_dir, mimetype='image/png')
     #If file is not an image return the icon associated with the files extension
@@ -419,7 +433,7 @@ def cache_file(is_image, thumbnails_dir, curr_file_dir, image_path, offset, meta
     if is_image and not os.path.isfile(thumbnails_dir + file_name):
         try:
             image = Image.open(curr_file_dir + file_name)
-            image.thumbnail(thumbnail_size)
+            image.thumbnail("42x42")
             image.save(thumbnails_dir + file_name)
         except IOError:
             logging.warn("[WARN] Failed to parse image " + file_name)
