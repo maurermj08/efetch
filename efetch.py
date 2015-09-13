@@ -12,9 +12,6 @@ from PIL import Image
 from yapsy.PluginManager import PluginManager
 from bottle import abort
 
-#TODO: Add case management page
-#TODO: Proper string escaping and filtering
-
 global address
 global port
 global output_dir
@@ -204,11 +201,6 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
     #Get file from database
     curr_file = get_file(image_id, offset, input_type, path_or_inode)
 
-    #Caching variables
-    file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
-    file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
-    thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
-    thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
 
     logging.debug("Analyzing file " + curr_file['name'])
     logging.debug("Found the following plugins - " + str(plugin_manager.getAllPlugins()))
@@ -219,7 +211,7 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
 
     #If file is less than max download (cache) size, cache it and analyze it
     if curr_file['inode'] and curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and int(curr_file['size']) / 1000000 <= max_download_size:
-        cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
+        file_cache_path = cache_file(curr_file)
         actual_mimetype = get_mimetype(file_cache_path)
         actual_size = os.path.getsize(file_cache_path)
         #Order Plugins by populatiry from highest to lowest
@@ -260,16 +252,8 @@ def plugin(name, image_id, offset, input_type, path_or_inode):
     #Get file from database
     curr_file = get_file(image_id, offset, input_type, path_or_inode)
     
-    #Caching variables
-    file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
-    file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
-    thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
-    thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
-
-    #Check if file has been cached, if not cache it
-    if not os.path.isfile(file_cache_path):
-        thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
-        cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
+    #Cache file
+    file_cache_path = cache_file(curr_file)
 
     #Get mimetype and size
     actual_mimetype = get_mimetype(file_cache_path)
@@ -292,17 +276,10 @@ def directory(image_id, offset, input_type, path_or_inode="/"):
     #Get file from database
     curr_file = get_file(image_id, offset, input_type, path_or_inode)
     
-    #Caching variables
-    file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
-    file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
-    thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
-    thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
+    #Get cached file
+    if curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and curr_file['inode']:
+        file_cache_path = cache_file(curr_file)   
 
-    #Check if file has been cached, if not cache it
-    if curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and not os.path.isfile(file_cache_path) and curr_file['inode']:
-        thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
-        cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
-   
     #If path is a folder just set the view to it, if not use the files parent folder
     if curr_file['file_type'] == 'TSK_FS_META_TYPE_DIR':
         curr_folder = curr_file['path'] + "/"
@@ -344,25 +321,6 @@ def directory(image_id, offset, input_type, path_or_inode="/"):
 
     return html
 
-@route('/file/<image_id>/<offset>/<input_type>/<path_or_inode:path>')
-def files(image_id, offset, input_type, path_or_inode):
-    """Returns the given file"""
-    #Get file from database
-    curr_file = get_file(image_id, offset, input_type, path_or_inode, False)
-    
-    #Caching variables
-    file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
-    file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
-
-    #Check if file has been cached, if not cache it
-    if not os.path.isfile(file_cache_path):
-        thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
-        cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
-    
-    actual_mimetype = get_mimetype(file_cache_path)
-    
-    return static_file(curr_file['name'], root=file_cache_dir, mimetype=actual_mimetype)
-
 @route('/thumbnail/<image_id>/<offset>/<input_type>/')
 @route('/thumbnail/<image_id>/<offset>/<input_type>/<path_or_inode:path>')
 def thumbnail(image_id, offset, input_type, path_or_inode='/'):
@@ -379,16 +337,10 @@ def thumbnail(image_id, offset, input_type, path_or_inode='/'):
 
     #If the file is an image create a thumbnail
     if assumed_mimetype.startswith('image'):
-        #Caching variables
-        file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
-        file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
+        #Cache file
+        file_cache_path = cache_file(curr_file)   	 
         thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
         thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
-    
-        #Check if file has been cached, if not cache it
-        if not os.path.isfile(file_cache_path) or not os.path.isfile(thumbnail_cache_path):
-            cache_file(True, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
-   	 
         #TODO: If this is always a jpeg just state it, should save some time
         thumbnail_mimetype = get_mimetype(thumbnail_cache_path)
         
@@ -403,44 +355,58 @@ def thumbnail(image_id, offset, input_type, path_or_inode='/'):
         else:
             return static_file(curr_file['ext'] + ".png", root=icon_dir, mimetype='image/png')
 
-def icat(offset, image_path, metaaddress, output_file):
+def icat(offset, image_path, metaaddress, output_file_path):
     """Returns the specified file using image file, meta or inode address, and outputfile"""
-    out = open(output_file, 'wb')
-    #TODO ADD OFFSET
-    img = pytsk3.Img_Info(image_path)
+    out = open(output_file_path, 'wb')
+    img = pytsk3.Img_Info(image_path, int(offset))
     fs = pytsk3.FS_Info(img)
-    f = fs.open_meta(inode = int(metaaddress.split('-')[0]))
-    #TODO RENAME VARIABLE
-    offset = 0
+    try:
+        f = fs.open_meta(inode = int(metaaddress.split('-')[0]))
+    except:
+        logging.warn("Failed to cache file, most likey file is reallocated " + output_file_path)
+        return
+    file_offset = 0
     size = f.info.meta.size
     BUFF_SIZE = 1024 * 1024
-    while offset < size:
-        available_to_read = min(BUFF_SIZE, size - offset)
-        data = f.read_random(offset, available_to_read)
+    while file_offset < size:
+        available_to_read = min(BUFF_SIZE, size - file_offset)
+        data = f.read_random(file_offset, available_to_read)
         if not data: break
-        offset += len(data)
+        file_offset += len(data)
         out.write(data)
     out.close()
 
-def cache_file(is_image, thumbnails_dir, curr_file_dir, image_path, offset, metaaddress, file_name, extension):
-    """Caches the provided file"""
-    if not os.path.isdir(thumbnails_dir):
-        os.makedirs(thumbnails_dir)
+def cache_file(curr_file, create_thumbnail=True):
+    """Caches the provided file and returns the files cached directory"""
+    file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
+    file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
+    thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
+    thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
+   
+    #Makesure cache directories exist 
+    if not os.path.isdir(thumbnail_cache_dir):
+        os.makedirs(thumbnail_cache_dir)
+    if not os.path.isdir(file_cache_dir):
+        os.makedirs(file_cache_dir)
 
-    if not os.path.isdir(curr_file_dir):
-        os.makedirs(curr_file_dir)
+    #If file does not exist cat it to directory
+    if not os.path.isfile(file_cache_path):
+        icat(curr_file['offset'], curr_file['image_path'], curr_file['inode'], file_cache_path)
 
-    if not os.path.isfile(curr_file_dir + file_name):
-        icat(offset, image_path, metaaddress, curr_file_dir + file_name)
+    #Uses extension to determine if it should create a thumbnail
+    assumed_mimetype = get_mime_type(curr_file['ext'])
 
-    if is_image and not os.path.isfile(thumbnails_dir + file_name):
+    #If the file is an image create a thumbnail
+    if assumed_mimetype.startswith('image') and create_thumbnail and not os.path.isfile(thumbnail_cache_path):
         try:
-            image = Image.open(curr_file_dir + file_name)
+            image = Image.open(file_cache_path)
             image.thumbnail("42x42")
-            image.save(thumbnails_dir + file_name)
+            image.save(thumbnail_cache_path)
         except IOError:
-            logging.warn("[WARN] Failed to parse image " + file_name)
-
+            logging.warn("[WARN] Failed to create thumbnail for " + curr_file['filename'])
+   
+    return file_cache_path
+     
 def get_mime_type(extension):
     types_map = {
         'a'      : 'application/octet-stream',
