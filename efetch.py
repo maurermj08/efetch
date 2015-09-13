@@ -133,7 +133,7 @@ def main(argv):
 def get_mimetype(file_path):
     """Returns the mimetype for the given file"""
     try:
-        return my_magic.from_file(fle_path)
+        return my_magic.from_file(file_path)
     except:
         return my_magic.id_filename(file_path)
 
@@ -218,7 +218,7 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
     plugins.append('<a href="http://' + address + ':' + port + '/directory/' + curr_file['image_id'] + '/' + curr_file['offset']  + '/p' + curr_file['path'] + '" target="frame">Directory</a><br>')
 
     #If file is less than max download (cache) size, cache it and analyze it
-    if curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and int(curr_file['size']) / 1000000 <= max_download_size:
+    if curr_file['inode'] and curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and int(curr_file['size']) / 1000000 <= max_download_size:
         cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
         actual_mimetype = get_mimetype(file_cache_path)
         actual_size = os.path.getsize(file_cache_path)
@@ -232,6 +232,9 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
                         plugins.append('<a href="http://' + address + ':' + port + '/plugin/' + plugin.name + '/' + curr_file['image_id'] + '/' + curr_file['offset'] + '/p' + curr_file['path'] + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
                     else:
                         logging.debug("Check did not match, NOT adding plugin " + plugin.plugin_object.display_name())
+    else:
+        actual_mimetype = '?'
+        actual_size = '?'
 
     #Modifies HTML page
     html = ""
@@ -296,7 +299,7 @@ def directory(image_id, offset, input_type, path_or_inode="/"):
     thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
 
     #Check if file has been cached, if not cache it
-    if curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and not os.path.isfile(file_cache_path):
+    if curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and not os.path.isfile(file_cache_path) and curr_file['inode']:
         thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
         cache_file(False, thumbnail_cache_dir, file_cache_dir, curr_file['image_path'], curr_file['offset'], curr_file['inode'], curr_file['name'], curr_file['ext'])
    

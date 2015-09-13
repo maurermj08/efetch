@@ -35,7 +35,7 @@ class FaPreview(IPlugin):
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
-        return mimetypei
+        return mimetype
 
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
