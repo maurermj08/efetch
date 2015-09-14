@@ -49,7 +49,6 @@ def main(argv):
 
     #Default Values
     max_download_size = 100 #In MegaBytes
-    _debug = 0 
     address = "localhost"
     port = str(8080)
     curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -58,8 +57,7 @@ def main(argv):
         os.mkdir(output_dir)
     icon_dir = curr_dir + "/icons/"
     database_file = None
-    logging.basicConfig(level=logging.DEBUG)
-    
+ 
     if not os.path.isdir(icon_dir):
         logging.error("Could not find icon directory " + icon_dir) 
         sys.exit(2)
@@ -79,7 +77,6 @@ def main(argv):
         elif opt in ("-D", "--database"):
             database_file = arg
         elif opt == '-d':
-            _debug = 1
             logging.basicConfig(level=logging.DEBUG)
         else:
             logging.error("Unknown argument " + opt)
@@ -114,8 +111,7 @@ def main(argv):
             database.create_index('iid')
             database.create_index('image_id')
             database.create_index('dir')
-        if _debug:
-            logging.debug("Saved database")
+        logging.debug("Saved database")
 
     #TODO MOVE TO analyze
     # Basic Plugin Management
@@ -187,7 +183,7 @@ def add_image(image_id, offset, image_path):
     try:
         image = pytsk3.Img_Info(url=image_path)
         file_system = pytsk3.FS_Info(image)
-        database.insert(image_id + "/" + offset, image_id + '/' + offset + '/', image_id + '/' + offset + '/-1', image_id, offset, image_path, '/', '', '', '', 'TSK_FS_META_TYPE_DIR', -1, 0, 0, 0, 0, 0, 0, 0)
+        database.insert(image_id + "/" + offset, image_id + '/' + offset + '/', image_id + '/' + offset + '/-1', image_id, offset, image_path, '/', '', '', '', 'directory', -1, 0, 0, 0, 0, 0, 0, 0)
         load_database(file_system, image_id, offset, image_path, database, "/")
         database.commit()
     except:
@@ -201,7 +197,6 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
     #Get file from database
     curr_file = get_file(image_id, offset, input_type, path_or_inode)
 
-
     logging.debug("Analyzing file " + curr_file['name'])
     logging.debug("Found the following plugins - " + str(plugin_manager.getAllPlugins()))
     
@@ -210,7 +205,7 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
     plugins.append('<a href="http://' + address + ':' + port + '/directory/' + curr_file['image_id'] + '/' + curr_file['offset']  + '/p' + curr_file['path'] + '" target="frame">Directory</a><br>')
 
     #If file is less than max download (cache) size, cache it and analyze it
-    if curr_file['inode'] and curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and int(curr_file['size']) / 1000000 <= max_download_size:
+    if curr_file['inode'] and curr_file['file_type'] != 'directory' and int(curr_file['size']) / 1000000 <= max_download_size:
         file_cache_path = cache_file(curr_file)
         actual_mimetype = get_mimetype(file_cache_path)
         actual_size = os.path.getsize(file_cache_path)
@@ -219,7 +214,7 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
             for plugin in plugin_manager.getAllPlugins():    
                 if plugin.plugin_object.popularity() == pop:
                     #Check if plugin applies to curr file
-                    if plugin.plugin_object.check(actual_mimetype, actual_size):
+                    if plugin.plugin_object.check(curr_file, file_cache_path, actual_mimetype, actual_size):
                         logging.debug("Check matched, adding plugin " + plugin.plugin_object.display_name())
                         plugins.append('<a href="http://' + address + ':' + port + '/plugin/' + plugin.name + '/' + curr_file['image_id'] + '/' + curr_file['offset'] + '/p' + curr_file['path'] + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
                     else:
@@ -233,7 +228,7 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
     template = open(curr_dir + '/template.html', 'r')
     html = str(template.read())
     html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/directory/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/p' + curr_file['path'])
-    if curr_file['file_type'] == 'TSK_FS_META_TYPE_DIR':
+    if curr_file['file_type'] == 'directory':
         html = html.replace('<!-- File -->', curr_file['name']) 
         html = html.replace('<!-- Mimetype -->', 'Directory')
         html = html.replace('<!-- Size -->', str(curr_file['size']) + " Bytes")
@@ -259,11 +254,8 @@ def plugin(name, image_id, offset, input_type, path_or_inode):
     actual_mimetype = get_mimetype(file_cache_path)
     actual_size = os.path.getsize(file_cache_path)
 
-    #Open file
-    curr_file = open(file_cache_path, "rb")
-
     #Get Plugin
-    plugin = plugin_manager.getPluginByName(name)
+    plugin = plugin_manager.getPluginByName(str(name).lower())
     
     #Return plugins frame
     return plugin.plugin_object.get(curr_file, file_cache_path, actual_mimetype, actual_size)
@@ -277,11 +269,11 @@ def directory(image_id, offset, input_type, path_or_inode="/"):
     curr_file = get_file(image_id, offset, input_type, path_or_inode)
     
     #Get cached file
-    if curr_file['file_type'] != 'TSK_FS_META_TYPE_DIR' and curr_file['inode']:
+    if curr_file['file_type'] != 'directory' and curr_file['inode']:
         file_cache_path = cache_file(curr_file)   
 
     #If path is a folder just set the view to it, if not use the files parent folder
-    if curr_file['file_type'] == 'TSK_FS_META_TYPE_DIR':
+    if curr_file['file_type'] == 'directory':
         curr_folder = curr_file['path'] + "/"
     else:
         curr_folder = curr_file['dir']
@@ -291,7 +283,7 @@ def directory(image_id, offset, input_type, path_or_inode="/"):
     for item in database._dir[curr_folder]:        
         listing.append("    <tr>")  
         listing.append('        <td><img src="http://' + address + ':' + port + '/thumbnail/' + item['image_id'] + '/' + item['offset'] + '/p' + item['path'] + '" alt="-" style="width:32px;height:32px;"></td>')
-        if item['file_type'] == 'TSK_FS_META_TYPE_DIR':
+        if item['file_type'] == 'directory':
             listing.append('        <td><a href="http://' + address + ':' + port + '/directory/' + item['image_id'] + '/' + item['offset'] + '/p' + item['path'] + '" target="_self">' + item['name'] + "</a></td>")
         else:
             listing.append('        <td><a href="http://' + address + ':' + port + '/analyze/' + item['image_id'] + '/' + item['offset'] + '/p' + item['path'] + '" target="_top">' + item['name'] + "</a></td>")
@@ -329,7 +321,7 @@ def thumbnail(image_id, offset, input_type, path_or_inode='/'):
     curr_file = get_file(image_id, offset, input_type, path_or_inode)
     
     #If it is folder just return the folder icon
-    if curr_file['file_type'] == 'TSK_FS_META_TYPE_DIR' or str(curr_file['name']).strip() == "." or str(curr_file['name']).strip() == "..":
+    if curr_file['file_type'] == 'directory' or str(curr_file['name']).strip() == "." or str(curr_file['name']).strip() == "..":
         return static_file("_folder.png", root=icon_dir, mimetype='image/png')
 
     #Uses extension to determine if it should create a thumbnail
@@ -378,6 +370,9 @@ def icat(offset, image_path, metaaddress, output_file_path):
 
 def cache_file(curr_file, create_thumbnail=True):
     """Caches the provided file and returns the files cached directory"""
+    if curr_file['file_type'] == 'directory':
+        return
+    
     file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
     file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
     thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
@@ -403,7 +398,7 @@ def cache_file(curr_file, create_thumbnail=True):
             image.thumbnail("42x42")
             image.save(thumbnail_cache_path)
         except IOError:
-            logging.warn("[WARN] Failed to create thumbnail for " + curr_file['filename'])
+            logging.warn("[WARN] Failed to create thumbnail for " + curr_file['name'])
    
     return file_cache_path
      
@@ -569,7 +564,16 @@ def load_database(fs, image_id, offset, image_path, db, directory):
         inode_ref = image_id + "/" + offset + "/" + inode
         ext = os.path.splitext(name)[1][1:] or ""
 
-        db.insert(image_id + "/" + offset, dir_ref, inode_ref, image_id, offset, image_path, name, directory + name, ext, directory, str(file_type), inode, mod, acc, chg, cre, size, uid, gid)
+        if file_type == pytsk3.TSK_FS_META_TYPE_REG:
+            file_type_str = 'regular'
+        elif file_type == pytsk3.TSK_FS_META_TYPE_DIR:
+            file_type_str = 'directory'
+        elif file_type == pytsk3.TSK_FS_META_TYPE_LNK:
+            file_type_str = 'link'
+        else:
+            file_type_str = str(file_type)
+
+        db.insert(image_id + "/" + offset, dir_ref, inode_ref, image_id, offset, image_path, name, directory + name, ext, directory, file_type_str, inode, mod, acc, chg, cre, size, uid, gid)
 
         if file_type == pytsk3.TSK_FS_META_TYPE_DIR and name != "." and name != "..":
             try:
@@ -578,7 +582,7 @@ def load_database(fs, image_id, offset, image_path, db, directory):
                 logging.warn("[WARNING] - Failed to parse directory " + directory + name + "/")
 
 def usage():
-    print("usage: efetch.py [-h] [-p PORT] [-o DIR ] [-s SIZE] [-d] [-D database] [-m maxfilesize")
+    print("usage: efetch.py [-h] [-p PORT] [-o DIR ] [-s SIZE] [-d] [-D database] [-m maxfilesize]")
     print("")
     print("efetch is a simple webserver that can return files and thumbnails from an image.")
     print("!!!WARNING!!! there are major known security issues if this is run as root and externally facing!")
@@ -592,6 +596,13 @@ def usage():
     print("  -D, --database     use an existing database file")
     print("  -m, --maxfilesize  max file size to download when caching files")
     print("")
+
+def create_file(self, identifier, pid, iid, image_id, offset, image_path, name, path, ext, directory, file_type='regular', 
+                inode='-1', mod='0', acc='0', chg='0', cre='0', size='0', uid='0', gid='0'):
+    """Creates a dictionary file to be used with a plugin"""
+    return dict([('id', identifier), ('pid', pid), ('iid', iid), ('image_id', image_id), ('offset', offset), ('image_path', image_path), 
+                 ('name', name), ('path', path), ('ext', ext), ('dir', directory), ('file_type', file_type), ('inode', inode), 
+                 ('mod', mod), ('acc', acc), ('chg', chg), ('cre', cre), ('size', size), ('uid', uid), ('gid', gid)])
 
 if __name__=="__main__":
     main(sys.argv[1:])

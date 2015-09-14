@@ -1,5 +1,5 @@
 [Core]
-Name = Download
+Name = fa_download
 Module = fa_download
 
 [Documentation]

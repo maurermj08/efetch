@@ -1,5 +1,5 @@
 [Core]
-Name = Hexdump
+Name = fa_hexdump
 Module = fa_hexdump
 
 [Documentation]

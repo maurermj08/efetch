@@ -1,5 +1,5 @@
 """
-A simple plugin that takes a file and returns the Strings in it
+Returns a static HTML page with the hexdump output, similar to Hexdump -C
 """
 
 from yapsy.IPlugin import IPlugin
@@ -21,13 +21,10 @@ class FaHexdump(IPlugin):
         """Returns the name displayed in the webview"""
         return "Hex View"
 
-    def check(self, mimetype, size):
+    def check(self, curr_file, path_on_disk, mimetype, size):
         """Checks if the file is compatable with this plugin"""
         maxsize = 100000000 
-        if (size < maxsize):
-            return True
-        else:
-            return False
+        return size < maxsize
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -37,8 +34,9 @@ class FaHexdump(IPlugin):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 5
 
-    def get(self, input_file, path_on_disk, mimetype, size):
+    def get(self, curr_file, path_on_disk, mimetype, size):
         """Returns the result of this plugin to be displayed in a browser"""
+        input_file = open(path_on_disk, 'rb')
         return "<xmp>" + self.hex_dump(input_file.read()) + "</xmp>"
 
     def hex_dump(self, src, length=16, sep='.'):
