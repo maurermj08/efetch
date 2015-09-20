@@ -597,13 +597,14 @@ def load_database(fs, image_id, offset, image_path, db, directory):
                 logging.warn("[WARNING] - Failed to parse directory " + directory + name + "/")
 
 def usage():
-    print("usage: efetch.py [-h] [-p PORT] [-o DIR ] [-s SIZE] [-d] [-D database] [-m maxfilesize]")
+    print("usage: efetch.py [-h] [-a ADDRESS] [-p PORT] [-o DIR ] [-s SIZE] [-d] [-D DATABASE] [-m maxfilesize]")
     print("")
     print("efetch is a simple webserver that can return files and thumbnails from an image.")
     print("!!!WARNING!!! there are major known security issues if this is run as root and externally facing!")
     print("")
     print("optional arguments:")
     print("  -h, --help         shows this help message and exits")
+    print("  -a, --address      sets the IP address or hostname this server runs on, defaults to localhost")
     print("  -p, --port         sets the port this server runs on, defaults to 8080")
     print("  -o, --output       directory to store output files")
     print("  -s, --size         the max size of cache storage, defaults to 1GB [NOT IMPLEMENTED]")
