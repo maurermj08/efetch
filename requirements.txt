@@ -1,0 +1,10 @@
+-e .
+
+#Core Dependencies
+bottle>=0.11
+yapsy>=1.11
+PIL>=1.1
+pydblite>=3.0
+
+#Sleuthkit
+imagemounter
