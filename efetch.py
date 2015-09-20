@@ -339,7 +339,7 @@ def thumbnail(image_id, offset, input_type, path_or_inode='/'):
         return static_file("_folder.png", root=icon_dir, mimetype='image/png')
 
     #Uses extension to determine if it should create a thumbnail
-    assumed_mimetype = get_mime_type(curr_file['ext'])
+    assumed_mimetype = get_mime_type(str(curr_file['ext']).lower())
 
     #If the file is an image create a thumbnail
     if assumed_mimetype.startswith('image'):
@@ -356,7 +356,7 @@ def thumbnail(image_id, offset, input_type, path_or_inode='/'):
             return static_file('_missing.png', root=icon_dir, mimetype='image/png')
     #If file is not an image return the icon associated with the files extension
     else:
-        if not os.path.isfile(icon_dir + curr_file['ext'] + ".png"):
+        if not os.path.isfile(icon_dir + str(curr_file['ext']).lower() + ".png"):
             return static_file("_blank.png", root=icon_dir, mimetype='image/png')
         else:
             return static_file(curr_file['ext'] + ".png", root=icon_dir, mimetype='image/png')
@@ -404,7 +404,7 @@ def cache_file(curr_file, create_thumbnail=True):
         icat(curr_file['offset'], curr_file['image_path'], curr_file['inode'], file_cache_path)
 
     #Uses extension to determine if it should create a thumbnail
-    assumed_mimetype = get_mime_type(curr_file['ext'])
+    assumed_mimetype = get_mime_type(str(curr_file['ext']).lower())
 
     #If the file is an image create a thumbnail
     if assumed_mimetype.startswith('image') and create_thumbnail and not os.path.isfile(thumbnail_cache_path):
