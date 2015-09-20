@@ -142,6 +142,49 @@ def get_check():
             answer = int(raw_input("Answer: "))
         except:
             answer = 0
+    
+    checks = []
+    pre = []
+
+    if answer == 1:
+        checks.append("True")
+    if answer == 3 or answer == 5 or answer == 7 or answer == 8:
+        size = 0
+        while size < 1:
+            try:
+                size = int(raw_input("Max Size in Bytes (i.e. 1024): "))
+            except:
+                size = 0
+        checks.append("size <= " + str(size))
+    if answer == 2 or answer == 5 or answer ==6 or answer == 8:
+        print("1 - Regular")
+        print("2 - Directory")
+        file_type = 0
+        while file_type < 1 or file_type > 2:
+            try:
+                file_type = int(raw_input("File Type (1-2): "))
+            except:
+                file_type = 0
+        if file_type == 1:
+            checks.append("curr_file['file_type'] == 'regular'")
+        else:
+            checks.append("curr_file['file_type'] == 'directory'")
+    if answer == 4 or answer == 6 or answer == 7 or answer == 8:
+        cont = True
+        mimetypes = []
+        while cont:
+            mimetype = raw_input("Mimetype or blank when done (i.e 'image/jpeg', 'application/pdf'): ")
+            if mimetype:
+                mimetypes.append("'" + mimetype + "'")
+            else:
+                cont = False
+        if mimetypes:
+            pre.append("allowed = [ " + ",".join(mimetypes) + " ]")
+            checks.append("str(mimetype).lower() in allowed")
+    if pre:
+        check = '\n        '.join(pre) + '\n        ' + 'return ' + ' and '.join(checks)
+    else:
+        check = 'return ' + ' and '.join(checks)
 
 def get_get():
     global get

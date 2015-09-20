@@ -4,7 +4,7 @@ A simple plugin that takes a file and returns the Strings in it
 
 from yapsy.IPlugin import IPlugin
 import string
-import codecs
+import re
 
 class FaStrings(IPlugin):
 
@@ -40,14 +40,13 @@ class FaStrings(IPlugin):
         """Returns the result of this plugin to be displayed in a browser"""
         input_file = open(path_on_disk, 'rb')
         strings = list(self.get_file_strings(input_file))
-        input_file = codecs.open(path_on_disk, 'rb', "utf-8")
-        strings.extend(list(self.get_file_strings(input_file)))
         return '<xmp style="white-space: pre-wrap;">' + "\n".join(strings) + '</xmp>'
 
     def get_file_strings(self, input_file, min=4):
         result = ""
+        exclude = re.compile(ur'[\u0080-\u009f]')
         for c in input_file.read():
-            if c in string.printable:
+            if c in string.printable or not bool(exclude.search(c)):
                 result += c
                 continue
             if len(result) >= min:
