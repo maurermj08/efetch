@@ -36,7 +36,7 @@ class FaStrings(IPlugin):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 5
 
-    def get(self, curr_file, path_on_disk, mimetype, size):
+    def get(self, curr_file, database, path_on_disk, mimetype, size, address, port, request_query):
         """Returns the result of this plugin to be displayed in a browser"""
         input_file = open(path_on_disk, 'rb')
         strings = list(self.get_file_strings(input_file))

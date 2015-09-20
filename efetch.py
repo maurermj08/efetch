@@ -36,6 +36,7 @@ def main(argv):
     global max_cache
     global icon_dir
     global curr_dir
+    global resource_dir
     global plugin_manager
     global max_download_size
     global my_magic
@@ -53,6 +54,7 @@ def main(argv):
     port = str(8080)
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     output_dir = curr_dir + "/cache/"
+    resource_dir = curr_dir + "/resources/"
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     icon_dir = curr_dir + "/icons/"
@@ -122,6 +124,18 @@ def main(argv):
         plugin_manager.activatePluginByName(plugin.name)
 
     run(host=address, port=port)
+
+@route('/resources/<resource_path:path>')
+def get_resource(resource_path):
+    """Returns any file in the resource directory"""
+    #TODO: Need better security
+    if '..' in str(resource_path):
+        return
+    else:
+        full_path = resource_dir + resource_path
+        res_dir = os.path.dirname(full_path)
+        res_name = os.path.basename(full_path)    
+        return static_file(res_name, root=res_dir)        
 
 def get_mimetype(file_path):
     """Returns the mimetype for the given file"""
@@ -258,7 +272,7 @@ def plugin(name, image_id, offset, input_type, path_or_inode):
     plugin = plugin_manager.getPluginByName(str(name).lower())
     
     #Return plugins frame
-    return plugin.plugin_object.get(curr_file, file_cache_path, actual_mimetype, actual_size)
+    return plugin.plugin_object.get(curr_file, database, file_cache_path, actual_mimetype, actual_size, address, port, request.query)
 
 @route('/directory/<image_id>/<offset>/<input_type>')
 @route('/directory/<image_id>/<offset>/<input_type>/')
@@ -349,6 +363,7 @@ def thumbnail(image_id, offset, input_type, path_or_inode='/'):
 
 def icat(offset, image_path, metaaddress, output_file_path):
     """Returns the specified file using image file, meta or inode address, and outputfile"""
+    #TODO: change to rb?
     out = open(output_file_path, 'wb')
     img = pytsk3.Img_Info(image_path, int(offset))
     fs = pytsk3.FS_Info(img)
@@ -572,7 +587,7 @@ def load_database(fs, image_id, offset, image_path, db, directory):
             file_type_str = 'link'
         else:
             file_type_str = str(file_type)
-
+    
         db.insert(image_id + "/" + offset, dir_ref, inode_ref, image_id, offset, image_path, name, directory + name, ext, directory, file_type_str, inode, mod, acc, chg, cre, size, uid, gid)
 
         if file_type == pytsk3.TSK_FS_META_TYPE_DIR and name != "." and name != "..":
