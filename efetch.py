@@ -1,4 +1,4 @@
-from bottle import route, run, request, static_file
+from bottle import route, run, request, static_file, abort
 import subprocess
 import os
 import sys
@@ -9,6 +9,7 @@ import logging
 import magic
 from pydblite import Base
 from PIL import Image
+from utils.efetch_helper import EfetchHelper
 from yapsy.PluginManager import PluginManager
 from bottle import abort
 
@@ -22,6 +23,7 @@ global plugin_manager
 global max_download_size
 global my_magic
 global database
+global helper
 
 def main(argv):
     try: 
@@ -41,6 +43,7 @@ def main(argv):
     global max_download_size
     global my_magic
     global database
+    global helper
 
     #Just in case support both magic libs
     try:
@@ -123,6 +126,8 @@ def main(argv):
     for plugin in plugin_manager.getAllPlugins():
         plugin_manager.activatePluginByName(plugin.name)
 
+    helper = EfetchHelper(database)
+
     run(host=address, port=port)
 
 @route('/resources/<resource_path:path>')
@@ -136,45 +141,6 @@ def get_resource(resource_path):
         res_dir = os.path.dirname(full_path)
         res_name = os.path.basename(full_path)    
         return static_file(res_name, root=res_dir)        
-
-def get_mimetype(file_path):
-    """Returns the mimetype for the given file"""
-    try:
-        return my_magic.from_file(file_path)
-    except:
-        return my_magic.id_filename(file_path)
-
-def get_file(image_id, offset, input_type, path_or_inode, abort_on_error=True):
-    """Returns the file object for the given file in the database"""
-    if path_or_inode.endswith('/'):
-        path_or_inode = path_or_inode[:-1]
-    #Check if image and offset are in database
-    if not database._id[image_id + '/' + offset]:
-        logging.error("Could not find image with provided id and offset " + image_id + "/" + offset)
-        if abort_on_error:
-            abort(400, "No image with id " + image_id + " and offset " + offset)
-        else:
-            return
-    
-    #Get file from either path or inode
-    if str(input_type).lower().strip() == 'p':
-        curr_file = database._pid[image_id + '/' + offset + '/' + path_or_inode]
-    elif str(input_type).lower().strip() == 'i':
-        curr_file = database._iid[image_id + '/' + offset + '/' + path_or_inode]
-    else:
-        logging.error("Unsupported input type '" + input_type + "' provided")
-        if abort_on_error:
-            abort(400, "Only supports input types of 'p' for path or 'i' for inode\nFormat is '/analyze/<image_id>/<offset>/<type[p or i]>/<fullpath or inode>'")
-        else:
-            return
-    if not curr_file:
-        logging.error("Could not find file. Image='" + image_id + "' Offset='" + offset + "' Type='" + input_type + "' Path or Inode='" + path_or_inode + "'")
-        if abort_on_error:
-            abort(404, "Could not find file in provided image.")
-        else:
-            return
-
-    return curr_file[0]
 
 @route('/image/add/<image_id>/<offset>/<image_path:path>')
 def add_image(image_id, offset, image_path):
@@ -209,7 +175,7 @@ def add_image(image_id, offset, image_path):
 def analyze(image_id, offset, input_type, path_or_inode = '/'):
     """Provides a web view with all applicable plugins, defaults to most popular"""
     #Get file from database
-    curr_file = get_file(image_id, offset, input_type, path_or_inode)
+    curr_file = helper.get_file(image_id, offset, input_type, path_or_inode)
 
     logging.debug("Analyzing file " + curr_file['name'])
     logging.debug("Found the following plugins - " + str(plugin_manager.getAllPlugins()))
@@ -221,7 +187,7 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
     #If file is less than max download (cache) size, cache it and analyze it
     if curr_file['inode'] and curr_file['file_type'] != 'directory' and int(curr_file['size']) / 1000000 <= max_download_size:
         file_cache_path = cache_file(curr_file)
-        actual_mimetype = get_mimetype(file_cache_path)
+        actual_mimetype = helper.get_mimetype(file_cache_path)
         actual_size = os.path.getsize(file_cache_path)
         #Order Plugins by populatiry from highest to lowest
         for pop in reversed(range(1, 11)):
@@ -259,13 +225,13 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
 def plugin(name, image_id, offset, input_type, path_or_inode):
     """Returns the iframe of the given plugin for the given file"""
     #Get file from database
-    curr_file = get_file(image_id, offset, input_type, path_or_inode)
+    curr_file = helper.get_file(image_id, offset, input_type, path_or_inode)
     
     #Cache file
     file_cache_path = cache_file(curr_file)
 
     #Get mimetype and size
-    actual_mimetype = get_mimetype(file_cache_path)
+    actual_mimetype = helper.get_mimetype(file_cache_path)
     actual_size = os.path.getsize(file_cache_path)
 
     #Get Plugin
@@ -280,7 +246,7 @@ def plugin(name, image_id, offset, input_type, path_or_inode):
 def directory(image_id, offset, input_type, path_or_inode="/"):
     """Returns a formatted directory listing for the given path"""
     #Get file from database
-    curr_file = get_file(image_id, offset, input_type, path_or_inode)
+    curr_file = helper.get_file(image_id, offset, input_type, path_or_inode)
     
     #Get cached file
     if curr_file['file_type'] != 'directory' and curr_file['inode']:
@@ -332,14 +298,14 @@ def directory(image_id, offset, input_type, path_or_inode="/"):
 def thumbnail(image_id, offset, input_type, path_or_inode='/'):
     """Returns either an icon or thumbnail of the provided file"""
     #Get file from database
-    curr_file = get_file(image_id, offset, input_type, path_or_inode)
+    curr_file = helper.get_file(image_id, offset, input_type, path_or_inode)
     
     #If it is folder just return the folder icon
     if curr_file['file_type'] == 'directory' or str(curr_file['name']).strip() == "." or str(curr_file['name']).strip() == "..":
         return static_file("_folder.png", root=icon_dir, mimetype='image/png')
 
     #Uses extension to determine if it should create a thumbnail
-    assumed_mimetype = get_mime_type(str(curr_file['ext']).lower())
+    assumed_mimetype = helper.guess_mimetype(str(curr_file['ext']).lower())
 
     #If the file is an image create a thumbnail
     if assumed_mimetype.startswith('image'):
@@ -348,7 +314,7 @@ def thumbnail(image_id, offset, input_type, path_or_inode='/'):
         thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
         thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
         #TODO: If this is always a jpeg just state it, should save some time
-        thumbnail_mimetype = get_mimetype(thumbnail_cache_path)
+        thumbnail_mimetype = helper.get_mimetype(thumbnail_cache_path)
         
         if os.path.isfile(thumbnail_cache_path):
             return static_file(curr_file['name'], root=thumbnail_cache_dir, mimetype=thumbnail_mimetype)
@@ -404,7 +370,7 @@ def cache_file(curr_file, create_thumbnail=True):
         icat(curr_file['offset'], curr_file['image_path'], curr_file['inode'], file_cache_path)
 
     #Uses extension to determine if it should create a thumbnail
-    assumed_mimetype = get_mime_type(str(curr_file['ext']).lower())
+    assumed_mimetype = helper.guess_mimetype(str(curr_file['ext']).lower())
 
     #If the file is an image create a thumbnail
     if assumed_mimetype.startswith('image') and create_thumbnail and not os.path.isfile(thumbnail_cache_path):
@@ -413,143 +379,9 @@ def cache_file(curr_file, create_thumbnail=True):
             image.thumbnail("42x42")
             image.save(thumbnail_cache_path)
         except IOError:
-            logging.warn("[WARN] Failed to create thumbnail for " + curr_file['name'])
+            logging.warn("Failed to create thumbnail for " + curr_file['name'] + " at cached path " + file_cache_path)
    
     return file_cache_path
-     
-def get_mime_type(extension):
-    types_map = {
-        'a'      : 'application/octet-stream',
-        'ai'     : 'application/postscript',
-        'aif'    : 'audio/x-aiff',
-        'aifc'   : 'audio/x-aiff',
-        'aiff'   : 'audio/x-aiff',
-        'au'     : 'audio/basic',
-        'avi'    : 'video/x-msvideo',
-        'bat'    : 'text/plain',
-        'bcpio'  : 'application/x-bcpio',
-        'bin'    : 'application/octet-stream',
-        'bmp'    : 'image/x-ms-bmp',
-        'c'      : 'text/plain',
-        # Duplicates :(
-        'cdf'    : 'application/x-cdf',
-        'cdf'    : 'application/x-netcdf',
-        'cpio'   : 'application/x-cpio',
-        'csh'    : 'application/x-csh',
-        'css'    : 'text/css',
-        'dll'    : 'application/octet-stream',
-        'doc'    : 'application/msword',
-        'dot'    : 'application/msword',
-        'dvi'    : 'application/x-dvi',
-        'eml'    : 'message/rfc822',
-        'eps'    : 'application/postscript',
-        'etx'    : 'text/x-setext',
-        'exe'    : 'application/octet-stream',
-        'gif'    : 'image/gif',
-        'gtar'   : 'application/x-gtar',
-        'h'      : 'text/plain',
-        'hdf'    : 'application/x-hdf',
-        'htm'    : 'text/html',
-        'html'   : 'text/html',
-        'ico'    : 'image/vnd.microsoft.icon',
-        'ief'    : 'image/ief',
-        'jpe'    : 'image/jpeg',
-        'jpeg'   : 'image/jpeg',
-        'jpg'    : 'image/jpeg',
-        'js'     : 'application/javascript',
-        'ksh'    : 'text/plain',
-        'latex'  : 'application/x-latex',
-        'm1v'    : 'video/mpeg',
-        'man'    : 'application/x-troff-man',
-        'me'     : 'application/x-troff-me',
-        'mht'    : 'message/rfc822',
-        'mhtml'  : 'message/rfc822',
-        'mif'    : 'application/x-mif',
-        'mov'    : 'video/quicktime',
-        'movie'  : 'video/x-sgi-movie',
-        'mp2'    : 'audio/mpeg',
-        'mp3'    : 'audio/mpeg',
-        'mp4'    : 'video/mp4',
-        'mpa'    : 'video/mpeg',
-        'mpe'    : 'video/mpeg',
-        'mpeg'   : 'video/mpeg',
-        'mpg'    : 'video/mpeg',
-        'ms'     : 'application/x-troff-ms',
-        'nc'     : 'application/x-netcdf',
-        'nws'    : 'message/rfc822',
-        'o'      : 'application/octet-stream',
-        'obj'    : 'application/octet-stream',
-        'oda'    : 'application/oda',
-        'p12'    : 'application/x-pkcs12',
-        'p7c'    : 'application/pkcs7-mime',
-        'pbm'    : 'image/x-portable-bitmap',
-        'pdf'    : 'application/pdf',
-        'pfx'    : 'application/x-pkcs12',
-        'pgm'    : 'image/x-portable-graymap',
-        'pl'     : 'text/plain',
-        'png'    : 'image/png',
-        'pnm'    : 'image/x-portable-anymap',
-        'pot'    : 'application/vnd.ms-powerpoint',
-        'ppa'    : 'application/vnd.ms-powerpoint',
-        'ppm'    : 'image/x-portable-pixmap',
-        'pps'    : 'application/vnd.ms-powerpoint',
-        'ppt'    : 'application/vnd.ms-powerpoint',
-        'ps'     : 'application/postscript',
-        'pwz'    : 'application/vnd.ms-powerpoint',
-        'py'     : 'text/x-python',
-        'pyc'    : 'application/x-python-code',
-        'pyo'    : 'application/x-python-code',
-        'qt'     : 'video/quicktime',
-        'ra'     : 'audio/x-pn-realaudio',
-        'ram'    : 'application/x-pn-realaudio',
-        'ras'    : 'image/x-cmu-raster',
-        'rdf'    : 'application/xml',
-        'rgb'    : 'image/x-rgb',
-        'roff'   : 'application/x-troff',
-        'rtx'    : 'text/richtext',
-        'sgm'    : 'text/x-sgml',
-        'sgml'   : 'text/x-sgml',
-        'sh'     : 'application/x-sh',
-        'shar'   : 'application/x-shar',
-        'snd'    : 'audio/basic',
-        'so'     : 'application/octet-stream',
-        'src'    : 'application/x-wais-source',
-        'sv4cpio': 'application/x-sv4cpio',
-        'sv4crc' : 'application/x-sv4crc',
-        'swf'    : 'application/x-shockwave-flash',
-        't'      : 'application/x-troff',
-        'tar'    : 'application/x-tar',
-        'tcl'    : 'application/x-tcl',
-        'tex'    : 'application/x-tex',
-        'texi'   : 'application/x-texinfo',
-        'texinfo': 'application/x-texinfo',
-        'tif'    : 'image/tiff',
-        'tiff'   : 'image/tiff',
-        'tr'     : 'application/x-troff',
-        'tsv'    : 'text/tab-separated-values',
-        'txt'    : 'text/plain',
-        'ustar'  : 'application/x-ustar',
-        'vcf'    : 'text/x-vcard',
-        'wav'    : 'audio/x-wav',
-        'wiz'    : 'application/msword',
-        'wsdl'   : 'application/xml',
-        'xbm'    : 'image/x-xbitmap',
-        'xlb'    : 'application/vnd.ms-excel',
-        # Duplicates :(
-        'xls'    : 'application/excel',
-        'xls'    : 'application/vnd.ms-excel',
-        'xml'    : 'text/xml',
-        'xpdl'   : 'application/xml',
-        'xpm'    : 'image/x-xpixmap',
-        'xsl'    : 'application/xml',
-        'xwd'    : 'image/x-xwindowdump',
-        'zip'    : 'application/zip',
-    }
-    
-    if extension in types_map:
-        return types_map[extension]
-    else:
-        return "" 
 
 def load_database(fs, image_id, offset, image_path, db, directory):
     for directory_entry in fs.open_dir(directory):

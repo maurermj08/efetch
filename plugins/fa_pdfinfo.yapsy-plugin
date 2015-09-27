@@ -1,0 +1,10 @@
+[Core]
+Name = fa_pdfinfo
+Module = fa_pdfinfo
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Prints the metadata of a PDF file
+Copyright = 2015
