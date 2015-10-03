@@ -1,10 +1,18 @@
--e .
-
-#Core Dependencies
-bottle>=0.11
-yapsy>=1.11
-PIL>=1.1
-pydblite>=3.0
-
-#Sleuthkit
-imagemounter
+Flask>=0.10.1
+PAM>=0.4.2
+Pillow>=2.3.0
+PyAFF4>=0.13
+PyDbLite>=3.0.2
+PyYAML>=3.11
+Yapsy>=1.11.223
+acora>=1.8
+adium-theme-ubuntu>=0.3.4
+argparse>=1.2.1
+bottle>=0.12.8
+certifi>=2015.04.28
+dfvfs>=20150708
+distorm3>=3.3.0
+filemagic>=1.6
+python-registry>=1.0.4
+## NO PIP INSTALL pytsk3>=4.1.3-20150111
+simplejson>=3.8.0
