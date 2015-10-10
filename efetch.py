@@ -162,11 +162,12 @@ def add_image(image_id, offset, image_path):
     
     try:
         image = pytsk3.Img_Info(url=image_path)
-        file_system = pytsk3.FS_Info(image)
+        file_system = pytsk3.FS_Info(image, offset=(int(offset)*512))
         database.insert(image_id + "/" + offset, image_id + '/' + offset + '/', image_id + '/' + offset + '/-1', image_id, offset, image_path, '/', '', '', '', 'directory', -1, 0, 0, 0, 0, 0, 0, 0)
         load_database(file_system, image_id, offset, image_path, database, "/")
         database.commit()
-    except:
+    except Exception as error:
+        logging.error(error.message)
         logging.error("Failed to parse image '" + image_path + "' at offset '" + offset + "'")
         abort(500, "Failed to parse image, please check your sector offset")
 
@@ -329,10 +330,9 @@ def thumbnail(image_id, offset, input_type, path_or_inode='/'):
 
 def icat(offset, image_path, metaaddress, output_file_path):
     """Returns the specified file using image file, meta or inode address, and outputfile"""
-    #TODO: change to rb?
     out = open(output_file_path, 'wb')
-    img = pytsk3.Img_Info(image_path, int(offset))
-    fs = pytsk3.FS_Info(img)
+    img = pytsk3.Img_Info(image_path)
+    fs = pytsk3.FS_Info(img, offset=(int(offset)*512))
     try:
         f = fs.open_meta(inode = int(metaaddress.split('-')[0]))
     except:
