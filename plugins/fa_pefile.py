@@ -38,5 +38,9 @@ class FaPefile(IPlugin):
 
     def get(self, curr_file, database, path_on_disk, mimetype, size, address, port, request_query):
         """Returns the result of this plugin to be displayed in a browser"""
-        pe = pefile.PE(path_on_disk)
-        return '<xmp style="white-space: pre-wrap;">\n' + pe.dump_info() + "</xmp>"
+        try:
+            pe = pefile.PE(path_on_disk)
+            return '<xmp style="white-space: pre-wrap;">\n' + pe.dump_info() + "</xmp>"
+        except Exception as e:
+            return '<xmp style="white-space: pre-wrap;">error parsing file: ' + str(path_on_disk) + "Got the following error: " + str(e) + "</xmp>"
+
