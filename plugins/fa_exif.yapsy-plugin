@@ -1,0 +1,10 @@
+[Core]
+Name = fa_exif
+Module = fa_exif
+
+[Documentation]
+Author = Robert Roberson
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Get EXIF Metadata
+Copyright = 2015

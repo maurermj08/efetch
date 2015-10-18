@@ -1,0 +1,10 @@
+[Core]
+Name = fa_pefile
+Module = fa_pefile
+
+[Documentation]
+Author = Robert Roberson
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Displays Info Aboes
+Copyright = 2015
