@@ -786,15 +786,40 @@ def Main():
             level=logging.INFO, format=u'[%(levelname)s] %(message)s')
 
     return_value = True
-    dfvfs_util = DfvfsUtil("/mnt/ewf_mount1/ewf1")
+    #dfvfs_util = DfvfsUtil("/mnt/ewf_mount1/ewf1")
+    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/xp-tdungan-10.3.58.7/xp-tdungan-c-drive/xp-tdungan-c-drive.E01")  
 
     try:
         #TEST GET FILE
         my_file = dfvfs_util.GetFile("/WINDOWS/system32/drivers/etc/hosts")
+        print(my_file.__dict__)
+        directory_entry = my_file._tsk_file
+        if directory_entry.info.meta == None:
+            file_type = ''
+            inode = ''
+            mod = ''
+            acc = ''
+            chg = ''
+            cre = ''
+            size = ''
+            uid = ''
+            gid = ''
+        else:
+            file_type = str(directory_entry.info.meta.type)
+            inode = str(directory_entry.info.meta.addr)
+            mod = str(directory_entry.info.meta.mtime)
+            acc = str(directory_entry.info.meta.atime)
+            chg = str(directory_entry.info.meta.ctime)
+            cre = str(directory_entry.info.meta.crtime)
+            size = str(directory_entry.info.meta.size)
+            uid = str(directory_entry.info.meta.uid)
+            gid = str(directory_entry.info.meta.gid)
+        print ("File Type: " + file_type + " | inode: " + inode + " | mod: " + mod + " | acc: " + acc + " | chg: " + chg + " | cre: " + cre + " | size: " + size + " | uid: " + uid + " | gid: " + gid)
         if my_file is not None:
             print("1 Success for GetFile(/Windows/System32/Drivers/etc/hosts)")
         else:
             print("1 Failed for GetFile")
+        sys.exit(0)
 
         #TEST GET FILE with IGNORE CASE
         my_file = dfvfs_util.GetFile("/windows/SYSTEM32/dRiVeRs/eTc/HOSTs", True)

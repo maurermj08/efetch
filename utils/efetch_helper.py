@@ -2,6 +2,7 @@
 from bottle import abort
 import magic
 import logging
+from elasticsearch import Elasticsearch
 
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
@@ -60,7 +61,18 @@ class EfetchHelper(object):
             else:
                 return
 
-        return curr_file[0]
+        elastic = Elasticsearch()
+        es_result = elastic.get(index='efetch_timeline_' + image_id, doc_type='event', id=image_id + '/' + offset + '/' + path_or_inode)
+        print("===BEGIN=====")
+        print("es = ")
+        print(es_result['_source'])
+        print("---vs----")
+        print("curr = ")
+        print(curr_file[0])
+        print("===END=====")
+        
+        #return curr_file[0]
+        return es_result['_source']
 
     def guess_mimetype(self, extension):
         """Returns the assumed mimetype based on the extension"""

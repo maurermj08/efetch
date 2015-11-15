@@ -12,6 +12,8 @@ from PIL import Image
 from utils.efetch_helper import EfetchHelper
 from yapsy.PluginManager import PluginManager
 from bottle import abort
+from elasticsearch import Elasticsearch
+from elasticsearch import helpers
 
 global address
 global port
@@ -23,7 +25,10 @@ global plugin_manager
 global max_download_size
 global my_magic
 global database
+global elastic
 global helper
+global json
+global id_count
 
 def main(argv):
     try: 
@@ -43,6 +48,7 @@ def main(argv):
     global max_download_size
     global my_magic
     global database
+    global elastic
     global helper
 
     #Just in case support both magic libs
@@ -62,7 +68,50 @@ def main(argv):
         os.mkdir(output_dir)
     icon_dir = curr_dir + "/icons/"
     database_file = None
- 
+    elastic = Elasticsearch()
+
+    #Elastic Setup
+    elastic.indices.create(index='efetch-config',ignore=400)
+    elastic.indices.create(index='efetch-log',ignore=400)
+    elastic.indices.create(index='efetch-cases',ignore=400)
+    elastic.indices.create(index='efetch-evidence',ignore=400)
+    template = {
+        "template" : "efetch_timeline*",
+        "settings" : {
+            "number_of_shards" : 1
+            },
+        "mappings" : {
+            "_default_" : {
+                "_source" : { "enabled" : True },
+                "properties" : {    
+                    "id" : {"type": "string", "index" : "not_analyzed"},
+                    "pid" : {"type": "string", "index" : "not_analyzed"},
+                    "iid" : {"type": "string", "index" : "not_analyzed"},
+                    "image_id": {"type": "string", "index" : "not_analyzed"},
+                    "offset" : {"type": "string", "index" : "not_analyzed"},
+                    "image_path" : {"type": "string", "index" : "not_analyzed"},
+                    "name" : {"type": "string", "index" : "not_analyzed"},
+                    "path" : {"type": "string", "index" : "not_analyzed"},
+                    "ext" : {"type": "string", "index" : "not_analyzed"},
+                    "dir" : {"type": "string", "index" : "not_analyzed"},
+                    "file_type" : {"type": "string", "index" : "not_analyzed"},
+                    "inode" : {"type": "string", "index" : "not_analyzed"},
+                    "mod" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
+                    "acc" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
+                    "chg" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
+                    "cre" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
+                    "size" : {"type": "string", "index" : "not_analyzed"},
+                    "uid" : {"type": "string", "index" : "not_analyzed"},
+                    "gid" : {"type": "string", "index" : "not_analyzed"},
+                    "thumbnail" : {"type": "string", "index" : "not_analyzed"},
+                    "analyze" : {"type": "string", "index" : "not_analyzed"}
+                    }
+            }
+        }
+        }
+    elastic.indices.put_template(name="efetch_timeline", body=template)
+    #elastic.indices.put_mapping(doc_type='efetch-event', body=mapping, index='efetchtimeline')
+    
     if not os.path.isdir(icon_dir):
         logging.error("Could not find icon directory " + icon_dir) 
         sys.exit(2)
@@ -146,6 +195,8 @@ def get_resource(resource_path):
 def add_image(image_id, offset, image_path):
     """Creates a file listing of the partition at the provided image and offset in the database"""
     image_path = "/" + image_path
+    global json
+    global id_count
 
     #Error Handling
     if database._image_id[image_id] and database._image_id[image_id][0]["path"] != str(image_path):
@@ -164,7 +215,13 @@ def add_image(image_id, offset, image_path):
         image = pytsk3.Img_Info(url=image_path)
         file_system = pytsk3.FS_Info(image, offset=(int(offset)*512))
         database.insert(image_id + "/" + offset, image_id + '/' + offset + '/', image_id + '/' + offset + '/-1', image_id, offset, image_path, '/', '', '', '', 'directory', -1, 0, 0, 0, 0, 0, 0, 0)
+        index_name = 'efetch_timeline_' + image_id
+        elastic.indices.create(index=index_name, ignore=400)
+        json = []
+        id_count = 1
         load_database(file_system, image_id, offset, image_path, database, "/")
+        helpers.bulk(elastic, json)
+        json = []
         database.commit()
     except Exception as error:
         logging.error(error.message)
@@ -238,6 +295,9 @@ def plugin(name, image_id, offset, input_type, path_or_inode):
     #Get Plugin
     plugin = plugin_manager.getPluginByName(str(name).lower())
     
+    #Get Accept metadata
+    accept=request.headers.get("Accept")
+
     #Return plugins frame
     return plugin.plugin_object.get(curr_file, database, file_cache_path, actual_mimetype, actual_size, address, port, request.query)
 
@@ -384,6 +444,10 @@ def cache_file(curr_file, create_thumbnail=True):
     return file_cache_path
 
 def load_database(fs, image_id, offset, image_path, db, directory):
+    global json
+    global id_count
+    index_name = 'efetch_timeline_' + image_id
+
     for directory_entry in fs.open_dir(directory):
         name =  directory_entry.info.name.name.decode("utf8")
         if directory_entry.info.meta == None:
@@ -419,13 +483,56 @@ def load_database(fs, image_id, offset, image_path, db, directory):
             file_type_str = 'link'
         else:
             file_type_str = str(file_type)
-    
+   
+        modtime = long(mod) if mod else 0
+        acctime = long(acc) if acc else 0
+        chgtime = long(chg) if chg else 0
+        cretime = long(cre) if cre else 0
+
+        meta_event = {
+                '_index': index_name,
+                '_type' : 'event',
+                '_id' : dir_ref,
+                '_source' : {
+                    'id' : image_id + "/" + offset,
+                    'pid' : dir_ref,
+                    'iid' : inode_ref,
+                    'image_id': image_id,
+                    'offset' : offset,
+                    'image_path' : image_path,
+                    'name' : name,
+                    'path' : directory + name,
+                    'ext' : ext,
+                    'dir' : directory,
+                    'file_type' : file_type_str,
+                    'inode' : inode,
+                    'mod' : modtime,
+                    'acc' : acctime,
+                    'chg' : chgtime,
+                    'cre' : cretime,
+                    'size' : size,
+                    'uid' : uid,
+                    'gid' : gid,
+                    'thumbnail' : "http://" + address + ":" + port + "/thumbnail/" + image_id + "/" + offset + "/p" + directory + name,
+                    'analyze' : "http://" + address + ":" + port + "/analyze/" + image_id + "/" + offset + "/p" + directory + name
+                }
+        }
+        id_count = id_count + 1
+
+        #elastic.index(index=index_name, doc_type='event', body=meta_event)
+        #elastic.index(index=index_name, doc_type='creation', body=cre_entry)
+        #elastic.index(index=index_name, doc_type='change', body=chg_entry)
+        #elastic.index(index=index_name, doc_type='access', body=acc_entry)
+        #res = elastic.search(index="efetchtimeline", body={"query": {"match_all": {}}})
+        #print("Got %d Hits:" % res['hits']['total'])
+        json.append(meta_event)
+      
         db.insert(image_id + "/" + offset, dir_ref, inode_ref, image_id, offset, image_path, name, directory + name, ext, directory, file_type_str, inode, mod, acc, chg, cre, size, uid, gid)
 
         if file_type == pytsk3.TSK_FS_META_TYPE_DIR and name != "." and name != "..":
             try:
                 load_database(fs, image_id, offset, image_path, db, directory + name + "/")
-            except:
+            except Exception as error:
                 logging.warn("[WARNING] - Failed to parse directory " + directory + name + "/")
 
 def usage():
