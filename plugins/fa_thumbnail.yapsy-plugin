@@ -1,0 +1,10 @@
+[Core]
+Name = fa_thumbnail
+Module = fa_thumbnail
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Returns a thumbnail or icon of the specified file
+Copyright = 2015

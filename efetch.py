@@ -4,12 +4,10 @@ import os
 import sys
 import getopt
 import time
-import pytsk3
 import logging
 import magic
-from pydblite import Base
-from PIL import Image
 from utils.efetch_helper import EfetchHelper
+from utils.db_util import DBUtil
 from yapsy.PluginManager import PluginManager
 from bottle import abort
 from elasticsearch import Elasticsearch
@@ -27,8 +25,7 @@ global my_magic
 global database
 global elastic
 global helper
-global json
-global id_count
+global db_util
 
 def main(argv):
     try: 
@@ -47,9 +44,9 @@ def main(argv):
     global plugin_manager
     global max_download_size
     global my_magic
-    global database
     global elastic
     global helper
+    global db_util
 
     #Just in case support both magic libs
     try:
@@ -67,51 +64,7 @@ def main(argv):
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     icon_dir = curr_dir + "/icons/"
-    database_file = None
-    elastic = Elasticsearch()
 
-    #Elastic Setup
-    elastic.indices.create(index='efetch-config',ignore=400)
-    elastic.indices.create(index='efetch-log',ignore=400)
-    elastic.indices.create(index='efetch-cases',ignore=400)
-    elastic.indices.create(index='efetch-evidence',ignore=400)
-    template = {
-        "template" : "efetch_timeline*",
-        "settings" : {
-            "number_of_shards" : 1
-            },
-        "mappings" : {
-            "_default_" : {
-                "_source" : { "enabled" : True },
-                "properties" : {    
-                    "id" : {"type": "string", "index" : "not_analyzed"},
-                    "pid" : {"type": "string", "index" : "not_analyzed"},
-                    "iid" : {"type": "string", "index" : "not_analyzed"},
-                    "image_id": {"type": "string", "index" : "not_analyzed"},
-                    "offset" : {"type": "string", "index" : "not_analyzed"},
-                    "image_path" : {"type": "string", "index" : "not_analyzed"},
-                    "name" : {"type": "string", "index" : "not_analyzed"},
-                    "path" : {"type": "string", "index" : "not_analyzed"},
-                    "ext" : {"type": "string", "index" : "not_analyzed"},
-                    "dir" : {"type": "string", "index" : "not_analyzed"},
-                    "file_type" : {"type": "string", "index" : "not_analyzed"},
-                    "inode" : {"type": "string", "index" : "not_analyzed"},
-                    "mod" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
-                    "acc" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
-                    "chg" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
-                    "cre" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
-                    "size" : {"type": "string", "index" : "not_analyzed"},
-                    "uid" : {"type": "string", "index" : "not_analyzed"},
-                    "gid" : {"type": "string", "index" : "not_analyzed"},
-                    "thumbnail" : {"type": "string", "index" : "not_analyzed"},
-                    "analyze" : {"type": "string", "index" : "not_analyzed"}
-                    }
-            }
-        }
-        }
-    elastic.indices.put_template(name="efetch_timeline", body=template)
-    #elastic.indices.put_mapping(doc_type='efetch-event', body=mapping, index='efetchtimeline')
-    
     if not os.path.isdir(icon_dir):
         logging.error("Could not find icon directory " + icon_dir) 
         sys.exit(2)
@@ -128,10 +81,10 @@ def main(argv):
             output_dir = arg
         elif opt in ("-s", "--size"):
             max_cache = arg    
-        elif opt in ("-D", "--database"):
-            database_file = arg
-        elif opt == '-d':
+        elif opt in ('-d', "--debug"):
             logging.basicConfig(level=logging.DEBUG)
+        elif opt in ('-m', "--maxfilesize"):
+            max_download_size = arg
         else:
             logging.error("Unknown argument " + opt)
             usage()
@@ -142,30 +95,6 @@ def main(argv):
     if not os.path.isdir(output_dir):
         logging.error("Could not find output directory " + output_dir)
         sys.exit(2)
-    if database_file and not os.path.isfile(database_file):
-        logging.error("Could not find database file " + database_file)
-        sys.exit(2)
-
-    if database_file:
-        database = Base(database_file)
-        if database.exists():
-            database.open()
-            database.create(mode='open')
-        else:
-            logging.error("Failed to open Database " + database_file)
-            sys.exit(2)
-    else:
-        database = Base(str(int(round(time.time() * 1000))) + '.pd1')
-        if database.exists():
-            database.open()
-        else:
-            database.create('id', 'pid', 'iid', 'image_id', 'offset', 'image_path', 'name', 'path', 'ext', 'dir', 'file_type', 'inode', 'mod', 'acc', 'chg', 'cre', 'size', 'uid', 'gid')
-            database.create_index('id')
-            database.create_index('pid')
-            database.create_index('iid')
-            database.create_index('image_id')
-            database.create_index('dir')
-        logging.debug("Saved database")
 
     #TODO MOVE TO analyze
     # Basic Plugin Management
@@ -175,7 +104,9 @@ def main(argv):
     for plugin in plugin_manager.getAllPlugins():
         plugin_manager.activatePluginByName(plugin.name)
 
+    #Initialize utils
     helper = EfetchHelper(database)
+    db_util = DBUtil()
 
     run(host=address, port=port)
 
@@ -191,43 +122,7 @@ def get_resource(resource_path):
         res_name = os.path.basename(full_path)    
         return static_file(res_name, root=res_dir)        
 
-@route('/image/add/<image_id>/<offset>/<image_path:path>')
-def add_image(image_id, offset, image_path):
-    """Creates a file listing of the partition at the provided image and offset in the database"""
-    image_path = "/" + image_path
-    global json
-    global id_count
-
-    #Error Handling
-    if database._image_id[image_id] and database._image_id[image_id][0]["path"] != str(image_path):
-        logging.error("Image ID '" + image_id + "' already in use")
-        abort(400, "That Image ID is already in use by an image with a different path")
-    if database._id[image_id + "/" + offset]:
-        logging.error("Image '" + image_id + "' with offset '" + offset + "' already exists")
-        abort(400, "Database already contains an image with that ID and offset")
-    if not os.path.isfile(image_path):
-        logging.error("Could not find file at path '" + str(image_path) + "'")
-        abort(400, "Could not find file at specified path '" + str(image_path) + "'")
-        
-    logging.info("Adding image to databse")
-    
-    try:
-        image = pytsk3.Img_Info(url=image_path)
-        file_system = pytsk3.FS_Info(image, offset=(int(offset)*512))
-        database.insert(image_id + "/" + offset, image_id + '/' + offset + '/', image_id + '/' + offset + '/-1', image_id, offset, image_path, '/', '', '', '', 'directory', -1, 0, 0, 0, 0, 0, 0, 0)
-        index_name = 'efetch_timeline_' + image_id
-        elastic.indices.create(index=index_name, ignore=400)
-        json = []
-        id_count = 1
-        load_database(file_system, image_id, offset, image_path, database, "/")
-        helpers.bulk(elastic, json)
-        json = []
-        database.commit()
-    except Exception as error:
-        logging.error(error.message)
-        logging.error("Failed to parse image '" + image_path + "' at offset '" + offset + "'")
-        abort(500, "Failed to parse image, please check your sector offset")
-
+#TODO -1 MOVE TO PLUGIN
 @route('/analyze/<image_id>/<offset>/<input_type>/<path_or_inode:path>')
 @route('/analyze/<image_id>/<offset>/<input_type>/')
 def analyze(image_id, offset, input_type, path_or_inode = '/'):
@@ -279,18 +174,27 @@ def analyze(image_id, offset, input_type, path_or_inode = '/'):
 
     return html
     
-@route('/plugin/<name>/<image_id>/<offset>/<input_type>/<path_or_inode:path>')
-def plugin(name, image_id, offset, input_type, path_or_inode):
+@route('/plugin/<name>/')
+@route('/plugin/<name>/<image_id>/')
+@route('/plugin/<name>/<image_id>/<offset>/')
+@route('/plugin/<name>/<image_id>/<offset>/<path:path>')
+def plugin(name, image_id, offset, path):
     """Returns the iframe of the given plugin for the given file"""
-    #Get file from database
-    curr_file = helper.get_file(image_id, offset, input_type, path_or_inode)
+    if path:
+        #Get file from database
+        curr_file = db_util.get_file(image_id, offset)
     
-    #Cache file
-    file_cache_path = cache_file(curr_file)
+        #Cache file
+        file_cache_path = plugin_manager.getPluginByName(curr_file['parser').cache_file(curr_file)
 
-    #Get mimetype and size
-    actual_mimetype = helper.get_mimetype(file_cache_path)
-    actual_size = os.path.getsize(file_cache_path)
+        #Get mimetype and size
+        actual_mimetype = helper.get_mimetype(file_cache_path)
+        actual_size = os.path.getsize(file_cache_path)
+    else:
+        curr_file = None
+        file_cache_path = None
+        actual_mimetype = None
+        actual_size = None
 
     #Get Plugin
     plugin = plugin_manager.getPluginByName(str(name).lower())
@@ -301,13 +205,14 @@ def plugin(name, image_id, offset, input_type, path_or_inode):
     #Return plugins frame
     return plugin.plugin_object.get(curr_file, database, file_cache_path, actual_mimetype, actual_size, address, port, request.query)
 
+#TODO -1 MOVE TO PLUGIN
 @route('/directory/<image_id>/<offset>/<input_type>')
 @route('/directory/<image_id>/<offset>/<input_type>/')
-@route('/directory/<image_id>/<offset>/<input_type>/<path_or_inode:path>')
-def directory(image_id, offset, input_type, path_or_inode="/"):
+@route('/directory/<image_id>/<offset>/<input_type>/<path:path>')
+def directory(image_id, offset, input_type, path="/"):
     """Returns a formatted directory listing for the given path"""
     #Get file from database
-    curr_file = helper.get_file(image_id, offset, input_type, path_or_inode)
+    curr_file = db_util.get_file(image_id, offset, path)
     
     #Get cached file
     if curr_file['file_type'] != 'directory' and curr_file['inode']:
@@ -354,12 +259,13 @@ def directory(image_id, offset, input_type, path_or_inode="/"):
 
     return html
 
+#TODO -1 MOVE TO PLUGIN
 @route('/thumbnail/<image_id>/<offset>/<input_type>/')
-@route('/thumbnail/<image_id>/<offset>/<input_type>/<path_or_inode:path>')
-def thumbnail(image_id, offset, input_type, path_or_inode='/'):
+@route('/thumbnail/<image_id>/<offset>/<input_type>/<path:path>')
+def thumbnail(image_id, offset, input_type, path='/'):
     """Returns either an icon or thumbnail of the provided file"""
     #Get file from database
-    curr_file = helper.get_file(image_id, offset, input_type, path_or_inode)
+    curr_file = db_util.get_file(image_id, offset, path)
     
     #If it is folder just return the folder icon
     if curr_file['file_type'] == 'directory' or str(curr_file['name']).strip() == "." or str(curr_file['name']).strip() == "..":
@@ -388,153 +294,6 @@ def thumbnail(image_id, offset, input_type, path_or_inode='/'):
         else:
             return static_file(curr_file['ext'] + ".png", root=icon_dir, mimetype='image/png')
 
-def icat(offset, image_path, metaaddress, output_file_path):
-    """Returns the specified file using image file, meta or inode address, and outputfile"""
-    out = open(output_file_path, 'wb')
-    img = pytsk3.Img_Info(image_path)
-    fs = pytsk3.FS_Info(img, offset=(int(offset)*512))
-    try:
-        f = fs.open_meta(inode = int(metaaddress.split('-')[0]))
-    except:
-        logging.warn("Failed to cache file, most likey file is reallocated " + output_file_path)
-        return
-    file_offset = 0
-    size = f.info.meta.size
-    BUFF_SIZE = 1024 * 1024
-    while file_offset < size:
-        available_to_read = min(BUFF_SIZE, size - file_offset)
-        data = f.read_random(file_offset, available_to_read)
-        if not data: break
-        file_offset += len(data)
-        out.write(data)
-    out.close()
-
-def cache_file(curr_file, create_thumbnail=True):
-    """Caches the provided file and returns the files cached directory"""
-    if curr_file['file_type'] == 'directory':
-        return
-    
-    file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
-    file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
-    thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
-    thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
-   
-    #Makesure cache directories exist 
-    if not os.path.isdir(thumbnail_cache_dir):
-        os.makedirs(thumbnail_cache_dir)
-    if not os.path.isdir(file_cache_dir):
-        os.makedirs(file_cache_dir)
-
-    #If file does not exist cat it to directory
-    if not os.path.isfile(file_cache_path):
-        icat(curr_file['offset'], curr_file['image_path'], curr_file['inode'], file_cache_path)
-
-    #Uses extension to determine if it should create a thumbnail
-    assumed_mimetype = helper.guess_mimetype(str(curr_file['ext']).lower())
-
-    #If the file is an image create a thumbnail
-    if assumed_mimetype.startswith('image') and create_thumbnail and not os.path.isfile(thumbnail_cache_path):
-        try:
-            image = Image.open(file_cache_path)
-            image.thumbnail("42x42")
-            image.save(thumbnail_cache_path)
-        except IOError:
-            logging.warn("Failed to create thumbnail for " + curr_file['name'] + " at cached path " + file_cache_path)
-   
-    return file_cache_path
-
-def load_database(fs, image_id, offset, image_path, db, directory):
-    global json
-    global id_count
-    index_name = 'efetch_timeline_' + image_id
-
-    for directory_entry in fs.open_dir(directory):
-        name =  directory_entry.info.name.name.decode("utf8")
-        if directory_entry.info.meta == None:
-            file_type = ''
-            inode = ''
-            mod = ''
-            acc = ''
-            chg = ''
-            cre = ''
-            size = ''
-            uid = ''
-            gid = ''
-        else:
-            file_type = directory_entry.info.meta.type
-            inode = str(directory_entry.info.meta.addr)
-            mod = str(directory_entry.info.meta.mtime)
-            acc = str(directory_entry.info.meta.atime)
-            chg = str(directory_entry.info.meta.ctime)
-            cre = str(directory_entry.info.meta.crtime)
-            size = str(directory_entry.info.meta.size)
-            uid = str(directory_entry.info.meta.uid)
-            gid = str(directory_entry.info.meta.gid)
-        
-        dir_ref = image_id + "/" + offset + directory + name
-        inode_ref = image_id + "/" + offset + "/" + inode
-        ext = os.path.splitext(name)[1][1:] or ""
-
-        if file_type == pytsk3.TSK_FS_META_TYPE_REG:
-            file_type_str = 'regular'
-        elif file_type == pytsk3.TSK_FS_META_TYPE_DIR:
-            file_type_str = 'directory'
-        elif file_type == pytsk3.TSK_FS_META_TYPE_LNK:
-            file_type_str = 'link'
-        else:
-            file_type_str = str(file_type)
-   
-        modtime = long(mod) if mod else 0
-        acctime = long(acc) if acc else 0
-        chgtime = long(chg) if chg else 0
-        cretime = long(cre) if cre else 0
-
-        meta_event = {
-                '_index': index_name,
-                '_type' : 'event',
-                '_id' : dir_ref,
-                '_source' : {
-                    'id' : image_id + "/" + offset,
-                    'pid' : dir_ref,
-                    'iid' : inode_ref,
-                    'image_id': image_id,
-                    'offset' : offset,
-                    'image_path' : image_path,
-                    'name' : name,
-                    'path' : directory + name,
-                    'ext' : ext,
-                    'dir' : directory,
-                    'file_type' : file_type_str,
-                    'inode' : inode,
-                    'mod' : modtime,
-                    'acc' : acctime,
-                    'chg' : chgtime,
-                    'cre' : cretime,
-                    'size' : size,
-                    'uid' : uid,
-                    'gid' : gid,
-                    'thumbnail' : "http://" + address + ":" + port + "/thumbnail/" + image_id + "/" + offset + "/p" + directory + name,
-                    'analyze' : "http://" + address + ":" + port + "/analyze/" + image_id + "/" + offset + "/p" + directory + name
-                }
-        }
-        id_count = id_count + 1
-
-        #elastic.index(index=index_name, doc_type='event', body=meta_event)
-        #elastic.index(index=index_name, doc_type='creation', body=cre_entry)
-        #elastic.index(index=index_name, doc_type='change', body=chg_entry)
-        #elastic.index(index=index_name, doc_type='access', body=acc_entry)
-        #res = elastic.search(index="efetchtimeline", body={"query": {"match_all": {}}})
-        #print("Got %d Hits:" % res['hits']['total'])
-        json.append(meta_event)
-      
-        db.insert(image_id + "/" + offset, dir_ref, inode_ref, image_id, offset, image_path, name, directory + name, ext, directory, file_type_str, inode, mod, acc, chg, cre, size, uid, gid)
-
-        if file_type == pytsk3.TSK_FS_META_TYPE_DIR and name != "." and name != "..":
-            try:
-                load_database(fs, image_id, offset, image_path, db, directory + name + "/")
-            except Exception as error:
-                logging.warn("[WARNING] - Failed to parse directory " + directory + name + "/")
-
 def usage():
     print("usage: efetch.py [-h] [-a ADDRESS] [-p PORT] [-o DIR ] [-s SIZE] [-d] [-D DATABASE] [-m maxfilesize]")
     print("")
@@ -551,13 +310,6 @@ def usage():
     print("  -D, --database     use an existing database file")
     print("  -m, --maxfilesize  max file size to download when caching files")
     print("")
-
-def create_file(self, identifier, pid, iid, image_id, offset, image_path, name, path, ext, directory, file_type='regular', 
-                inode='-1', mod='0', acc='0', chg='0', cre='0', size='0', uid='0', gid='0'):
-    """Creates a dictionary file to be used with a plugin"""
-    return dict([('id', identifier), ('pid', pid), ('iid', iid), ('image_id', image_id), ('offset', offset), ('image_path', image_path), 
-                 ('name', name), ('path', path), ('ext', ext), ('dir', directory), ('file_type', file_type), ('inode', inode), 
-                 ('mod', mod), ('acc', acc), ('chg', chg), ('cre', cre), ('size', size), ('uid', uid), ('gid', gid)])
 
 if __name__=="__main__":
     main(sys.argv[1:])

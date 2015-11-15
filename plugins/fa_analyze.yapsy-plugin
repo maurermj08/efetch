@@ -1,0 +1,10 @@
+[Core]
+Name = fa_analyze
+Module = fa_analyze
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Basic UI for browsing and analyzing files
+Copyright = 2015

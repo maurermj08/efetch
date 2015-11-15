@@ -1,0 +1,10 @@
+[Core]
+Name = fa_directory
+Module = fa_directory
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Simple file browser
+Copyright = 2015
