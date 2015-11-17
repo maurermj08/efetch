@@ -5,7 +5,6 @@ Parses image using Sleuth Kit
 from yapsy.IPlugin import IPlugin
 import pytsk3
 import os
-from PIL import Image
 
 class FaTsk(IPlugin):
 
@@ -36,11 +35,15 @@ class FaTsk(IPlugin):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 5
 
-    def get(self, curr_file, db_util, path_on_disk, mimetype, size, address, port, request_query):
+    def cache(self):
+        """Returns if caching is required"""
+        return True
+
+    def get(self, helper, path_on_disk, mimetype, size, address, port, request_query):
         offset = request_query['offset']
         path = request_query['path']
         image_id = request_query['image_id']
-        self.add_image(image_Id, offset, path, db_util)
+        self.add_image(image_Id, offset, path, helper.db_util())
         return '<xmp style="white-space: pre-wrap;">DONE</xmp>'
     
     def add_image(self, image_id, offset, image_path, db_util):
@@ -91,41 +94,6 @@ class FaTsk(IPlugin):
             file_offset += len(data)
             out.write(data)
             out.close()
-
-    def cache_file(curr_file, create_thumbnail=True):
-        """Caches the provided file and returns the files cached directory"""
-        if curr_file['file_type'] == 'directory':
-            return
-
-        #TODO: Not everything will have an iid... so need to figure that out
-        file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
-        file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
-        thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
-        thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
-
-        #Makesure cache directories exist 
-        if not os.path.isdir(thumbnail_cache_dir):
-            os.makedirs(thumbnail_cache_dir)
-        if not os.path.isdir(file_cache_dir):
-            os.makedirs(file_cache_dir)
-
-        #If file does not exist cat it to directory
-        if not os.path.isfile(file_cache_path):
-            icat(curr_file['offset'], curr_file['image_path'], curr_file['inode'], file_cache_path)
-
-        #Uses extension to determine if it should create a thumbnail
-        assumed_mimetype = helper.guess_mimetype(str(curr_file['ext']).lower())
-
-        #If the file is an image create a thumbnail
-        if assumed_mimetype.startswith('image') and create_thumbnail and not os.path.isfile(thumbnail_cache_path):
-            try:
-                image = Image.open(file_cache_path)
-                image.thumbnail("42x42")
-                image.save(thumbnail_cache_path)
-            except IOError:
-                logging.warn("Failed to create thumbnail for " + curr_file['name'] + " at cached path " + file_cache_path)
-
-        return file_cache_path
 
     def load_database(fs, image_id, offset, image_path, index_name, directory):
         json = []
@@ -197,7 +165,7 @@ class FaTsk(IPlugin):
                         'gid' : gid,
                         'thumbnail' : "http://" + address + ":" + port + "/thumbnail/" + image_id + "/" + offset + "/p" + directory + name,
                         'analyze' : "http://" + address + ":" + port + "/analyze/" + image_id + "/" + offset + "/p" + directory + name,
-                        'parser' : "fa_tsk"
+                        'driver' : "fa_tsk"
                     }
             }
 

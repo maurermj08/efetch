@@ -36,6 +36,10 @@ class FaPreview(IPlugin):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 8
 
-    def get(self, curr_file, database, path_on_disk, mimetype, size, address, port, request_query):
+    def cache(self):
+        """Returns if caching is required"""
+        return True
+
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
         """Returns the result of this plugin to be displayed in a browser"""
         return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk))

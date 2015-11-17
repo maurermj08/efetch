@@ -34,7 +34,11 @@ class FaHexdump(IPlugin):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 5
 
-    def get(self, curr_file, database, path_on_disk, mimetype, size, address, port, request_query):
+    def cache(self):
+        """Returns if caching is required"""
+        return True
+
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
         """Returns the result of this plugin to be displayed in a browser"""
         input_file = open(path_on_disk, 'rb')
         return "<xmp>" + self.hex_dump(input_file.read()) + "</xmp>"

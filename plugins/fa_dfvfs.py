@@ -32,8 +32,12 @@ class FaDfvfs(IPlugin):
 
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 5
+        return 0
+    
+    def cache(self):
+    """Returns if caching is required"""
+        return False
 
-    def get(self, curr_file, database, path_on_disk, mimetype, size, address, port, request_query):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
         """Returns the result of this plugin to be displayed in a browser"""
         return '<xmp style="white-space: pre-wrap;">TODO</xmp>'

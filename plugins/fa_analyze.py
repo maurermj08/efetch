@@ -3,7 +3,7 @@ Basic UI for browsing and analyzing files
 """
 
 from yapsy.IPlugin import IPlugin
-
+import os
 
 class FaAnalyze(IPlugin):
 
@@ -32,8 +32,47 @@ class FaAnalyze(IPlugin):
 
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 5
+        return 0
 
-    def get(self, curr_file, database, path_on_disk, mimetype, size, address, port, request_query):
-        """Returns the result of this plugin to be displayed in a browser"""
-        return '<xmp style="white-space: pre-wrap;">TODO</xmp>'
+    def cache(self):
+        """Returns if caching is required"""
+        return True
+
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
+        """Provides a web view with all applicable plugins, defaults to most popular"""
+        
+        #Add Directoy link
+        plugins = []
+        plugins.append('<a href="http://' + address + ':' + port + '/plugin/fa_directory/' + curr_file['image_id'] + '/' + curr_file['offset'] + curr_file['path'] + '" target="frame">Directory</a><br>')
+
+        #Order Plugins by populatiry from highest to lowest
+        for pop in reversed(range(1, 11)):
+            for plugin in helper.plugin_manager().getAllPlugins():
+                if plugin.plugin_object.popularity() == pop:
+                    #Check if plugin applies to curr file
+                    if plugin.plugin_object.check(curr_file, file_cache_path, actual_mimetype, actual_size):
+                        logging.debug("Check matched, adding plugin " + plugin.plugin_object.display_name())
+                        plugins.append('<a href="http://' + address + ':' + port + '/plugin/' + plugin.name + '/' + curr_file['image_id'] + '/' + curr_file['offset'] + '/p' + curr_file['path'] + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
+                    else:
+                        logging.debug("Check did not match, NOT adding plugin " + plugin.plugin_object.display_name())
+
+        #Modifies HTML page
+        html = ""
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+        template = open(curr_dir + '/analyze_template.html', 'r')
+        html = str(template.read())
+        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugin/fa_directory/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/p' + curr_file['path'])
+        if curr_file['file_type'] == 'directory':
+            html = html.replace('<!-- File -->', curr_file['name'])
+            html = html.replace('<!-- Mimetype -->', 'Directory')
+            html = html.replace('<!-- Size -->', str(curr_file['size']) + " Bytes")
+            html = html.replace('<!-- Links -->', "\n".join(plugins))
+        else:
+            html = html.replace('<!-- File -->', curr_file['name'])
+            html = html.replace('<!-- Mimetype -->', actual_mimetype)
+            html = html.replace('<!-- Size -->', str(actual_size) + " Bytes")
+            html = html.replace('<!-- Links -->', "\n".join(plugins))
+
+        return html
+
+

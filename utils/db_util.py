@@ -50,7 +50,7 @@ class DBUtil(object):
                         "gid" : {"type": "string", "index" : "not_analyzed"},
                         "thumbnail" : {"type": "string", "index" : "not_analyzed"},
                         "analyze" : {"type": "string", "index" : "not_analyzed"},
-                        "parser" : {"type": "string", "index" : "not_analyzed"}
+                        "driver" : {"type": "string", "index" : "not_analyzed"}
                         }
                 }
             }
@@ -80,7 +80,13 @@ class DBUtil(object):
                 return
         
         return curr_file['_source']
-    
+   
+    #TODO add error checking
+    def list_dir(self, directory):
+        """Returns the list of files and folders within a directory"""
+        result = elasticsearch.search(index='eftech_timeline_' + directory['image_id'], body={"query": { "term" : { "dir" : directory['name'] } } })
+        return result['hits']['hits']
+
     def create_index(self, index_name):
         elasticsearch.indices.create(index=index_name, ignore=400)
 

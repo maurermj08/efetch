@@ -1,28 +1,93 @@
 #!/usr/bin/python
 from bottle import abort
 import magic
+import os
 import logging
-from elasticsearch import Elasticsearch
+from PIL import Image
+from db_util import DBUtil
+from yapsy.PluginManager import PluginManager
 
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
-    global db
-    global libmagic
     global pymagic
     global my_magic
+    global db_util
+    global plugin_manager 
+    global output_dir
+    global curr_dir
+    global icon_dir
+    global resource_dir
 
-    def __init__(self, database):
-        global db
+    def __init__(self, curr_directory, output_directory, es_url=None):
+        """Initializes the Efetch Helper"""
         global pymagic
         global my_magic
-        db = database
+        global db_util
+        global plugin_manager
+        global output_dir
+        global curr_dir
+        global icon_dir
+        global resource_dir
+
+        #Setup directory references
+        curr_dir = curr_directory
+        output_dir = output_directory
+        resource_dir = curr_dir + "/resources/"
+        icon_dir = curr_dir + "/icons/"
+
+        if not os.path.isdir(icon_dir):
+            logging.error("Could not find icon directory " + icon_dir)
+            sys.exit(2)
+
+        #Elastic Search DB setup
+        if es_url:
+            db_util = DBUtil()
+        else:
+            db_util = DBUtil(es_url)
         
+        #Plugin Manager Setup
+        plugin_manager = PluginManager()
+        plugin_manager.setPluginPlaces([curr_dir + "/plugins/"])
+        self.reload_plugins()
+
+        #Determine which magic lib to use
         try:
             my_magic = magic.Magic(mime = True)
             pymagic = True
         except:
             my_magic = magic.Magic(flags=magic.MAGIC_MIME_TYPE)
             pymagic = False
+
+    def curr_dir(self):
+        """Gets the current directory Efetch is running from"""
+        return curr_dir
+
+    def output_dir(self):
+        """Gets Efetch's cache directory"""
+        return output_dir
+
+    def resource_dir(self):
+        """Gets Efetch's resource directory"""
+        return resource_dir
+
+    def icon_dir(self):
+        """Gets Efetch's icon directory"""
+        return icon_dir
+
+    def plugin_manager(self):
+        """Gets the Yapsy Plugin Manager"""
+        global plugin_amanger
+        return plugin_manager
+
+    def reload_plugins(self):
+        """Reloads all Yapsy plugins"""
+        plugin_manager.collectPlugins()
+        for plugin in plugin_manager.getAllPlugins():
+            plugin_manager.activatePluginByName(plugin.name)
+
+    def db_util(self):
+        """Gets the Efetch DB Util"""
+        return db_util
 
     def get_mimetype(self, file_path):
         """Returns the mimetype for the given file"""
@@ -31,48 +96,40 @@ class EfetchHelper(object):
         else:
             return my_magic.id_filename(file_path)
 
-    def get_file(self, image_id, offset, input_type, path_or_inode, abort_on_error=True):
-        """Returns the file object for the given file in the database"""
-        if path_or_inode.endswith('/'):
-            path_or_inode = path_or_inode[:-1]
-        #Check if image and offset are in database
-        if not db._id[image_id + '/' + offset]:
-            logging.error("Could not find image with provided id and offset " + image_id + "/" + offset)
-            if abort_on_error:
-                abort(400, "No image with id " + image_id + " and offset " + offset)
-            else:
-                return
+    def cache_file(curr_file, create_thumbnail=True):
+        """Caches the provided file and returns the files cached directory"""
+        if curr_file['file_type'] == 'directory':
+            return
 
-        #Get file from either path or inode
-        if str(input_type).lower().strip() == 'p':
-            curr_file = db._pid[image_id + '/' + offset + '/' + path_or_inode]
-        elif str(input_type).lower().strip() == 'i':
-            curr_file = db._iid[image_id + '/' + offset + '/' + path_or_inode]
-        else:
-            logging.error("Unsupported input type '" + input_type + "' provided")
-            if abort_on_error:
-                abort(400, "Only supports input types of 'p' for path or 'i' for inode\nFormat is '/analyze/<image_id>/<offset>/<type[p or i]>/<fullpath or inode>'")
-            else:
-                return
-        if not curr_file:
-            logging.error("Could not find file. Image='" + image_id + "' Offset='" + offset + "' Type='" + input_type + "' Path or Inode='" + path_or_inode + "'")
-            if abort_on_error:
-                abort(404, "Could not find file in provided image.")
-            else:
-                return
+        #TODO: Not everything will have an iid... so need to figure that out
+        file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
+        file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
+        thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
+        thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
 
-        elastic = Elasticsearch()
-        es_result = elastic.get(index='efetch_timeline_' + image_id, doc_type='event', id=image_id + '/' + offset + '/' + path_or_inode)
-        print("===BEGIN=====")
-        print("es = ")
-        print(es_result['_source'])
-        print("---vs----")
-        print("curr = ")
-        print(curr_file[0])
-        print("===END=====")
-        
-        #return curr_file[0]
-        return es_result['_source']
+        #Makesure cache directories exist 
+        if not os.path.isdir(thumbnail_cache_dir):
+            os.makedirs(thumbnail_cache_dir)
+        if not os.path.isdir(file_cache_dir):
+            os.makedirs(file_cache_dir)
+
+        #If file does not exist cat it to directory
+        if not os.path.isfile(file_cache_path):
+            plugin_manager.getPluginByName(curr_file['driver']).icat(curr_file['offset'], curr_file['image_path'], curr_file['inode'], file_cache_path)
+
+        #Uses extension to determine if it should create a thumbnail
+        assumed_mimetype = self.guess_mimetype(str(curr_file['ext']).lower())
+
+        #If the file is an image create a thumbnail
+        if assumed_mimetype.startswith('image') and create_thumbnail and not os.path.isfile(thumbnail_cache_path):
+            try:
+                image = Image.open(file_cache_path)
+                image.thumbnail("42x42")
+                image.save(thumbnail_cache_path)
+            except IOError:
+                logging.warn("Failed to create thumbnail for " + curr_file['name'] + " at cached path " + file_cache_path)
+
+        return file_cache_path
 
     def guess_mimetype(self, extension):
         """Returns the assumed mimetype based on the extension"""
