@@ -11,43 +11,28 @@ class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
     global pymagic
     global my_magic
-    global db_util
-    global plugin_manager 
-    global output_dir
-    global curr_dir
-    global icon_dir
-    global resource_dir
 
     def __init__(self, curr_directory, output_directory, es_url=None):
         """Initializes the Efetch Helper"""
-        global pymagic
-        global my_magic
-        global db_util
-        global plugin_manager
-        global output_dir
-        global curr_dir
-        global icon_dir
-        global resource_dir
 
         #Setup directory references
-        curr_dir = curr_directory
-        output_dir = output_directory
-        resource_dir = curr_dir + "/resources/"
-        icon_dir = curr_dir + "/icons/"
-
-        if not os.path.isdir(icon_dir):
-            logging.error("Could not find icon directory " + icon_dir)
+        self.curr_dir = curr_directory
+        self.output_dir = output_directory
+        self.resource_dir = self.curr_dir + "/resources/"
+        self.icon_dir = self.curr_dir + "/icons/"
+        if not os.path.isdir(self.icon_dir):
+            logging.error("Could not find icon directory " + self.icon_dir)
             sys.exit(2)
 
         #Elastic Search DB setup
         if es_url:
-            db_util = DBUtil()
+            self.db_util = DBUtil()
         else:
-            db_util = DBUtil(es_url)
+            self.db_util = DBUtil(es_url)
         
         #Plugin Manager Setup
-        plugin_manager = PluginManager()
-        plugin_manager.setPluginPlaces([curr_dir + "/plugins/"])
+        self.plugin_manager = PluginManager()
+        self.plugin_manager.setPluginPlaces([self.curr_dir + "/plugins/"])
         self.reload_plugins()
 
         #Determine which magic lib to use
@@ -58,36 +43,11 @@ class EfetchHelper(object):
             my_magic = magic.Magic(flags=magic.MAGIC_MIME_TYPE)
             pymagic = False
 
-    def curr_dir(self):
-        """Gets the current directory Efetch is running from"""
-        return curr_dir
-
-    def output_dir(self):
-        """Gets Efetch's cache directory"""
-        return output_dir
-
-    def resource_dir(self):
-        """Gets Efetch's resource directory"""
-        return resource_dir
-
-    def icon_dir(self):
-        """Gets Efetch's icon directory"""
-        return icon_dir
-
-    def plugin_manager(self):
-        """Gets the Yapsy Plugin Manager"""
-        global plugin_amanger
-        return plugin_manager
-
     def reload_plugins(self):
         """Reloads all Yapsy plugins"""
-        plugin_manager.collectPlugins()
-        for plugin in plugin_manager.getAllPlugins():
-            plugin_manager.activatePluginByName(plugin.name)
-
-    def db_util(self):
-        """Gets the Efetch DB Util"""
-        return db_util
+        self.plugin_manager.collectPlugins()
+        for plugin in self.plugin_manager.getAllPlugins():
+            self.plugin_manager.activatePluginByName(plugin.name)
 
     def get_mimetype(self, file_path):
         """Returns the mimetype for the given file"""
@@ -96,16 +56,16 @@ class EfetchHelper(object):
         else:
             return my_magic.id_filename(file_path)
 
-    def cache_file(curr_file, create_thumbnail=True):
+    def cache_file(self, curr_file, create_thumbnail=True):
         """Caches the provided file and returns the files cached directory"""
         if curr_file['file_type'] == 'directory':
             return
 
         #TODO: Not everything will have an iid... so need to figure that out
-        file_cache_path = output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
-        file_cache_dir = output_dir + 'files/' + curr_file['iid'] + '/'
-        thumbnail_cache_path = output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
-        thumbnail_cache_dir = output_dir + 'thumbnails/' + curr_file['iid'] + '/'
+        file_cache_path = self.output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
+        file_cache_dir = self.output_dir + 'files/' + curr_file['iid'] + '/'
+        thumbnail_cache_path = self.output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
+        thumbnail_cache_dir = self.output_dir + 'thumbnails/' + curr_file['iid'] + '/'
 
         #Makesure cache directories exist 
         if not os.path.isdir(thumbnail_cache_dir):

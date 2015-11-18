@@ -1,8 +1,7 @@
 #!/usr/bin/python
 from bottle import abort
 import logging
-from elasticsearch import Elasticsearch
-
+from elasticsearch import Elasticsearch, helpers
 class DBUtil(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
     global elasticsearch

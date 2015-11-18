@@ -1,17 +1,9 @@
-from bottle import route, run, request, static_file, abort
-import subprocess
+from bottle import route, run, request, static_file
 import os
 import sys
 import getopt
-import time
 import logging
-import magic
 from utils.efetch_helper import EfetchHelper
-from utils.db_util import DBUtil
-from yapsy.PluginManager import PluginManager
-from bottle import abort
-from elasticsearch import Elasticsearch
-from elasticsearch import helpers
 
 global address
 global port
@@ -20,7 +12,6 @@ global plugin_manager
 global max_download_size
 global elastic
 global helper
-global db_util
 
 def main(argv):
     try: 
@@ -36,7 +27,6 @@ def main(argv):
     global max_download_size
     global elastic
     global helper
-    global db_util
 
     #Default Values
     max_download_size = 100 #In MegaBytes
@@ -78,9 +68,8 @@ def main(argv):
 
     #Initialize utils
     helper = EfetchHelper(curr_dir, output_dir)
-    helper.__init__(curr_dir, output_dir)
-    plugin_manager = helper.plugin_manager()
-    db_util = DBUtil()
+    test = helper.db_util
+    manager = helper.plugin_manager
 
     run(host=address, port=port)
 
@@ -91,7 +80,7 @@ def get_resource(resource_path):
     if '..' in str(resource_path):
         return
     else:
-        full_path = helper.resource_dir() + resource_path
+        full_path = helper.resource_dir + resource_path
         res_dir = os.path.dirname(full_path)
         res_name = os.path.basename(full_path)    
         return static_file(res_name, root=res_dir)        
@@ -100,7 +89,7 @@ def get_resource(resource_path):
 def plugin_empty(name):
     """Returns the iframe of the given plugin for the given file"""
     #Get Plugin
-    plugin = helper.plugin_manager().getPluginByName(str(name).lower())
+    plugin = helper.plugin_manager.getPluginByName(str(name).lower())
     
     curr_file = None
     file_cache_path = None
@@ -119,15 +108,15 @@ def plugin_empty(name):
 def plugin(name, image_id, offset, path):
     """Returns the iframe of the given plugin for the given file"""
     #Get Plugin
-    plugin = helper.plugin_manager().getPluginByName(str(name).lower())
+    plugin = helper.plugin_manager.getPluginByName(str(name).lower())
     
     if path:
         #Get file from database
-        curr_file = helper.db_util().get_file(image_id, offset)
+        curr_file = helper.db_util.get_file(image_id, offset)
     
         #Cache file
         if plugin.cache():
-            file_cache_path = helper.plugin_manager().getPluginByName(curr_file['parser']).cache_file(curr_file)
+            file_cache_path = helper.plugin_manager.getPluginByName(curr_file['parser']).cache_file(curr_file)
         
         #Get mimetype and size
         actual_mimetype = helper.get_mimetype(file_cache_path)

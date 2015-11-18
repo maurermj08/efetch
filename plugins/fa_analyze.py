@@ -4,6 +4,7 @@ Basic UI for browsing and analyzing files
 
 from yapsy.IPlugin import IPlugin
 import os
+import logging
 
 class FaAnalyze(IPlugin):
 
@@ -47,7 +48,7 @@ class FaAnalyze(IPlugin):
 
         #Order Plugins by populatiry from highest to lowest
         for pop in reversed(range(1, 11)):
-            for plugin in helper.plugin_manager().getAllPlugins():
+            for plugin in helper.plugin_manager.getAllPlugins():
                 if plugin.plugin_object.popularity() == pop:
                     #Check if plugin applies to curr file
                     if plugin.plugin_object.check(curr_file, file_cache_path, actual_mimetype, actual_size):

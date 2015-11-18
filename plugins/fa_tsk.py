@@ -3,8 +3,10 @@ Parses image using Sleuth Kit
 """
 
 from yapsy.IPlugin import IPlugin
+import logging
 import pytsk3
 import os
+from bottle import abort
 
 class FaTsk(IPlugin):
 
@@ -39,16 +41,17 @@ class FaTsk(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, helper, path_on_disk, mimetype, size, address, port, request_query):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
         offset = request_query['offset']
         path = request_query['path']
         image_id = request_query['image_id']
-        self.add_image(image_Id, offset, path, helper.db_util())
+        self.add_image(image_id, offset, path, helper.db_util, address, port)
         return '<xmp style="white-space: pre-wrap;">DONE</xmp>'
     
-    def add_image(self, image_id, offset, image_path, db_util):
+    def add_image(self, image_id, offset, image_path, db_util, address, port):
         """Creates a file listing of the partition at the provided image and offset in the database"""
-        image_path = "/" + image_path
+        if not str(image_path).startswith("/"):
+            image_path = "/" + image_path
 
         #TODO ADD Error Handling
         #if database._image_id[image_id] and database._image_id[image_id][0]["path"] != str(image_path):
@@ -62,17 +65,18 @@ class FaTsk(IPlugin):
             abort(400, "Could not find file at specified path '" + str(image_path) + "'")
             
         logging.info("Adding image to databse")
+        print("[INFO] - Loading image " + image_path + " at offset " + str(offset) + " as " + image_id + " using Sluethkit")
         
-        try:
-            image = pytsk3.Img_Info(url=image_path)
-            file_system = pytsk3.FS_Info(image, offset=(int(offset)*512))
-            index_name = 'efetch_timeline_' + image_id
-            db_util.create_index(index_name)
-            db_util.bulk(load_database(file_system, image_id, offset, image_path, index_name, "/"))
-        except Exception as error:
-            logging.error(error.message)
-            logging.error("Failed to parse image '" + image_path + "' at offset '" + offset + "'")
-            abort(500, "Failed to parse image, please check your sector offset")
+        #try:
+        image = pytsk3.Img_Info(url=image_path)
+        file_system = pytsk3.FS_Info(image, offset=(int(offset)*512))
+        index_name = 'efetch_timeline_' + image_id
+        db_util.create_index(index_name)
+        db_util.bulk(self.load_database(file_system, image_id, offset, image_path, index_name, "/", address, port))
+        #except Exception as error:
+        #    logging.error(error.message)
+        #    logging.error("Failed to parse image '" + image_path + "' at offset '" + offset + "'")
+        #    abort(500, "Failed to parse image, please check your sector offset")
 
     def icat(curr_file, output_file_path):
         """Returns the specified file using image file, meta or inode address, and outputfile"""
@@ -95,11 +99,12 @@ class FaTsk(IPlugin):
             out.write(data)
             out.close()
 
-    def load_database(fs, image_id, offset, image_path, index_name, directory):
+    def load_database(self, fs, image_id, offset, image_path, index_name, directory, address, port):
         json = []
-
+        print("dir " + directory)
         for directory_entry in fs.open_dir(directory):
             name =  directory_entry.info.name.name.decode("utf8")
+            print("entry " + name)
             if directory_entry.info.meta == None:
                 file_type = ''
                 inode = ''
@@ -173,9 +178,9 @@ class FaTsk(IPlugin):
 
             if file_type == pytsk3.TSK_FS_META_TYPE_DIR and name != "." and name != "..":
                 try:
-                    json.append(load_database(fs, image_id, offset, image_path, db, directory + name + "/"))
+                    json.extend(self.load_database(fs, image_id, offset, image_path, index_name, directory + name + "/", address, port))
                 except Exception as error:
                     logging.warn("[WARNING] - Failed to parse directory " + directory + name + "/")
 
-            return json
+        return json
 
