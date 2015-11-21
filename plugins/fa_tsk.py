@@ -35,7 +35,7 @@ class FaTsk(IPlugin):
 
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 5
+        return 0
 
     def cache(self):
         """Returns if caching is required"""
@@ -65,20 +65,51 @@ class FaTsk(IPlugin):
             abort(400, "Could not find file at specified path '" + str(image_path) + "'")
             
         logging.info("Adding image to databse")
-        print("[INFO] - Loading image " + image_path + " at offset " + str(offset) + " as " + image_id + " using Sluethkit")
         
         #try:
         image = pytsk3.Img_Info(url=image_path)
         file_system = pytsk3.FS_Info(image, offset=(int(offset)*512))
         index_name = 'efetch_timeline_' + image_id
         db_util.create_index(index_name)
-        db_util.bulk(self.load_database(file_system, image_id, offset, image_path, index_name, "/", address, port))
+        root = {
+                    '_index': index_name,
+                    '_type' : 'event',
+                    '_id' : image_id + '/' + offset + '/',
+                    '_source' : {
+                        'id' : image_id + "/" + offset,
+                        'pid' : image_id + '/' + offset + '/',
+                        'iid' : image_id + '/' + offset + '/',
+                        'image_id': image_id,
+                        'offset' : offset,
+                        'image_path' : image_path,
+                        'name' : '/',
+                        'path' : '/',
+                        'ext' : '',
+                        'dir' : '',
+                        'file_type' : 'directory',
+                        'inode' : '',
+                        'mod' : 0,
+                        'acc' : 0,
+                        'chg' : 0,
+                        'cre' : 0,
+                        'size' : '',
+                        'uid' : '',
+                        'gid' : '',
+                        'thumbnail' : "http://" + address + ":" + port + "/plguins/fa_thumbnail/" + image_id + "/" + offset + '/',
+                        'analyze' : "http://" + address + ":" + port + "/plugins/fa_analyze/" + image_id + "/" + offset + '/',
+                        'driver' : "fa_tsk"
+                    }
+            }
+  
+        json = self.load_database(file_system, image_id, offset, image_path, index_name, "/", address, port)
+        json.append(root)
+        db_util.bulk(json)
         #except Exception as error:
         #    logging.error(error.message)
         #    logging.error("Failed to parse image '" + image_path + "' at offset '" + offset + "'")
         #    abort(500, "Failed to parse image, please check your sector offset")
 
-    def icat(curr_file, output_file_path):
+    def icat(self, curr_file, output_file_path):
         """Returns the specified file using image file, meta or inode address, and outputfile"""
         out = open(output_file_path, 'wb')
         img = pytsk3.Img_Info(curr_file['image_path'])
@@ -101,10 +132,8 @@ class FaTsk(IPlugin):
 
     def load_database(self, fs, image_id, offset, image_path, index_name, directory, address, port):
         json = []
-        print("dir " + directory)
         for directory_entry in fs.open_dir(directory):
             name =  directory_entry.info.name.name.decode("utf8")
-            print("entry " + name)
             if directory_entry.info.meta == None:
                 file_type = ''
                 inode = ''
@@ -168,8 +197,8 @@ class FaTsk(IPlugin):
                         'size' : size,
                         'uid' : uid,
                         'gid' : gid,
-                        'thumbnail' : "http://" + address + ":" + port + "/thumbnail/" + image_id + "/" + offset + "/p" + directory + name,
-                        'analyze' : "http://" + address + ":" + port + "/analyze/" + image_id + "/" + offset + "/p" + directory + name,
+                        'thumbnail' : "http://" + address + ":" + port + "/plugins/fa_thumbnail/" + image_id + "/" + offset + directory + name,
+                        'analyze' : "http://" + address + ":" + port + "/plugins/fa_analyze/" + image_id + "/" + offset + directory + name,
                         'driver' : "fa_tsk"
                     }
             }

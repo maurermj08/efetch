@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from bottle import abort
 import logging
+import sys
 from elasticsearch import Elasticsearch, helpers
 class DBUtil(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
@@ -58,8 +59,13 @@ class DBUtil(object):
 
     def get_file(self, image_id, offset, path, abort_on_error=True):
         """Returns the file object for the given file in the database"""
-        if path.endswith('/'):
+        if path.endswith('/') and path != '/':
             path = path[:-1]
+        #TODO: THIS NEEDS REMOVED? need to figure out why it happens sometimes and not others
+        if str(path).startswith('p/'):
+            path = str(path)[1:]
+        if str(path).startswith('/'):
+            path = str(path)[1:]
 
         #TODO CHECK IF IMAGE EXISTS
         #Check if image and offset are in database
@@ -70,20 +76,34 @@ class DBUtil(object):
         #        return
 
         #TODO Do not hide errors from elasticsearch
-        curr_file =  elasticsearch.get(index='efetch_timeline_' + image_id, doc_type='event', id=image_id + '/' + offset + '/' + path_or_inode)
+        curr_file =  elasticsearch.get(index='efetch_timeline_' + image_id, doc_type='event', id=image_id + '/' + offset + '/' + path)
         if not curr_file['_source']:
-            logging.error("Could not find file. Image='" + image_id + "' Offset='" + offset + "' Type='" + input_type + "' Path or Inode='" + path_or_inode + "'")
+            logging.error("Could not find file. Image='" + image_id + "' Offset='" + offset + "' Type='" + input_type + "' Path='" + path + "'")
             if abort_on_error:
                 abort(404, "Could not find file in provided image.")
             else:
                 return
         
         return curr_file['_source']
-   
+
     #TODO add error checking
     def list_dir(self, directory):
         """Returns the list of files and folders within a directory"""
-        result = elasticsearch.search(index='eftech_timeline_' + directory['image_id'], body={"query": { "term" : { "dir" : directory['name'] } } })
+        if directory['path'] == '/':
+            query_dir = '/'
+        else:
+            query_dir = directory['path'] + '/'
+
+        query = {
+                "query": { 
+                    "match" : 
+                    { 
+                        "dir" : query_dir
+                        } 
+                    },
+                "size" : 32000
+                }
+        result = elasticsearch.search(index='efetch_timeline_' + directory['image_id'], body=query,)
         return result['hits']['hits']
 
     def create_index(self, index_name):

@@ -4,6 +4,7 @@ Simple file browser
 
 from yapsy.IPlugin import IPlugin
 import os
+import time
 
 class FaDirectory(IPlugin):
 
@@ -32,7 +33,7 @@ class FaDirectory(IPlugin):
 
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 5
+        return 0
 
     def cache(self):
         """Returns if caching is required"""
@@ -48,30 +49,31 @@ class FaDirectory(IPlugin):
 
         listing = []
         #TODO: Change localtime to case time, specifically what is supplied to sleuthkit
-        for item in db_util.list_dir(db_util.get_file(curr_file['image_id'], curr_file['offset'], curr_folder)):
+        for item in helper.db_util.list_dir(helper.db_util.get_file(curr_file['image_id'], curr_file['offset'], curr_folder)):
+            source = item['_source']
             listing.append("    <tr>") 
-            listing.append('        <td><img src="http://' + address + ':' + port + '/plugin/fa_thumbnail/' + item['image_id'] + '/' + item['offset'] + item['path'] + '" alt="-" style="width:32px;height:32px;"></td>')
-            if item['file_type'] == 'directory':
-                listing.append('        <td><a href="http://' + address + ':' + port + '/plugin/fa_directory/' + item['image_id'] + '/' + item['offset'] + item['path'] + '" target="_self">' + item['name'] + "</a></td>")
+            listing.append('        <td><img src="http://' + address + ':' + port + '/plugins/fa_thumbnail/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" alt="-" style="width:32px;height:32px;"></td>')
+            if source['file_type'] == 'directory':
+                listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_directory/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_self">' + source['name'] + "</a></td>")
             else:
-                listing.append('        <td><a href="http://' + address + ':' + port + '/plugin/fa_analyze/' + item['image_id'] + '/' + item['offset'] + item['path'] + '" target="_top">' + item['name'] + "</a></td>")
-            if (item['mod']):
-                listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(item['mod']))) + "</td>")
-            else:
-                listing.append("        <td> - </td>")
-            if (item['acc']):
-                listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(item['acc']))) + "</td>")
+                listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_analyze/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_top">' + source['name'] + "</a></td>")
+            if (source['mod']):
+                listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['mod']))) + "</td>")
             else:
                 listing.append("        <td> - </td>")
-            if (item['chg']):
-                listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(item['chg']))) + "</td>")
+            if (source['acc']):
+                listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['acc']))) + "</td>")
             else:
                 listing.append("        <td> - </td>")
-            if (item['cre']):
-                listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(item['cre']))) + "</td>")
+            if (source['chg']):
+                listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['chg']))) + "</td>")
             else:
                 listing.append("        <td> - </td>")
-            listing.append("        <td>" + item['size'] + "</td>")
+            if (source['cre']):
+                listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(source['cre']))) + "</td>")
+            else:
+                listing.append("        <td> - </td>")
+            listing.append("        <td>" + source['size'] + "</td>")
             listing.append("    </tr>")
 
         html = ""

@@ -67,7 +67,7 @@ def main(argv):
         sys.exit(2)
 
     #Initialize utils
-    helper = EfetchHelper(curr_dir, output_dir)
+    helper = EfetchHelper(curr_dir, output_dir, max_download_size * 1000000)
     test = helper.db_util
     manager = helper.plugin_manager
 
@@ -85,7 +85,7 @@ def get_resource(resource_path):
         res_name = os.path.basename(full_path)    
         return static_file(res_name, root=res_dir)        
 
-@route('/plugin/<name>/')
+@route('/plugins/<name>/')
 def plugin_empty(name):
     """Returns the iframe of the given plugin for the given file"""
     #Get Plugin
@@ -102,25 +102,40 @@ def plugin_empty(name):
     #Return plugins frame
     return plugin.plugin_object.get(curr_file, helper, file_cache_path, actual_mimetype, actual_size, address, port, request.query)
 
-#@route('/plugin/<name>/<image_id>/')
-#@route('/plugin/<name>/<image_id>/<offset>/')
-@route('/plugin/<name>/<image_id>/<offset>/<path:path>')
+
+@route('/plugins/<name>/<image_id>/<offset>/')
+def plugin(name, image_id, offset):
+    """Returns the iframe of the given plugin for the given file"""
+    return plugin(name, image_id, offset, u'/')
+
+#@route('/plugins/<name>/<image_id>/')
+@route('/plugins/<name>/<image_id>/<offset>/<path:path>')
 def plugin(name, image_id, offset, path):
     """Returns the iframe of the given plugin for the given file"""
+    file_cache_path = None
+    actual_mimetype = None
+    actual_size = None
+    if path == 'p/':
+        path = '/'
+
     #Get Plugin
     plugin = helper.plugin_manager.getPluginByName(str(name).lower())
-    
+   
+    if not plugin:
+        abort(404, "Sorry, could not find plugin " + str(name).lower())
+
     if path:
         #Get file from database
-        curr_file = helper.db_util.get_file(image_id, offset)
+        curr_file = helper.db_util.get_file(image_id, offset, str(path))
     
         #Cache file
-        if plugin.cache():
-            file_cache_path = helper.plugin_manager.getPluginByName(curr_file['parser']).cache_file(curr_file)
-        
-        #Get mimetype and size
-        actual_mimetype = helper.get_mimetype(file_cache_path)
-        actual_size = os.path.getsize(file_cache_path)
+        if plugin.plugin_object.cache():
+            file_cache_path = helper.cache_file(curr_file)
+      
+        if file_cache_path:
+            #Get mimetype and size
+            actual_mimetype = helper.get_mimetype(file_cache_path)
+            actual_size = os.path.getsize(file_cache_path)
     else:
         curr_file = None
         file_cache_path = None

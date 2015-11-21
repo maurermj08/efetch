@@ -25,7 +25,7 @@ class FaDownload(IPlugin):
 
     def check(self, curr_file, path_on_disk, mimetype, size):
         """Checks if the file is compatable with this plugin"""
-        return os.path.isfile(path_on_disk) and curr_file['file_type'] != 'directory'
+        return path_on_disk and os.path.isfile(path_on_disk) and curr_file['file_type'] != 'directory'
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

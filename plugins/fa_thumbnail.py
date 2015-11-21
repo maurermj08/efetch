@@ -3,7 +3,8 @@ Returns a thumbnail or icon of the specified file
 """
 
 from yapsy.IPlugin import IPlugin
-
+from bottle import static_file
+import os
 
 class FaThumbnail(IPlugin):
 
@@ -32,7 +33,7 @@ class FaThumbnail(IPlugin):
 
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 5
+        return 0
 
     def cache(self):
         """Returns if caching is required"""
@@ -65,4 +66,4 @@ class FaThumbnail(IPlugin):
             if not os.path.isfile(helper.icon_dir + str(curr_file['ext']).lower() + ".png"):
                 return static_file("_blank.png", root=helper.icon_dir, mimetype='image/png')
             else:
-                return static_file(curr_file['ext'] + ".png", root=helper.icon_dir, mimetype='image/png')
+                return static_file(curr_file['ext'].lower() + ".png", root=helper.icon_dir, mimetype='image/png')

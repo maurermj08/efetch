@@ -12,8 +12,12 @@ class EfetchHelper(object):
     global pymagic
     global my_magic
 
-    def __init__(self, curr_directory, output_directory, es_url=None):
+    def __init__(self, curr_directory, output_directory, max_file_size, es_url=None):
         """Initializes the Efetch Helper"""
+        global pymagic
+        global my_magic
+
+        self.max_file_size = max_file_size
 
         #Setup directory references
         self.curr_dir = curr_directory
@@ -58,8 +62,12 @@ class EfetchHelper(object):
 
     def cache_file(self, curr_file, create_thumbnail=True):
         """Caches the provided file and returns the files cached directory"""
-        if curr_file['file_type'] == 'directory':
-            return
+        #if curr_file['file_type'] == 'directory':
+        #    return
+        if curr_file['file_type'] != 'regular':
+            return None
+        if int(curr_file['size']) > self.max_file_size:
+            return None
 
         #TODO: Not everything will have an iid... so need to figure that out
         file_cache_path = self.output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
@@ -75,7 +83,7 @@ class EfetchHelper(object):
 
         #If file does not exist cat it to directory
         if not os.path.isfile(file_cache_path):
-            plugin_manager.getPluginByName(curr_file['driver']).icat(curr_file['offset'], curr_file['image_path'], curr_file['inode'], file_cache_path)
+            self.plugin_manager.getPluginByName(curr_file['driver']).plugin_object.icat(curr_file, file_cache_path)
 
         #Uses extension to determine if it should create a thumbnail
         assumed_mimetype = self.guess_mimetype(str(curr_file['ext']).lower())

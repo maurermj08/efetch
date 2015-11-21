@@ -54,6 +54,8 @@ class DfvfsUtil(object):
 
     def GetFile(self, full_path, ignore_case = False):
         """Gets file using the full path to the file"""
+        if full_path.endswith('/'):
+            full_path = full_path[:-1]
         paths = full_path.split('/')
         curr = 1
         for base_path_spec in self.base_path_specs:
@@ -62,15 +64,21 @@ class DfvfsUtil(object):
             if file_entry is None:
                 logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
             else:
-                myfile = self._GetFile(curr, paths, file_entry, ignore_case)            
+                myfile = self._GetFile(curr, paths, file_entry, ignore_case)         
                 if myfile is not None:
                     return myfile
                 continue
     
     def ListDir(self, dir_path, recursive=False):
         """Lists the contents of the provided directory, can be set to list recursively"""
+        if dir_path.endswith('/'):
+            dir_path = dir_path[:-1]
         paths = dir_path.split('/')
         curr = 1
+
+        if dir_path == '/' and not recursive:
+            return self.ListRoot()
+
         for base_path_spec in self.base_path_specs:
             file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
             file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
@@ -159,15 +167,35 @@ class DfvfsUtil(object):
     def _GetFile(self, curr, paths, file_entry, ignore_case):
         """Gets a file_object from a file_entry"""
         for sub_file_entry in file_entry.sub_file_entries:
+            #if curr == (len(paths) - 1) and sub_file_entry.IsFile() and (sub_file_entry.name == paths[curr] 
+            # or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
+            #   file_object = sub_file_entry.GetFileObject()
+            #   return    file_object
             if curr == (len(paths) - 1) and sub_file_entry.IsFile() and (sub_file_entry.name == paths[curr] 
              or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
                 file_object = sub_file_entry.GetFileObject()
-                return    file_object
+                return file_object
             if sub_file_entry.IsDirectory():
-                if sub_file_entry.name == paths[curr] or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower()):
+                if curr == (len(paths) - 1) and (sub_file_entry.name == paths[curr] or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
+                    return sub_file_entry
+                elif sub_file_entry.name == paths[curr] or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower()):
                     return self._GetFile(curr + 1, paths, sub_file_entry, ignore_case)
         return None
-    
+   
+    def ListRoot(self):
+        dir_list = []
+        for base_path_spec in self.base_path_specs:
+            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+            if file_entry is None:
+                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+            else:
+                for sub_file_entry in file_entry.sub_file_entries:
+                    dir_list.append(sub_file_entry.name)
+                if dir_list is not None:
+                    return dir_list
+                continue
+
     def _ListDir(self, curr, paths, file_entry, recursive):
         """List the contents of the specified directory"""
         for sub_file_entry in file_entry.sub_file_entries:
@@ -176,13 +204,13 @@ class DfvfsUtil(object):
             if sub_file_entry.IsDirectory():
                 if sub_file_entry.name == paths[curr]:
                     return self._ListDir(curr + 1, paths, sub_file_entry, recursive)
-        return None
+        return []
 
     def _ListDirSub(self, file_entry, recursive, level=0):
         """Appends all contents of provided file_entry directory to list and returns list"""
         dir_list = []
         for sub_file_entry in file_entry.sub_file_entries:
-            dir_list.append(('\t'*level) + sub_file_entry.name)
+            dir_list.append(sub_file_entry.name)
             if recursive and sub_file_entry.IsDirectory():
                 dir_list.extend(_ListDirSub(file_entry, recursive, level + 1))
         return dir_list
@@ -791,7 +819,7 @@ def Main():
 
     try:
         #TEST GET FILE
-        my_file = dfvfs_util.GetFile("/WINDOWS/system32/drivers/etc/hosts")
+        my_file = dfvfs_util.GetFile("/WINDOWS")
         print(my_file.__dict__)
         directory_entry = my_file._tsk_file
         if directory_entry.info.meta == None:
@@ -819,7 +847,10 @@ def Main():
             print("1 Success for GetFile(/Windows/System32/Drivers/etc/hosts)")
         else:
             print("1 Failed for GetFile")
-        sys.exit(0)
+
+        output = dfvfs_util.ListDir("/WINDOWS/")
+        print("\n\t".join(output))
+        sys.exit(1)
 
         #TEST GET FILE with IGNORE CASE
         my_file = dfvfs_util.GetFile("/windows/SYSTEM32/dRiVeRs/eTc/HOSTs", True)
@@ -829,7 +860,7 @@ def Main():
             print("2 Failed for GetFile Ignore Case")
         
         #TEST LIST DIR
-        dir_list = dfvfs_util.ListDir("/Documents and Settings/tdungan/My Documents")
+        dir_list = dfvfs_util.ListDir("/")
         if dir_list is not None:
             print("\n\t".join(dir_list))
             print("3 Success for ListDir")
@@ -897,6 +928,7 @@ def Main():
 
 
 if __name__ == '__main__':
+    sys.exit(0)
     if not Main():
         sys.exit(1)
     else:
