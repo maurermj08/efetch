@@ -35,18 +35,20 @@ class FaAnalyze(IPlugin):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 0
 
+    def parent(self):
+        """Returns if the plugin accepts other plugins (True) or only files (False)"""
+        return False
+
     def cache(self):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
         """Provides a web view with all applicable plugins, defaults to most popular"""
         
         #Add Directoy link
         plugins = []
-        plugins.append('<a href="http://' + address + ':' + port + '/plugins/fa_directory/' + curr_file['image_id'] + '/' + curr_file['offset'] + curr_file['path'] + '" target="frame">Directory</a><br>')
-
-        print("[REMOVE] - INSIDE ANALYZE " + str(path_on_disk))
+        plugins.append('<a href="http://' + address + ':' + port + '/plugins/fa_loader/fa_directory/' + curr_file['image_id'] + '/' + curr_file['offset'] + curr_file['path'] + '" target="frame">Directory</a><br>')
 
         if not mimetype:
             mimetype = helper.guess_mimetype(curr_file['ext'])
@@ -58,10 +60,9 @@ class FaAnalyze(IPlugin):
             for plugin in helper.plugin_manager.getAllPlugins():
                 if plugin.plugin_object.popularity() == pop:
                     #Check if plugin applies to curr file
-                    print("REMOVE - " + plugin.plugin_object.display_name() + " *" + str(plugin.plugin_object.check(curr_file, path_on_disk, mimetype, size)))
                     if plugin.plugin_object.check(curr_file, path_on_disk, mimetype, size):
                         logging.debug("Check matched, adding plugin " + plugin.plugin_object.display_name())
-                        plugins.append('<a href="http://' + address + ':' + port + '/plugins/' + plugin.name + '/' + curr_file['image_id'] + '/' + curr_file['offset'] + '/p' + curr_file['path'] + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
+                        plugins.append('<a href="http://' + address + ':' + port + '/plugins/fa_loader/' + plugin.name + '/' + curr_file['image_id'] + '/' + curr_file['offset'] + '/p' + curr_file['path'] + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
                     else:
                         logging.debug("Check did not match, NOT adding plugin " + plugin.plugin_object.display_name())
 
@@ -70,7 +71,8 @@ class FaAnalyze(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/analyze_template.html', 'r')
         html = str(template.read())
-        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/fa_directory/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/p' + curr_file['path'])
+        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/fa_loader/fa_directory/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/p' + curr_file['path'])
+        
         if curr_file['file_type'] == 'directory':
             html = html.replace('<!-- File -->', curr_file['name'])
             html = html.replace('<!-- Mimetype -->', 'Directory')
@@ -81,7 +83,7 @@ class FaAnalyze(IPlugin):
             html = html.replace('<!-- Mimetype -->', mimetype)
             html = html.replace('<!-- Size -->', str(size) + " Bytes")
             html = html.replace('<!-- Links -->', "\n".join(plugins))
-
+        
         return html
 
 

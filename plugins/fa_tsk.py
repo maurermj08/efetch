@@ -37,11 +37,15 @@ class FaTsk(IPlugin):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 0
 
+    def parent(self):
+        """Returns if the plugin accepts other plugins (True) or only files (False)"""
+        return False
+
     def cache(self):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
         offset = request_query['offset']
         path = request_query['path']
         image_id = request_query['image_id']

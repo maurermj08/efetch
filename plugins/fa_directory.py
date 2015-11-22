@@ -35,11 +35,15 @@ class FaDirectory(IPlugin):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 0
 
+    def parent(self):
+        """Returns if the plugin accepts other plugins (True) or only files (False)"""
+        return False
+
     def cache(self):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
         """Returns a formatted directory listing for the given path"""
         #If path is a folder just set the view to it, if not use the files parent folder
         if curr_file['file_type'] == 'directory':

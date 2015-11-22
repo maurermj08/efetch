@@ -36,11 +36,15 @@ class FaOffice(IPlugin):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 8
 
+    def parent(self):
+        """Returns if the plugin accepts other plugins (True) or only files (False)"""
+        return False
+
     def cache(self):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
         """Returns the result of this plugin to be displayed in a browser"""
         newname = os.path.splitext(path_on_disk)[0] + ".pdf"
         if not os.path.isfile(newname):

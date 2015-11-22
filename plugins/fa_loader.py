@@ -1,10 +1,11 @@
 """
-Returns a static HTML page with the hexdump output, similar to Hexdump -C
+Displays a loading gif while its child plugin loads
 """
 
 from yapsy.IPlugin import IPlugin
+import os
 
-class FaHexdump(IPlugin):
+class FaLoader(IPlugin):
 
     def __init__(self):
         IPlugin.__init__(self)
@@ -19,12 +20,11 @@ class FaHexdump(IPlugin):
 
     def display_name(self):
         """Returns the name displayed in the webview"""
-        return "Hex View"
+        return "Loading"
 
     def check(self, curr_file, path_on_disk, mimetype, size):
         """Checks if the file is compatable with this plugin"""
-        maxsize = 100000000 
-        return size < maxsize
+        return True
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -32,11 +32,11 @@ class FaHexdump(IPlugin):
 
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 5
+        return 0
 
     def parent(self):
         """Returns if the plugin accepts other plugins (True) or only files (False)"""
-        return False
+        return True
 
     def cache(self):
         """Returns if caching is required"""
@@ -44,17 +44,12 @@ class FaHexdump(IPlugin):
 
     def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        input_file = open(path_on_disk, 'rb')
-        return "<xmp>" + self.hex_dump(input_file.read()) + "</xmp>"
+        html = ""
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+        template = open(curr_dir + '/loader_template.html', 'r')
+        html = str(template.read())
+        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children)
+        html = html.replace('<!-- Load -->', "http://" + address + ":" + port + "/resources/loader.gif")
 
-    def hex_dump(self, src, length=16, sep='.'):
-        FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or sep for x in range(256)])
-        lines = []
-        for c in xrange(0, len(src), length):
-            chars = src[c:c+length]
-            hex = ' '.join(["%02x" % ord(x) for x in chars])
-            if len(hex) > 24:
-                hex = "%s %s" % (hex[:24], hex[24:])
-            printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or sep) for x in chars])
-            lines.append("%08x:  %-*s  |%s|\n" % (c, length*3, hex, printable))
-        return ''.join(lines)
+        return html
+ 

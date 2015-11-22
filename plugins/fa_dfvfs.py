@@ -37,12 +37,16 @@ class FaDfvfs(IPlugin):
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 0
+
+    def parent(self):
+        """Returns if the plugin accepts other plugins (True) or only files (False)"""
+        return False
     
     def cache(self):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
         """Returns the result of this plugin to be displayed in a browser"""
         offset = request_query['offset']
         path = request_query['path']
@@ -59,13 +63,12 @@ class FaDfvfs(IPlugin):
             logging.error("Could not find file at path '" + str(image_path) + "'")
             abort(400, "Could not find file at specified path '" + str(image_path) + "'")
 
-        logging.info("Adding image to databse")
+        logging.info("Adding " + image_id + " to Elastic Search using dfVFS driver")
 
         #try:
         dfvfs_util = DfvfsUtil(image_path)
         index_name = 'efetch_timeline_' + image_id
         db_util.create_index(index_name)
-        
         root = {
                     '_index': index_name,
                     '_type' : 'event',
@@ -96,7 +99,7 @@ class FaDfvfs(IPlugin):
                     }
             }
 
-        json = self.load_database(dfvfs_util, image_id, offset, image_path, index_name, "/", address, port)
+        json = dfvfs_util.GetJson(image_id, offset, image_path, address, port)
         json.append(root)
         db_util.bulk(json)
 
@@ -104,99 +107,3 @@ class FaDfvfs(IPlugin):
         """Returns the specified file using image file, meta or inode address, and outputfile"""
         dfvfs_util = DfvfsUtil(curr_file['image_path'])
         dfvfs_util.Icat(curr_file['path'], output_file_path)
-
-    def load_database(self, dfvfs_util, image_id, offset, image_path, index_name, directory, address, port):
-        json = []
-        if directory == "/":
-            dir_list = dfvfs_util.ListRoot()
-        else:
-            dir_list = dfvfs_util.ListDir(directory)
-        print("DIR:  " + directory)
-
-        for name in dir_list:
-            my_file = dfvfs_util.GetFile(directory + name)
-
-            directory_entry = my_file._tsk_file
-            if directory_entry.info.meta == None:
-                file_type = ''
-                inode = ''
-                mod = ''
-                acc = ''
-                chg = ''
-                cre = ''
-                size = ''
-                uid = ''
-                gid = ''
-            else:
-                file_type = directory_entry.info.meta.type
-                inode = str(directory_entry.info.meta.addr)
-                mod = str(directory_entry.info.meta.mtime)
-                acc = str(directory_entry.info.meta.atime)
-                chg = str(directory_entry.info.meta.ctime)
-                cre = str(directory_entry.info.meta.crtime)
-                size = str(directory_entry.info.meta.size)
-                uid = str(directory_entry.info.meta.uid)
-                gid = str(directory_entry.info.meta.gid)
-
-            dir_ref = image_id + "/" + offset + directory + name
-            inode_ref = image_id + "/" + offset + "/" + inode
-            ext = os.path.splitext(name)[1][1:] or ""
-    
-            if file_type == None:
-                file_type_str = 'None'
-            elif file_type == pytsk3.TSK_FS_META_TYPE_REG:
-                file_type_str = 'regular'
-            elif file_type == pytsk3.TSK_FS_META_TYPE_DIR:
-                file_type_str = 'directory'
-            elif file_type == pytsk3.TSK_FS_META_TYPE_LNK:
-                file_type_str = 'link'
-            else:
-                file_type_str = str(file_type)
-
-            modtime = long(mod) if mod else 0
-            acctime = long(acc) if acc else 0
-            chgtime = long(chg) if chg else 0
-            cretime = long(cre) if cre else 0
-
-            meta_event = {
-                    '_index': index_name,
-                    '_type' : 'event',
-                    '_id' : dir_ref,
-                    '_source' : {
-                        'id' : image_id + "/" + offset,
-                        'pid' : dir_ref,
-                        'iid' : inode_ref,
-                        'image_id': image_id,
-                        'offset' : offset,
-                        'image_path' : image_path,
-                        'name' : name,
-                        'path' : str(directory) + name,
-                        'ext' : ext,
-                        'dir' : directory,
-                        'file_type' : file_type_str,
-                        'inode' : inode,
-                        'mod' : modtime,
-                        'acc' : acctime,
-                        'chg' : chgtime,
-                        'cre' : cretime,
-                        'size' : size,
-                        'uid' : uid,
-                        'gid' : gid,
-                        'thumbnail' : "http://" + address + ":" + port + "/plugins/fa_thumbnail/" + image_id + "/" + offset + directory + name,
-                        'analyze' : "http://" + address + ":" + port + "/plugins/fa_analyze/" + image_id + "/" + offset + directory + name,
-                        'driver' : "fa_dfvfs"
-                    }
-            }
-
-            json.append(meta_event)
-
-            if file_type == pytsk3.TSK_FS_META_TYPE_DIR and name != "." and name != "..":
-                try:
-                    json.extend(self.load_database(dfvfs_util, image_id, offset, image_path, index_name, directory + name + "/", address, port))
-                except Exception as error:
-                    logging.warn("[WARNING] - Failed to parse directory " + directory + name + "/")
-            elif file_type == pytsk3.TSK_FS_META_TYPE_REG:
-                my_file.close()
-
-        return json
-

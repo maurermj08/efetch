@@ -1,0 +1,43 @@
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" > 
+<head runat="server"> 
+    <title></title> 
+    <script type="text/javascript"> 
+       function hideLoading() { 
+            document.getElementById('divLoading').style.display = "none"; 
+            document.getElementById('divFrameHolder').style.display = "block"; 
+        } 
+    </script>
+    <style> 
+        iframe {
+            height: 100%;
+            width: 100%;
+            position:absolute; 
+            top:0; 
+            bottom:0; 
+            right:0;    
+            left:0;
+        }
+        img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-left: -(X/2)px;
+            margin-top: -(Y/2)px;
+        }    
+    </style>
+</head> 
+<body> 
+    <form id="form1" runat="server"> 
+    <div id="divLoading"> 
+        <img src="<!-- Load -->" alt="" /> 
+    </div> 
+    <div id="divFrameHolder" style="display:none"> 
+        <iframe src="<!-- Home -->" onload="hideLoading()" frameborder="0"> 
+        
+        </iframe> 
+    </div> 
+    </form> 
+</body> 
+</html> 

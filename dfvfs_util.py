@@ -13,6 +13,7 @@ import hashlib
 import logging
 import os
 import sys
+import pytsk3
 
 from dfvfs.credentials import manager as credentials_manager
 from dfvfs.helpers import source_scanner
@@ -69,6 +70,110 @@ class DfvfsUtil(object):
                     return myfile
                 continue
     
+    def GetJson(self, image_id, offset, image_path, address, port):
+        """Returns a full json version for Efetch"""
+        json = []
+
+        for base_path_spec in self.base_path_specs:
+            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
+            if file_entry is None:
+                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+            else:
+                json.extend(self._GetJson(image_id, offset, image_path, address, port, file_entry, ''))
+
+        return json
+
+    def _GetJson(self, image_id, offset, image_path, address, port, file_entry, curr_path):
+        """Returns a partial json version for Efetch"""
+        json = []
+        if file_entry.IsDirectory():
+            json.append(self._ConvertToJson(image_id, offset, image_path, address, port, file_entry, curr_path, file_entry.name))
+            for sub_file_entry in file_entry.sub_file_entries:
+                json.extend(self._GetJson(image_id, offset, image_path, address, port, sub_file_entry, curr_path + file_entry.name + "/"))
+        else:
+            json.append(self._ConvertToJson(image_id, offset, image_path, address, port, file_entry.GetFileObject(), curr_path, file_entry.name))
+        return json
+
+    def _ConvertToJson(self, image_id, offset, image_path, address, port, file_object, curr_path, name):
+        """Converts a dfVFS file_entry to an Efetch evidence json"""
+        index_name = 'efetch_timeline_' + image_id
+        tsk_object = file_object._tsk_file
+
+        if tsk_object.info.meta == None:
+            file_type = ''
+            inode = ''
+            mod = ''
+            acc = ''
+            chg = ''
+            cre = ''
+            size = ''
+            uid = ''
+            gid = ''
+        else:
+            file_type = tsk_object.info.meta.type
+            inode = str(tsk_object.info.meta.addr)
+            mod = str(tsk_object.info.meta.mtime)
+            acc = str(tsk_object.info.meta.atime)
+            chg = str(tsk_object.info.meta.ctime)
+            cre = str(tsk_object.info.meta.crtime)
+            size = str(tsk_object.info.meta.size)
+            uid = str(tsk_object.info.meta.uid)
+            gid = str(tsk_object.info.meta.gid)
+
+        dir_ref = image_id + "/" + offset + curr_path + name
+        inode_ref = image_id + "/" + offset + "/" + inode
+        ext = os.path.splitext(name)[1][1:] or ""
+
+        if file_type == None:
+            file_type_str = 'None'
+        elif file_type == pytsk3.TSK_FS_META_TYPE_REG:
+            file_type_str = 'regular'
+        elif file_type == pytsk3.TSK_FS_META_TYPE_DIR:
+            file_type_str = 'directory'
+        elif file_type == pytsk3.TSK_FS_META_TYPE_LNK:
+            file_type_str = 'link'
+        else:
+            file_type_str = str(file_type)
+
+        modtime = long(mod) if mod else 0
+        acctime = long(acc) if acc else 0
+        chgtime = long(chg) if chg else 0
+        cretime = long(cre) if cre else 0
+
+        if file_type != pytsk3.TSK_FS_META_TYPE_DIR:
+            file_object.close()
+
+        return {
+                '_index': index_name,
+                '_type' : 'event',
+                '_id' : dir_ref,
+                '_source' : {
+                    'id' : image_id + "/" + offset,
+                    'pid' : dir_ref,
+                    'iid' : inode_ref,
+                    'image_id': image_id,
+                    'offset' : offset,
+                    'image_path' : image_path,
+                    'name' : name,
+                    'path' : curr_path + name,
+                    'ext' : ext,
+                    'dir' : curr_path,
+                    'file_type' : file_type_str,
+                    'inode' : inode,
+                    'mod' : modtime,
+                    'acc' : acctime,
+                    'chg' : chgtime,
+                    'cre' : cretime,
+                    'size' : size,
+                    'uid' : uid,
+                    'gid' : gid,
+                    'thumbnail' : "http://" + address + ":" + port + "/plugins/fa_thumbnail/" + image_id + "/" + offset + curr_path + name,
+                    'analyze' : "http://" + address + ":" + port + "/plugins/fa_analyze/" + image_id + "/" + offset + curr_path + name,
+                    'driver' : "fa_dfvfs"
+                }
+        }
+
     def ListDir(self, dir_path, recursive=False):
         """Lists the contents of the provided directory, can be set to list recursively"""
         if dir_path.endswith('/'):
@@ -104,6 +209,7 @@ class DfvfsUtil(object):
                 if found:
                     return found
                 continue
+
     def DirExists(self, dir_path):
         """Returns true if the provided path is a directory or false if not"""
         paths = dir_path.split('/')
@@ -817,6 +923,8 @@ def Main():
     #dfvfs_util = DfvfsUtil("/mnt/ewf_mount1/ewf1")
     dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/xp-tdungan-10.3.58.7/xp-tdungan-c-drive/xp-tdungan-c-drive.E01")  
 
+    print(dfvfs_util.GetJson("epic", "0", "/mnt/ewf_mount1/ewf1", "localhost", "8080"))
+    sys.exit(0)
     try:
         #TEST GET FILE
         my_file = dfvfs_util.GetFile("/WINDOWS")
@@ -928,7 +1036,6 @@ def Main():
 
 
 if __name__ == '__main__':
-    sys.exit(0)
     if not Main():
         sys.exit(1)
     else:
