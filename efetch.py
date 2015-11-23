@@ -1,8 +1,9 @@
-from bottle import route, run, request, static_file
+from bottle import route, run, request, static_file, abort
 import os
 import sys
 import getopt
 import logging
+import json
 from utils.efetch_helper import EfetchHelper
 
 global address
@@ -85,40 +86,26 @@ def get_resource(resource_path):
         res_name = os.path.basename(full_path)    
         return static_file(res_name, root=res_dir)        
 
-@route('/plugins/<name>/')
-def plugin_empty(name):
-    """Returns the iframe of the given plugin for the given file"""
-    #Get Plugin
-    plugin = helper.plugin_manager.getPluginByName(str(name).lower())
+@route('/plugins/')
+def list_plugins():
+    """Returns a json object of all the plugins"""
+    plugin_list = []
+
+    for plugin in helper.plugin_manager.getAllPlugins():
+        plugin_list.append(plugin.name)
     
-    curr_file = None
-    file_cache_path = None
-    actual_mimetype = None
-    actual_size = None
-    children = None 
+    return json.dumps(plugin_list)
 
-    #Get Accept metadata
-    accept=request.headers.get("Accept")
-
-    #Return plugins frame
-    return plugin.plugin_object.get(curr_file, helper, file_cache_path, actual_mimetype, actual_size, address, port, request.query, children)
-
-@route('/plugins/<name>/<image_id>/<offset>/')
-def plugin(name, image_id, offset):
-    """Returns the iframe of the given plugin for the given file"""
-    return plugin(name, image_id, offset, u'/')
-
-#@route('/plugins/<name>/<image_id>/')
-@route('/plugins/<name>/<image_id>/<offset>/<path:path>')
-def plugin(name, image_id, offset, path):
+@route('/plugins/<args:path>')
+def plugins(args):
     """Returns the iframe of the given plugin for the given file"""
     file_cache_path = None
     actual_mimetype = None
     actual_size = None
-    if path == 'p/':
-        path = '/'
 
-    #Get Plugin
+    args_list = args.split('/')
+
+    name = str(args_list.pop(0))
     plugin = helper.plugin_manager.getPluginByName(str(name).lower())
 
     if not plugin:
@@ -131,25 +118,50 @@ def plugin(name, image_id, offset, path):
     children = None
 
     if plugin.plugin_object.parent():
-        children = image_id + "/" + offset + "/" + path
-    elif path:
-        #Get file from database
-        curr_file = helper.db_util.get_file(image_id, offset, str(path))
-    
-        #Cache file
-        if plugin.plugin_object.cache():
-            file_cache_path = helper.cache_file(curr_file)
-      
-        if file_cache_path:
-            #Get mimetype and size
-            actual_mimetype = helper.get_mimetype(file_cache_path)
-            actual_size = os.path.getsize(file_cache_path)
+        children = '/'.join(args_list)
+    else:
+        #Image ID
+        if args_list:
+            image_id = args_list.pop(0)
+        else:
+            image_id = None
+
+        #Offset
+        if args_list:
+            offset = args_list.pop(0)
+        else:
+            offset = None
+
+        #Path
+        if args_list:
+            path = '/'.join(args_list)
+        else:
+            path = None
+        if offset and not path:
+            path = '/'
+        
+        if path:
+            #Remove random P, #TODO Resolve issue at source and remove this patch
+            if path.startswith('p/'):
+                path = path[1:]
+
+            #Get file from database
+            curr_file = helper.db_util.get_file(image_id, offset, str(path))
+        
+            #Cache file
+            if plugin.plugin_object.cache():
+                file_cache_path = helper.cache_file(curr_file)
+          
+            if file_cache_path:
+                #Get mimetype and size
+                actual_mimetype = helper.get_mimetype(file_cache_path)
+                actual_size = os.path.getsize(file_cache_path)
 
     #Get Accept metadata
     accept=request.headers.get("Accept")
-
+    
     #Return plugins frame
-    return plugin.plugin_object.get(curr_file, helper, file_cache_path, actual_mimetype, actual_size, address, port, request.query, children)
+    return plugin.plugin_object.get(curr_file, helper, file_cache_path, actual_mimetype, actual_size, address, port, request, children)
 
 def usage():
     print("usage: efetch.py [-h] [-a ADDRESS] [-p PORT] [-o DIR ] [-s SIZE] [-d] [-D DATABASE] [-m maxfilesize]")

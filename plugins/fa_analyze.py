@@ -43,7 +43,7 @@ class FaAnalyze(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
         """Provides a web view with all applicable plugins, defaults to most popular"""
         
         #Add Directoy link

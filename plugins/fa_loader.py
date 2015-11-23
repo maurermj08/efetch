@@ -42,13 +42,19 @@ class FaLoader(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/loader_template.html', 'r')
         html = str(template.read())
-        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children)
+        
+        if request.query_string:
+            query_string = "?" + request.query_string
+        else:
+            query_string = ""
+
+        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children + query_string)
         html = html.replace('<!-- Load -->', "http://" + address + ":" + port + "/resources/loader.gif")
 
         return html

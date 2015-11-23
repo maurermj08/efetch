@@ -43,7 +43,7 @@ class FaThumbnail(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
         """Returns either an icon or thumbnail of the provided file"""
         #If it is folder just return the folder icon
         if curr_file['file_type'] == 'directory' or str(curr_file['name']).strip() == "." or str(curr_file['name']).strip() == "..":

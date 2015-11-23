@@ -1,0 +1,10 @@
+[Core]
+Name = fa_loader
+Module = fa_loader
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Displays a loading gif while its child plugin loads
+Copyright = 2015

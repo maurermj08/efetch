@@ -45,10 +45,10 @@ class FaTsk(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
-        offset = request_query['offset']
-        path = request_query['path']
-        image_id = request_query['image_id']
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+        offset = request.query['offset']
+        path = request.query['path']
+        image_id = request.query['image_id']
         self.add_image(image_id, offset, path, helper.db_util, address, port)
         return '<xmp style="white-space: pre-wrap;">DONE</xmp>'
     

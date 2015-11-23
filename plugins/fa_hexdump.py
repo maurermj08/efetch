@@ -42,7 +42,7 @@ class FaHexdump(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request_query, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         input_file = open(path_on_disk, 'rb')
         return "<xmp>" + self.hex_dump(input_file.read()) + "</xmp>"
