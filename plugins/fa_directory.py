@@ -84,6 +84,7 @@ class FaDirectory(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/dir_template.html', 'r')
         html = str(template.read())
+        template.close()
         html = html.replace('<!-- Table -->', '\n'.join(listing))
 
         return html

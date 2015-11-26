@@ -1,0 +1,10 @@
+[Core]
+Name = fa_regview
+Module = fa_regview
+
+[Documentation]
+Author = Bob Roberson
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Lazy loading registry viewer
+Copyright = 2015

@@ -62,7 +62,7 @@ class FaAnalyze(IPlugin):
                     #Check if plugin applies to curr file
                     if plugin.plugin_object.check(curr_file, path_on_disk, mimetype, size):
                         logging.debug("Check matched, adding plugin " + plugin.plugin_object.display_name())
-                        plugins.append('<a href="http://' + address + ':' + port + '/plugins/fa_loader/' + plugin.name + '/' + curr_file['image_id'] + '/' + curr_file['offset'] + '/p' + curr_file['path'] + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
+                        plugins.append('<a href="http://' + address + ':' + port + '/plugins/fa_loader/' + plugin.name + '/' + curr_file['image_id'] + '/' + curr_file['offset'] + '/' + curr_file['path'] + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
                     else:
                         logging.debug("Check did not match, NOT adding plugin " + plugin.plugin_object.display_name())
 
@@ -71,7 +71,8 @@ class FaAnalyze(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/analyze_template.html', 'r')
         html = str(template.read())
-        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/fa_loader/fa_directory/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/p' + curr_file['path'])
+        template.close()
+        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/fa_loader/fa_directory/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/' + curr_file['path'])
         
         if curr_file['file_type'] == 'directory':
             html = html.replace('<!-- File -->', curr_file['name'])
