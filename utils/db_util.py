@@ -57,13 +57,22 @@ class DBUtil(object):
             }
         elasticsearch.indices.put_template(name="efetch_timeline", body=template)
 
+    def get_file_from_ppid(self, ppid, abort_on_error=True):
+        """Returns the file object for the given file in the database"""
+        ppid_split = str(ppid).split('/')
+        image_id = ppid_split[0]
+        offset = ppid_split[1]
+        path = '/'.join(ppid_split[2:])
+
+        return self.get_file(image_id, offset, path, abort_on_error)
+
     def get_file(self, image_id, offset, path, abort_on_error=True):
         """Returns the file object for the given file in the database"""
         if path.endswith('/') and path != '/':
             path = path[:-1]
         #TODO: THIS NEEDS REMOVED? need to figure out why it happens sometimes and not others
-        if str(path).startswith('p/'):
-            path = str(path)[1:]
+        #if str(path).startswith('p/'):
+        #    path = str(path)[1:]
         if str(path).startswith('/'):
             path = str(path)[1:]
 
