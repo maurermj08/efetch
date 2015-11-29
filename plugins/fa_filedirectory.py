@@ -59,9 +59,9 @@ class FaDirectory(IPlugin):
                 listing.append("    <tr>") 
                 listing.append('        <td><img src="http://' + address + ':' + port + '/plugins/fa_thumbnail/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" alt="-" style="width:32px;height:32px;"></td>')
                 if source['file_type'] == 'directory':
-                    listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_filedirectory/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_self">' + source['name'] + "</a></td>")
+                    listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_file_analyze/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="file_dir_frame">' + source['name'] + "</a></td>")
                 else:
-                    listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_filedirectory/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_self">' + source['name'] + "</a></td>")
+                    listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_file_analyze/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="file_dir_frame">' + source['name'] + "</a></td>")
                 if (source['mod']):
                     listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['mod']))) + "</td>")
                 else:
@@ -88,7 +88,7 @@ class FaDirectory(IPlugin):
         template.close()
         html = html.replace('<!-- Table -->', '\n'.join(listing))
 
-        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/fa_loader/fa_analyze/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/' + curr_file['path'])
+        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/fa_loader/fa_file_analyze/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/' + curr_file['path'])
 
         return html
 

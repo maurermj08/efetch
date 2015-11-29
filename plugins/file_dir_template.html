@@ -3,10 +3,7 @@
 <head>
 <style>
     table {
-        height: 100%;
-        width: 100%;
         overflow-y: scroll;
-        display: block;
     }
     table, th, td {
         border: 0px;
@@ -29,6 +26,7 @@
 
     #top {
         position: absolute;
+        overflow-x: auto;
         top: 0;
         right: 5px;
         height: 50%;
@@ -45,7 +43,7 @@
         padding: 0px;
     }
 
-    #frame {
+    #file_dir_frame {
         height: 100%;
         width: 100%;
         border: none;
@@ -69,7 +67,7 @@
         </table>
         </div>
         <div id="bottom">
-            <iframe name="frame" id="frame" target="self" src="<!-- Home -->"></iframe>
+            <iframe name="file_dir_frame" id="file_dir_frame" target="self" src="<!-- Home -->"></iframe>
         </div>
 
 

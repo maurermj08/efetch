@@ -1,0 +1,10 @@
+[Core]
+Name = fa_overview
+Module = fa_overview
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Gets an overview of the file without using cache
+Copyright = 2015
