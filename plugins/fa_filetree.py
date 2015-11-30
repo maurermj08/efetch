@@ -39,7 +39,7 @@ class FaRegview(IPlugin):
 
     def parent(self):
         """Returns if the plugin accepts other plugins (True) or only files (False)"""
-        return False
+        return True
 
     def cache(self):
         """Returns if caching is required"""
@@ -60,12 +60,29 @@ class FaRegview(IPlugin):
                     'lazy': True,
                     }])
 
+        child_plugins = ''
+
+        if children and curr_file['image_id'] in children:
+            child_plugins = str(children).split(curr_file['image_id'])[0]
+        if not child_plugins:
+            child_plugins = 'fa_loader/fa_filedirectory/fa_file_analyze/'
+        if not children:
+            children = 'fa_loader/fa_filedirectory/fa_file_analyze/'
+
+        if request.query_string:
+            query_string = "?" + request.query_string
+        else:
+            query_string = ""
+
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/filetree_template.html', 'r')
         html = str(template.read())
         html = html.replace("<!-- Path -->", curr_file['image_id'] + '/' + curr_file['offset'] + '/' + curr_file['path'])
-        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/fa_loader/fa_filedirectory/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/' + curr_file['path'])
-        html = html.replace('<!-- Child -->', "http://" + address + ":" + port + "/plugins/fa_loader/fa_filedirectory/")
+        if str(children).startswith(curr_file['image_id']):
+            html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + child_plugins + children + query_string)
+        else:
+            html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children + query_string)
+        html = html.replace('<!-- Child -->', "http://" + address + ":" + port + "/plugins/" + child_plugins + query_string)
         template.close()
 
         return html

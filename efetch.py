@@ -119,43 +119,51 @@ def plugins(args):
 
     if plugin.plugin_object.parent():
         children = '/'.join(args_list)
+        #Updates the args list so parent plugins can get imaged_id, offset, and path
+        while args_list and helper.plugin_manager.getPluginByName(args_list[0]) and helper.plugin_manager.getPluginByName(args_list[0]).plugin_object.parent():
+            print("HERE: " + args_list.pop(0))
+        if args_list and helper.plugin_manager.getPluginByName(args_list[0]):
+            args_list.pop(0)
+
+    #Image ID
+    if args_list:
+        image_id = args_list.pop(0)
     else:
-        #Image ID
-        if args_list:
-            image_id = args_list.pop(0)
-        else:
-            image_id = None
+        image_id = None
 
-        #Offset
-        if args_list:
-            offset = args_list.pop(0)
-        else:
-            offset = None
+    #Offset
+    if args_list:
+        offset = args_list.pop(0)
+    else:
+        offset = None
 
-        #Path
-        if args_list:
-            path = '/'.join(args_list)
-        else:
-            path = None
-        if offset and not path:
-            path = '/'
-        
-        if path:
-            #Remove random P, #TODO Resolve issue at source and remove this patch
-            if path.startswith('p/'):
-                path = path[1:]
+    #Path
+    if args_list:
+        path = '/'.join(args_list)
+    else:
+        path = None
+    if offset and not path:
+        path = '/'
+    
+    if path:
+        #Remove random P, #TODO Resolve issue at source and remove this patch
+        if path.startswith('p/'):
+            path = path[1:]
 
-            #Get file from database
+        #Get file from database
+        try:
             curr_file = helper.db_util.get_file(image_id, offset, str(path))
-        
-            #Cache file
-            if plugin.plugin_object.cache():
-                file_cache_path = helper.cache_file(curr_file)
-          
-            if file_cache_path:
-                #Get mimetype and size
-                actual_mimetype = helper.get_mimetype(file_cache_path)
-                actual_size = os.path.getsize(file_cache_path)
+        except:
+            abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '" at offset "' + offset + '"')
+
+        #Cache file
+        if plugin.plugin_object.cache():
+            file_cache_path = helper.cache_file(curr_file)
+      
+        if file_cache_path:
+            #Get mimetype and size
+            actual_mimetype = helper.get_mimetype(file_cache_path)
+            actual_size = os.path.getsize(file_cache_path)
 
     #Get Accept metadata
     accept=request.headers.get("Accept")
