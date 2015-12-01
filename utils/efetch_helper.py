@@ -12,7 +12,7 @@ class EfetchHelper(object):
     global pymagic
     global my_magic
 
-    def __init__(self, curr_directory, output_directory, max_file_size, es_url=None):
+    def __init__(self, curr_directory, output_directory, upload_directory, max_file_size, es_url=None):
         """Initializes the Efetch Helper"""
         global pymagic
         global my_magic
@@ -22,6 +22,7 @@ class EfetchHelper(object):
         #Setup directory references
         self.curr_dir = curr_directory
         self.output_dir = output_directory
+        self.upload_dir = upload_directory
         self.resource_dir = self.curr_dir + "/resources/"
         self.icon_dir = self.curr_dir + "/icons/"
         if not os.path.isdir(self.icon_dir):

@@ -37,6 +37,7 @@ def main(argv):
     #MOVE DIRS TO HELPER (NOT CURR & OUTPUT)
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     output_dir = curr_dir + "/cache/"
+    upload_dir = curr_dir + "/uploads/"
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
 
@@ -68,7 +69,7 @@ def main(argv):
         sys.exit(2)
 
     #Initialize utils
-    helper = EfetchHelper(curr_dir, output_dir, max_download_size * 1000000)
+    helper = EfetchHelper(curr_dir, output_dir, upload_dir, max_download_size * 1000000)
     test = helper.db_util
     manager = helper.plugin_manager
 
@@ -97,6 +98,7 @@ def list_plugins():
     return json.dumps(plugin_list)
 
 @route('/plugins/<args:path>')
+@route('/plugins/<args:path>', method='POST')
 def plugins(args):
     """Returns the iframe of the given plugin for the given file"""
     file_cache_path = None
