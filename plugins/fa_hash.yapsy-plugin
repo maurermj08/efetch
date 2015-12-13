@@ -1,0 +1,10 @@
+[Core]
+Name = fa_hash
+Module = fa_hash
+
+[Documentation]
+Author = Robert Roberson
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Get the hash of a file
+Copyright = 2015
