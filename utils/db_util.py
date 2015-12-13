@@ -120,3 +120,22 @@ class DBUtil(object):
 
     def bulk(self, json):
         helpers.bulk(elasticsearch, json)
+
+
+    def update_by_ppid(self, ppid, update, abort_on_error=True):
+        """Returns the file object for the given file in the database"""
+        ppid_split = str(ppid).split('/')
+        image_id = ppid_split[0]
+        offset = ppid_split[1]
+        path = '/'.join(ppid_split[2:])
+        print("path: " + path + ", offset: " + offset + ", image_id: " + image_id)
+        self.update(ppid, image_id, update, abort_on_error)
+
+    def update(self, ppid, image_id, update, abort_on_error=True):
+        #try:
+        elasticsearch.update(index='efetch_timeline_' + image_id, doc_type='event', id=ppid, body={'doc': update})
+        #except:
+        #    if abort_on_error:
+        #        abort(404, "Could not update document with id: " +image_id + '/' + offset + '/' + path)
+        #    else:
+        #        return
