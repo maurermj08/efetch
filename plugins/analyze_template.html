@@ -4,7 +4,42 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta http-equiv="content-type" content="text/html; charset=us-ascii" />
+    <script src="/resources/jquery-1.11.3.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/resources/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
+    <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
+
     <style>
+        #nav {
+            line-height:30px;
+            height:100%;
+            width:400px;
+            float:left;
+            padding:0px;
+        }
+        #section {
+            width:calc(100% - 420px);
+            height:calc(100% - 10px);
+            padding:0px;
+        }
+        .panel-body {
+            font-size: inherit; !important
+        }
+        .layout-button-left {
+            padding-left: 0px; !important
+        }
+        .layout-button-right {
+            padding-left: 0px; !important
+        }
+        html{
+            height: 100%;
+        }
+
+        body {
+            min-height: 100%;
+            margin: 0px;
+        }
+
         a {
             display:block;
             color: #FFFFFF;
@@ -32,15 +67,9 @@
             line-height:20px;
             background-color:#4488E8;
             height:100%;
-            width:180px;
+            width:100%;
             float:left;          
-        }
-
-        body {
-            margin-left: 0px;
-            margin-top: 0px;
-            margin-right: 0px;
-            margin-bottom: 0px;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         #main {
@@ -49,16 +78,13 @@
             height: 100%;
             width: calc(100% - 80px);
             float: bottom;
-            font-family: Arial, Helvetica, sans-serif;
         }
 
         #iframe {
-            position: absolute;
             top: 0px;
             right: 0px;
-            left: 180px;
             height: 100%;
-            width: calc(100% - 100px);
+            width: 100%;
             border: none;
         }
 
@@ -67,23 +93,28 @@
 </head>
 
 <body>
-    <div id="main">
-        <div id="nav">
-            <p><b>
-            <!-- File -->
-            </b><br /></p>
-            <p align="right">
-            <!-- Mimetype -->
-            <br />
-            <!-- Size -->
-            <br /></p>
-            <hr />
-            <br />
-            <!-- Links -->
-            <!-- Links End -->
+        <div class="easyui-layout" style="width:100%;height:100%;">
+            <div data-options="region:'west',hideCollapsedContent:false,split:true" title="Plugins" style="width:200px;background-color: #4488E8;">
+            <div id="nav">
+                <p><b>
+                <!-- File -->
+                </b><br /></p>
+                <p align="right">
+                <!-- Mimetype -->
+                <br />
+                <!-- Size -->
+                <br /></p>
+                <hr />
+                <br />
+                <!-- Links -->
+                <!-- Links End -->
+            </div>    
+            </div>
+            <div data-options="region:'center',title:''">
+                <iframe name="frame" id="iframe" src="<!-- Home -->"></iframe>
+            </div>
         </div>
-        <iframe name="frame" id="iframe" src="<!-- Home -->"></iframe>
-    </div>
+
 </body>
 </html>
 
