@@ -56,7 +56,7 @@ class FaDirectory(IPlugin):
         for item in helper.db_util.list_dir(helper.db_util.get_file(curr_file['image_id'], curr_file['offset'], curr_folder)):
             source = item['_source']
             listing.append("    <tr>") 
-            listing.append('        <td><img src="http://' + address + ':' + port + '/plugins/fa_thumbnail/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" alt="-" style="width:32px;height:32px;"></td>')
+            listing.append('        <td><img src="http://' + address + ':' + port + '/plugins/fa_thumbnail/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" alt="' + source['file_type'] + '-' + source['ext'] + '" title="' + source['file_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
             if source['file_type'] == 'directory':
                 listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_directory/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_self">' + source['name'] + "</a></td>")
             else:

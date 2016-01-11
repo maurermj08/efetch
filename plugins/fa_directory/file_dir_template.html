@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+        <script src="/resources/jquery-1.11.3.min.js"></script>
+        <script src="/resources/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
+        <link rel="stylesheet" type="text/css" href="/resources/themes/default/easyui.css">
+        <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
+        <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
+        <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
+        <script type="text/javascript" src="/resources/jquery.dataTables.min.js"></script>
+        <script type="text/javascript" src="/resources/dataTables.title-string.js"></script>
+        <script type="text/javascript" class="init">
+                
+        $(document).ready(function() {
+                    $('#t01').DataTable({
+                            "paging": false,
+                            "info": false,
+                            "searching": false,
+                            "order": [[ 1, "asc" ]],
+                            "columnDefs": [
+                                { type: 'title-string', targets: 0 }
+                            ],
+                            "orderClasses": false
+                            }
+                    );
+            } );
+        </script>
+
+<style>
+    table {
+        overflow-y: scroll;
+        width: 100%;
+    }
+    table, th, td {
+        border: 0px;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 5px;
+        text-align: left;
+    }
+    table#t01 tr:nth-child(even) {
+        background-color: #fff;
+    }
+    table#t01 tr:nth-child(odd) {
+       background-color:#eee;
+    }
+    table#t01 th {
+        background-color: #E9F1FF;
+        color: #0E2D87;
+    }
+    html{
+        height: 100%;
+    }
+
+    body {
+        min-height: 100%;
+        margin: 0px;
+    }
+
+    #file_dir_frame {
+        height: 99%;
+        width: 100%;
+        border: none;
+    }
+</style>
+</head>
+    <body>
+        <div class="easyui-layout" style="width:100%;height:100%;">
+        <div data-options="region:'north',split:true" style="height:300px">
+            <table id="t01" class="display">
+                <thead>
+                <tr>
+                    <th>Icon</th>
+                    <th>Name</th>
+                    <th>Modified</th>
+                    <th>Accessed</th>
+                    <th>Changed</th>
+                    <th>Created</th>
+                    <th>Size (Bytes)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Table -->
+                </tbody>
+            </table>
+        </div>
+        <div data-options="region:'center'">
+            <iframe name="file_dir_frame" id="file_dir_frame" target="self" src="<!-- Home -->"></iframe>
+        </div>
+    </div>
+ 
+    </body>
+</html>

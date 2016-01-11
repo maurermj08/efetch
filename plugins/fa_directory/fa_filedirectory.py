@@ -68,7 +68,7 @@ class FaFileDirectory(IPlugin):
             source = item['_source']
             if source['file_type'] != 'directory':
                 listing.append("    <tr>") 
-                listing.append('        <td><img src="http://' + address + ':' + port + '/plugins/fa_thumbnail/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" alt="-" style="width:32px;height:32px;"></td>')
+                listing.append('        <td><img src="http://' + address + ':' + port + '/plugins/fa_thumbnail/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" alt="' + source['file_type'] + '-' + source['ext'] + '" title="' + source['file_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
                 if source['file_type'] == 'directory':
                     listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/' + child_plugins + source['image_id'] + '/' + source['offset'] + source['path'] + query_string + '" target="file_dir_frame">' + source['name'] + "</a></td>")
                 else:

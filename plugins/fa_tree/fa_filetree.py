@@ -54,7 +54,7 @@ class FaRegview(IPlugin):
             return self.get_child(request_file, helper)
         elif 'mode' in request.query and request.query['mode'] == 'root':
             return json.dumps([{
-                    'title': curr_file['image_id'] + ' at offset ' + curr_file['offset'] + '- /',
+                    'title': curr_file['image_id'] + ' at offset ' + curr_file['offset'] + '- ' + curr_file['path'],
                     'key': curr_file['pid'],
                     'folder': True,
                     'lazy': True,
@@ -83,6 +83,7 @@ class FaRegview(IPlugin):
         else:
             html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children + query_string)
         html = html.replace('<!-- Child -->', "http://" + address + ":" + port + "/plugins/" + child_plugins + query_string)
+        html = html.replace('<!-- Name -->', 'Navigate')
         template.close()
 
         return html

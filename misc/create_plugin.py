@@ -11,6 +11,7 @@ global cname
 global check
 global get
 global imports
+global popularity
 
 def main(argv):
     global name
@@ -21,12 +22,13 @@ def main(argv):
     global check
     global get
     global imports
+    global popularity
     
     name = ""
     author = ""
     description = ""
     cname = ""
-    popularity = 5
+    popularity = "5"
     check = "return True"
     get = 'return \'<xmp style="white-space: pre-wrap;">TODO</xmp>\''
     imports = []
@@ -114,10 +116,7 @@ def get_description():
 
 def get_popularity():
     global popularity
-    try:
-        popularity = int(raw_input("Popularity, 0(Hidden) 1(low) - 10(high): "))
-    except:
-        popularity = 5
+    popularity = raw_input("Popularity, 0(Hidden) 1(low) - 10(high): ")
 
 def get_imports():
     global imports

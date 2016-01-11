@@ -1,5 +1,5 @@
 <html xmlns="http://www.w3.org/1999/xhtml" > 
-<head > 
+<head> 
     <style> 
         iframe {
             height: calc(100% - 38px);
@@ -37,15 +37,15 @@
 <body> 
         <div style="margin:0px 0;"></div>
         <div class="easyui-panel" style="padding:5px;width:100%;border-left-style: none;border-right-style: none;">
-            <a href="javascript:void(0)" class="easyui-linkbutton" onclick="$('#w').window('open')" data-options="plain:true">Add</a>
-            <a href="#" class="easyui-menubutton" data-options="menu:'#mm1',iconCls:'icon-edit'">Edit</a>
-            <a href="#" class="easyui-menubutton" data-options="menu:'#mm2',iconCls:'icon-help'">Help</a>
-            <a href="#" class="easyui-menubutton" data-options="menu:'#mm3'">About</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" onclick="$('#w').window('open')" data-options="plain:true,iconCls:'icon-add'">New Evidence</a>
+            <a href="#" class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-add'">Existing Evidence</a>
+            <a href="#" class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-remove'">Evidence</a>
+            <a href="#" class="easyui-menubutton" data-options="menu:'#view'">View</a>
         </div>
         <div id="w" class="easyui-window" title="Add Evidence" data-options="closed:true,iconCls:'icon-save'" style="width:340px;height:280px;padding:10px;">
             <iframe src="<!-- Upload -->" style="width:100%;height:100%"></iframe>
         </div>
-        <div id="mm1" style="width:150px;">
+        <div id="view" style="width:150px;">
             <div data-options="iconCls:'icon-undo'">Undo</div>
             <div data-options="iconCls:'icon-redo'">Redo</div>
             <div class="menu-sep"></div>
@@ -66,15 +66,6 @@
             </div>
             <div data-options="iconCls:'icon-remove'">Delete</div>
             <div>Select All</div>
-        </div>
-        <div id="mm2" style="width:100px;">
-            <div>Help</div>
-            <div>Update</div>
-            <div>About</div>
-        </div>
-        <div id="mm3" class="menu-content" style="background:#f0f0f0;padding:10px;text-align:left">
-            <img src="http://www.jeasyui.com/images/logo1.png" style="width:150px;height:50px">
-            <p style="font-size:14px;color:#444;">Try jQuery EasyUI to build your modern, interactive, javascript applications.</p>
         </div>
     <div id="bottom"> 
         <iframe src="<!-- Home -->"> 

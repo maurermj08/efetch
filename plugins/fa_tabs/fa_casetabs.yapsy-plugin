@@ -1,0 +1,10 @@
+[Core]
+Name = fa_casetabs
+Module = fa_casetabs
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Displays case manager and open cases in tabs
+Copyright = 2015
