@@ -1,11 +1,11 @@
 """
-Allows for the adding, deleting, and modifying of cases
+CRUD for Efetch Cases
 """
 
 from yapsy.IPlugin import IPlugin
-import os
+import json
 
-class FaCasemanager(IPlugin):
+class FaCase(IPlugin):
 
     def __init__(self):
         IPlugin.__init__(self)
@@ -20,7 +20,7 @@ class FaCasemanager(IPlugin):
 
     def display_name(self):
         """Returns the name displayed in the webview"""
-        return "Case Manager"
+        return "Case API"
 
     def check(self, curr_file, path_on_disk, mimetype, size):
         """Checks if the file is compatable with this plugin"""
@@ -44,24 +44,4 @@ class FaCasemanager(IPlugin):
 
     def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        cases = helper.db_util.read_case()['hits']['hits']
-        table = []
-        for case in cases:
-            source = case['_source']
-            name = source['name']
-            description = ""
-            evidence = []
-            if source['description']:
-                description = source['description']
-            if source['evidence']:
-                evidence = source['evidence']
-            table.append('<tr><td>' + name + '</td><td>' + description + '</td><td>' + ','.join(evidence) + '</td></tr>')
-        
-        html = ""
-        curr_dir = os.path.dirname(os.path.realpath(__file__))
-        template = open(curr_dir + '/case_manager_template.html', 'r')
-        html = str(template.read())
-        template.close()
-
-        html = html.replace('<!-- Table -->', '\n'.join(table))
-        return html
+        return '<xmp style="white-space: pre-wrap;">TODO</xmp>'

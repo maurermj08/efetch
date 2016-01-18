@@ -20,6 +20,28 @@ class DBUtil(object):
         elasticsearch.indices.create(index='efetch-log',ignore=400)
         elasticsearch.indices.create(index='efetch-cases',ignore=400)
         elasticsearch.indices.create(index='efetch-evidence',ignore=400)
+        case_template = {
+            "template" : "efetch-cases",
+            "settings" : {
+                "number_of_shards" : 1
+                },
+            "mapping" : {
+                "_default_" : {
+                    "_source" : { "enabled" : True },
+                    "properties" : {
+                        "name" : {"type": "string", "index" : "not_analyzed"},
+                        "description" : {"type": "string", "index" : "analyzed"},
+                        "evidence" : {
+                            "properties" : {
+                                    "evidence" : {"type" : "string", "index" : "not_analyzed" }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        elasticsearch.indices.put_template(name="efetch-case", body=case_template)
+
         template = {
             "template" : "efetch_timeline*",
             "settings" : {
@@ -66,13 +88,68 @@ class DBUtil(object):
 
         return self.get_file(image_id, offset, path, abort_on_error)
 
+    def create_case(self, name, description, evidence):
+        if not name:
+            return
+        case = {
+                    '_index': 'efetch-cases',
+                    '_type' : 'case',
+                    '_id' : name,
+                    '_source' : {
+                        'name' : name,
+                        'description' : description,
+                        'evidence' : evidence
+                    }
+            }
+        json = []
+        json.append(case)
+        helpers.bulk(elasticsearch, json)
+        return
+
+    #TODO switch to actual update
+    def update_case(self, name, new_name, description, evidence):
+        """Updates the current case"""
+        self.delete_case(name)
+        return self.create_case(new_name, description, evidence)
+
+    def add_evidence_to_case(self, name, evidence, abort_on_error=True):
+        """Adds a list of evidence to a given case by using the update_case method"""
+        case = self.read_case(name)
+        curr_evidence = case['_source']['evidence']
+        description = case['_source']['description']
+        return self.update_case(name, name, description, curr_evidence + evidence)
+
+    def remove_evidence_from_case(self, name, evidence, abort_on_error=True):
+        """Removes a list of evidence from a given case by using the update_case method"""
+        case = self.read_case(name)
+        curr_evidence = case['_source']['evidence']
+        description = case['_source']['description']
+        return self.update_case(name, name, description, [e for e in curr_evidence if e not in evidence])
+
+    def get_evidence(self, name=None, abort_on_error=True):
+        if not name:
+            indices = elasticsearch.indices.get_aliases().keys()
+            evidence = []
+            for index in sorted(indices):
+                if str(index).startswith('efetch_timeline_'):
+                    evidence.append(index[16:])
+            return evidence
+        else:
+            return self.read_case(name)['_source']['evidence']
+
+    def read_case(self, name=None, abort_on_error=True):
+        if not name:
+            return elasticsearch.search(index='efetch-cases', doc_type='case')
+        return elasticsearch.get(index='efetch-cases', doc_type='case', id=name)
+
+    def delete_case(self, name):
+        elasticsearch.delete(index='efetch-cases', doc_type='case', id=name)
+        return
+
     def get_file(self, image_id, offset, path, abort_on_error=True):
         """Returns the file object for the given file in the database"""
         if path.endswith('/') and path != '/':
             path = path[:-1]
-        #TODO: THIS NEEDS REMOVED? need to figure out why it happens sometimes and not others
-        #if str(path).startswith('p/'):
-        #    path = str(path)[1:]
         if str(path).startswith('/'):
             path = str(path)[1:]
 
@@ -110,7 +187,7 @@ class DBUtil(object):
                         "dir" : query_dir
                         } 
                     },
-                "size" : 32000
+                "size" : 64000
                 }
         result = elasticsearch.search(index='efetch_timeline_' + directory['image_id'], body=query,)
         return result['hits']['hits']
@@ -120,7 +197,6 @@ class DBUtil(object):
 
     def bulk(self, json):
         helpers.bulk(elasticsearch, json)
-
 
     def update_by_ppid(self, ppid, update, abort_on_error=True):
         """Returns the file object for the given file in the database"""

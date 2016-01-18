@@ -25,7 +25,7 @@
     
     ul.fancytree-container {
         width: 395px;
-        height: 95vh;
+        height: 100%;
         float: left;
         overflow: auto !important;
         position: fixed;
@@ -55,7 +55,6 @@
         <script>
               $(function() {
             $('#tree').fancytree({
-                source: { url: '/plugins/fa_filetree/<!-- Path -->/?mode=root' },
                 autoScroll: true,
                 init: function(event, data) {
                     data.tree.getFirstChild().setFocus();
@@ -65,17 +64,18 @@
                 },
                 activate: function(event, data) {
                     node = data.node;
-                    var url = '<!-- Child -->' + node.key
+                    var url = '<!-- Child -->' + node.title + '<!-- Query -->'
                     document.getElementById('tree_frame').src = url 
                 },
-                lazyLoad: function(event, data) {
-                    var node = data.node;
-                    console.log(node);
-                    // Issue an ajax request to load child nodes
-                    data.result = {
-                        url: "/plugins/fa_filetree/<!-- Path -->/",
-                        data: {mode: "children", parent: node.key},
-                    };
+                loadChildren: function(event, data) {
+                    var children = data.node.getChildren();
+
+                    for (var i = 0; i < children.length; i++) {
+                        if (!children[i].isFolder()) {
+                            children[i].data.icon = "/resources/images/Farm-Fresh_drive_magnify.png";
+                            children[i].renderTitle();
+                        }
+                    }
                 }
             });
         });
@@ -84,7 +84,11 @@
     <body>
         <div class="easyui-layout" data-options="fit:true" style="width:100%;height:100%;">
             <div data-options="region:'west',hideCollapsedContent:false,split:true" title="<!-- Name -->" style="width:200px;">
-                <div id="tree" class="registry-tree"></div>
+                <div id="tree" class="registry-tree">
+                    <ul>
+                    <!-- Tree -->
+                    </ul>
+                </div>
             </div>
             <div data-options="region:'center',title:''">
                 <iframe name="tree_frame" id="tree_frame" src="<!-- Home -->"></iframe>

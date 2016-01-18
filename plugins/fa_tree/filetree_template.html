@@ -25,7 +25,7 @@
     
     ul.fancytree-container {
         width: 395px;
-        height: 95vh;
+        height: 100%;
         float: left;
         overflow: auto !important;
         position: fixed;
@@ -65,7 +65,7 @@
                 },
                 activate: function(event, data) {
                     node = data.node;
-                    var url = '<!-- Child -->' + node.key
+                    var url = '<!-- Child -->' + node.key + '<!-- Query -->'
                     document.getElementById('tree_frame').src = url 
                 },
                 lazyLoad: function(event, data) {

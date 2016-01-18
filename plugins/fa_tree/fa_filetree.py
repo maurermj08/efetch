@@ -82,7 +82,8 @@ class FaRegview(IPlugin):
             html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + child_plugins + children + query_string)
         else:
             html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children + query_string)
-        html = html.replace('<!-- Child -->', "http://" + address + ":" + port + "/plugins/" + child_plugins + query_string)
+        html = html.replace('<!-- Child -->', "http://" + address + ":" + port + "/plugins/" + child_plugins)
+        html = html.replace('<!-- Query -->', query_string)
         html = html.replace('<!-- Name -->', 'Navigate')
         template.close()
 

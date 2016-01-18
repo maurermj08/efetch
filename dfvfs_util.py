@@ -635,7 +635,9 @@ class DfvfsUtil(object):
                     u'All partitions can be defined as: "all". Note that you '
                     u'can abort with Ctrl^C.')
 
-            selected_volume_identifier = sys.stdin.readline()
+            #selected_volume_identifier = sys.stdin.readline()
+            #TODO NEED TO ADD WAY FOR USER TO SPECIFY AND THEN SAVE VALUE
+            selected_volume_identifier = "0"
             selected_volume_identifier = selected_volume_identifier.strip()
 
             if not selected_volume_identifier.startswith(u'p'):
@@ -719,9 +721,10 @@ class DfvfsUtil(object):
             print(u'as "all". If no stores are specified none will be processed. You')
             print(u'can abort with Ctrl^C.')
 
-            selected_vss_stores = sys.stdin.readline()
-
-            selected_vss_stores = selected_vss_stores.strip()
+            #TODO USER INPUT
+            #selected_vss_stores = sys.stdin.readline()
+            selected_vss_stores = []
+            #selected_vss_stores = selected_vss_stores.strip()
             if not selected_vss_stores:
                 break
 

@@ -56,7 +56,7 @@ class FaCasetabs(IPlugin):
 
         cases = []
         cases.append('       <div title="Demo" style="height:100%;width:100%">')
-        cases.append('           <iframe src="http://' + address + ':' + port + '/plugins/' + children + query_string + '">')
+        cases.append('           <iframe src="http://' + address + ':' + port + '/plugins/' + children + query_string + '?case=test">')
         cases.append('           </iframe>')
         cases.append('       </div>')
 

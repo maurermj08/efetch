@@ -56,5 +56,6 @@ class FaMenu(IPlugin):
 
         html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children + query_string)
         html = html.replace('<!-- Upload -->', "http://" + address + ":" + port + "/plugins/fa_upload")
+        html = html.replace('<!-- Case -->', request.query['case'])
 
         return html
