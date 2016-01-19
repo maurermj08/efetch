@@ -54,6 +54,7 @@
         <script>
             function submitForm(){
                 $('#ff').form('submit');
+                $('#ff').form('clear');
                 $('#add_case_window').window('close');
                 setTimeout(function(){$('#dg').datagrid('reload');}, 1000);
             }
@@ -95,7 +96,7 @@
             function openCase(){
                 var row = $('#dg').datagrid('getSelected');
                 if (row){
-                    var win = window.open('/plugins/fa_header/fa_menu/fa_casetree/fa_filetree/fa_filedirectory/?case=' + row.name, '_blank');
+                    var win = window.open('/plugins/fa_header/fa_menu/fa_casetree/fa_filetree/fa_filedirectory/fa_fileanalyze/?case=' + row.name, '_blank');
                     win.focus();
                 }
             }

@@ -65,9 +65,9 @@ class FaRegview(IPlugin):
         if children and curr_file['image_id'] in children:
             child_plugins = str(children).split(curr_file['image_id'])[0]
         if not child_plugins:
-            child_plugins = 'fa_loader/fa_filedirectory/fa_file_analyze/'
+            child_plugins = 'fa_loader/fa_filedirectory/fa_fileanalyze/'
         if not children:
-            children = 'fa_loader/fa_filedirectory/fa_file_analyze/'
+            children = 'fa_loader/fa_filedirectory/fa_fileanalyze/'
 
         if request.query_string:
             query_string = "?" + request.query_string

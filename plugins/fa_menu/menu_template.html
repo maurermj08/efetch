@@ -52,7 +52,7 @@
         <div id="add_evidence_window" class="easyui-window" title="Add Existing Evidence" data-options="closed:true,iconCls:'icon-add'" style="width:440px;height:400px;padding:10px;">
             <div style="padding:10px 10px 20px 10px">
                 <form id="ff" action="/plugins/fa_case/?method=add_evidence&name=<!-- Case -->" method="post">
-                    <table id="dg" title="Evidence" class="easyui-datagrid" style="width:100%;height:260px"
+                    <table id="dg" title="" class="easyui-datagrid" style="width:100%;height:260px"
                             url="/plugins/fa_case/?method=get_evidence"
                             toolbar="#toolbar" 
                             fitColumns="true" singleSelect="true">
@@ -73,7 +73,7 @@
         <div id="remove_evidence_window" class="easyui-window" title="Remove Evidence" data-options="closed:true,iconCls:'icon-remove'" style="width:440px;height:400px;padding:10px;">
             <div style="padding:10px 10px 20px 10px">
                 <form id="ff_remove" action="/plugins/fa_case/?method=remove_evidence&name=<!-- Case -->" method="post">
-                    <table id="dg_remove" title="Evidence" class="easyui-datagrid" style="width:100%;height:260px"
+                    <table id="dg_remove" title="" class="easyui-datagrid" style="width:100%;height:260px"
                         url="/plugins/fa_case/?method=get_evidence&name=<!-- Case -->"
                             toolbar="#toolbar" 
                             fitColumns="true" singleSelect="true">

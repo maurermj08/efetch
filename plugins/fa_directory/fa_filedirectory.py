@@ -56,21 +56,25 @@ class FaFileDirectory(IPlugin):
         if curr_file['image_id'] in children:
             child_plugins = str(children).split(curr_file['image_id'])[0]
         if not child_plugins:
-            child_plugins = 'fa_file_analyze/'
+            child_plugins = 'fa_fileanalyze/'
         
         if request.query_string:
             query_string = "?" + request.query_string
         else:
             query_string = ""
-        
+       
+        show_dirs = False
+        if 'show_dirs' in request.query:
+            show_dirs = request.query['show_dirs'].lower() == 'true'
+
         #TODO: Change localtime to case time, specifically what is supplied to sleuthkit
         for item in helper.db_util.list_dir(helper.db_util.get_file(curr_file['image_id'], curr_file['offset'], curr_folder)):
             source = item['_source']
-            if source['file_type'] != 'directory':
+            if show_dirs or source['file_type'] != 'directory':
                 listing.append("    <tr>") 
                 listing.append('        <td><img src="http://' + address + ':' + port + '/plugins/fa_thumbnail/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" alt="' + source['file_type'] + '-' + source['ext'] + '" title="' + source['file_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
                 if source['file_type'] == 'directory':
-                    listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/' + child_plugins + source['image_id'] + '/' + source['offset'] + source['path'] + query_string + '" target="file_dir_frame">' + source['name'] + "</a></td>")
+                    listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_filedirectory/' + child_plugins + source['image_id'] + '/' + source['offset'] + source['path'] + query_string + '" target="_self">' + source['name'] + "</a></td>")
                 else:
                     listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/' + child_plugins + source['image_id'] + '/' + source['offset'] + source['path'] + query_string + '" target="file_dir_frame">' + source['name'] + "</a></td>")
                 if (source['mod']):

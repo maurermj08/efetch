@@ -1,6 +1,6 @@
 [Core]
-Name = fa_file_analyze
-Module = fa_file_analyze
+Name = fa_fileanalyze
+Module = fa_fileanalyze
 
 [Documentation]
 Author = Michael Maurer

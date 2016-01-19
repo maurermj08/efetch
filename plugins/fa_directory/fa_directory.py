@@ -60,7 +60,7 @@ class FaDirectory(IPlugin):
             if source['file_type'] == 'directory':
                 listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_directory/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_self">' + source['name'] + "</a></td>")
             else:
-                listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_analyze/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_top">' + source['name'] + "</a></td>")
+                listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_analyze/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_parent">' + source['name'] + "</a></td>")
             if (source['mod']):
                 listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['mod']))) + "</td>")
             else:
