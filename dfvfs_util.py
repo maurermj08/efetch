@@ -635,9 +635,9 @@ class DfvfsUtil(object):
                     u'All partitions can be defined as: "all". Note that you '
                     u'can abort with Ctrl^C.')
 
-            #selected_volume_identifier = sys.stdin.readline()
+            selected_volume_identifier = sys.stdin.readline()
             #TODO NEED TO ADD WAY FOR USER TO SPECIFY AND THEN SAVE VALUE
-            selected_volume_identifier = "0"
+            #selected_volume_identifier = "0"
             selected_volume_identifier = selected_volume_identifier.strip()
 
             if not selected_volume_identifier.startswith(u'p'):
