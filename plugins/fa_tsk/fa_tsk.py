@@ -73,18 +73,17 @@ class FaTsk(IPlugin):
         #try:
         image = pytsk3.Img_Info(url=image_path)
         file_system = pytsk3.FS_Info(image, offset=(int(offset)*512))
-        index_name = 'efetch_timeline_' + image_id
+        index_name = 'efetch-evidence_' + image_id
         db_util.create_index(index_name)
         root = {
                     '_index': index_name,
                     '_type' : 'event',
-                    '_id' : image_id + '/' + offset + '/',
+                    '_id' : image_id + '/',
                     '_source' : {
-                        'id' : image_id + "/" + offset,
-                        'pid' : image_id + '/' + offset + '/',
-                        'iid' : image_id + '/' + offset + '/',
+                        'id' : image_id + '/',
+                        'pid' : image_id,
+                        'iid' : image_id,
                         'image_id': image_id,
-                        'offset' : offset,
                         'image_path' : image_path,
                         'name' : '/',
                         'path' : '/',
@@ -99,8 +98,6 @@ class FaTsk(IPlugin):
                         'size' : '',
                         'uid' : '',
                         'gid' : '',
-                        'thumbnail' : "http://" + address + ":" + port + "/plguins/fa_thumbnail/" + image_id + "/" + offset + '/',
-                        'analyze' : "http://" + address + ":" + port + "/plugins/fa_analyze/" + image_id + "/" + offset + '/',
                         'driver' : "fa_tsk"
                     }
             }

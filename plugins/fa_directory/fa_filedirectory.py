@@ -47,16 +47,16 @@ class FaFileDirectory(IPlugin):
         """Returns a formatted directory listing for the given path"""
         #If path is a folder just set the view to it, if not use the files parent folder
         if curr_file['file_type'] == 'directory':
-            curr_folder = curr_file['path'] + "/"
+            curr_folder = curr_file
         else:
-            curr_folder = curr_file['dir']
+            curr_folder = helper.db_util.get_file(curr_file['image_id'], curr_file['dir'])
 
         listing = []
 
         if curr_file['image_id'] in children:
             child_plugins = str(children).split(curr_file['image_id'])[0]
         if not child_plugins:
-            child_plugins = 'fa_fileanalyze/'
+            cuild_plugins = 'fa_fileanalyze/'
         
         if request.query_string:
             query_string = "?" + request.query_string
@@ -68,15 +68,15 @@ class FaFileDirectory(IPlugin):
             show_dirs = request.query['show_dirs'].lower() == 'true'
 
         #TODO: Change localtime to case time, specifically what is supplied to sleuthkit
-        for item in helper.db_util.list_dir(helper.db_util.get_file(curr_file['image_id'], curr_file['offset'], curr_folder)):
+        for item in helper.db_util.list_dir(curr_folder):
             source = item['_source']
             if show_dirs or source['file_type'] != 'directory':
-                listing.append("    <tr>") 
-                listing.append('        <td><img src="http://' + address + ':' + port + '/plugins/fa_thumbnail/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" alt="' + source['file_type'] + '-' + source['ext'] + '" title="' + source['file_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
+                listing.append('    <tr>')
+                listing.append('        <td><img src="/plugins/fa_thumbnail/' + source['pid'] + '" alt="' + source['file_type'] + '-' + source['ext'] + '" title="' + source['file_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
                 if source['file_type'] == 'directory':
-                    listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_filedirectory/' + child_plugins + source['image_id'] + '/' + source['offset'] + source['path'] + query_string + '" target="_self">' + source['name'] + "</a></td>")
+                    listing.append('        <td><a href="/plugins/fa_filedirectory/' + child_plugins + source['pid'] + query_string + '" target="_self">' + source['name'] + "</a></td>")
                 else:
-                    listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/' + child_plugins + source['image_id'] + '/' + source['offset'] + source['path'] + query_string + '" target="file_dir_frame">' + source['name'] + "</a></td>")
+                    listing.append('        <td><a href="/plugins/' + child_plugins + source['pid'] + query_string + '" target="file_dir_frame">' + source['name'] + "</a></td>")
                 if (source['mod']):
                     listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['mod']))) + "</td>")
                 else:
@@ -105,9 +105,9 @@ class FaFileDirectory(IPlugin):
         html = html.replace('<!-- Table -->', '\n'.join(listing))
 
         if str(children).startswith(curr_file['image_id']):
-            html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + child_plugins + children + query_string)
+            html = html.replace('<!-- Home -->', "/plugins/" + child_plugins + children + query_string)
         else:
-            html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children + query_string)
+            html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
 
 
         return html

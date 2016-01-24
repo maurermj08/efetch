@@ -36,12 +36,17 @@ class DfvfsUtil(object):
     _UNITS_1024 = [u'B', u'KiB', u'MiB', u'GiB', u'TiB', u'EiB', u'ZiB', u'YiB']
 
     base_path_specs = None
+    settings = None
+    options = []
+    display = ''
+    initialized = 0
 
-    def __init__(self, source):
+    def __init__(self, source, settings=[], interactive=True):
         """Initializes the dfvfs util object."""
         super(DfvfsUtil, self).__init__()
         self._source_scanner = source_scanner.SourceScanner()
-        self.base_path_specs = self.GetBasePathSpecs(source)
+        self.settings = settings
+        self.base_path_specs = self.GetBasePathSpecs(source, interactive)
 
     def Icat(self, full_path, output_path, ignore_case = False):
         """Gets the file at full_path and outputs it to the output path"""
@@ -70,7 +75,7 @@ class DfvfsUtil(object):
                     return myfile
                 continue
     
-    def GetJson(self, image_id, offset, image_path, address, port):
+    def GetJson(self, image_id, curr_id, image_path):
         """Returns a full json version for Efetch"""
         json = []
 
@@ -80,24 +85,27 @@ class DfvfsUtil(object):
             if file_entry is None:
                 logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
             else:
-                json.extend(self._GetJson(image_id, offset, image_path, address, port, file_entry, ''))
+                json.extend(self._GetJson(image_id, curr_id, image_path, file_entry, ''))
 
         return json
 
-    def _GetJson(self, image_id, offset, image_path, address, port, file_entry, curr_path):
+    def _GetJson(self, image_id, curr_id, image_path, file_entry, curr_path):
         """Returns a partial json version for Efetch"""
         json = []
         if file_entry.IsDirectory():
-            json.append(self._ConvertToJson(image_id, offset, image_path, address, port, file_entry, curr_path, file_entry.name))
+            json.append(self._ConvertToJson(image_id, curr_id, image_path, file_entry, curr_path, file_entry.name))
             for sub_file_entry in file_entry.sub_file_entries:
-                json.extend(self._GetJson(image_id, offset, image_path, address, port, sub_file_entry, curr_path + file_entry.name + "/"))
+                json.extend(self._GetJson(image_id, curr_id, image_path, sub_file_entry, curr_path + file_entry.name + "/"))
         else:
-            json.append(self._ConvertToJson(image_id, offset, image_path, address, port, file_entry.GetFileObject(), curr_path, file_entry.name))
+            try:
+                json.append(self._ConvertToJson(image_id, curr_id, image_path, file_entry.GetFileObject(), curr_path, file_entry.name))
+            except:
+                logging.warning("Failed to add file %s in image %s, most likely not a file", file_entry.name, image_id)
         return json
 
-    def _ConvertToJson(self, image_id, offset, image_path, address, port, file_object, curr_path, name):
+    def _ConvertToJson(self, image_id, curr_id, image_path, file_object, curr_path, name):
         """Converts a dfVFS file_entry to an Efetch evidence json"""
-        index_name = 'efetch_timeline_' + image_id
+        index_name = 'efetch-evidence_' + image_id
         tsk_object = file_object._tsk_file
 
         if tsk_object.info.meta == None:
@@ -121,8 +129,8 @@ class DfvfsUtil(object):
             uid = str(tsk_object.info.meta.uid)
             gid = str(tsk_object.info.meta.gid)
 
-        dir_ref = image_id + "/" + offset + curr_path + name
-        inode_ref = image_id + "/" + offset + "/" + inode
+        dir_ref = curr_id + curr_path + name
+        inode_ref = curr_id + "/" + inode
         ext = os.path.splitext(name)[1][1:] or ""
 
         if file_type == None:
@@ -143,22 +151,28 @@ class DfvfsUtil(object):
 
         if file_type != pytsk3.TSK_FS_META_TYPE_DIR:
             file_object.close()
+        print("HERE _id=" + dir_ref + " path=" + curr_path)
+        if not curr_path:
+            curr_dir = curr_id.split('ROOT')[0]
+            name = 'ROOT'
+        else:
+            curr_dir = curr_id + curr_path
 
         return {
                 '_index': index_name,
                 '_type' : 'event',
                 '_id' : dir_ref,
                 '_source' : {
-                    'id' : image_id + "/" + offset,
+                    'id' : curr_id,
                     'pid' : dir_ref,
                     'iid' : inode_ref,
                     'image_id': image_id,
-                    'offset' : offset,
                     'image_path' : image_path,
+                    'evd_type' : 'item',
                     'name' : name,
                     'path' : curr_path + name,
                     'ext' : ext,
-                    'dir' : curr_path,
+                    'dir' : curr_dir,
                     'file_type' : file_type_str,
                     'inode' : inode,
                     'mod' : modtime,
@@ -168,8 +182,6 @@ class DfvfsUtil(object):
                     'size' : size,
                     'uid' : uid,
                     'gid' : gid,
-                    'thumbnail' : "http://" + address + ":" + port + "/plugins/fa_thumbnail/" + image_id + "/" + offset + curr_path + name,
-                    'analyze' : "http://" + address + ":" + port + "/plugins/fa_analyze/" + image_id + "/" + offset + curr_path + name,
                     'driver' : "fa_dfvfs"
                 }
         }
@@ -417,7 +429,7 @@ class DfvfsUtil(object):
         return u'{0:s} / {1:s} ({2:d} B)'.format(
                 size_string_1024, size_string_1000, size)
 
-    def _GetTSKPartitionIdentifiers(self, scan_node):
+    def _GetTSKPartitionIdentifiers(self, scan_node, interactive):
         """Determines the TSK partition identifiers.
         Args:
             scan_node: the scan node (instance of dfvfs.ScanNode).
@@ -445,7 +457,7 @@ class DfvfsUtil(object):
 
         try:
             selected_volume_identifier = self._PromptUserForPartitionIdentifier(
-                    volume_system, volume_identifiers)
+                    volume_system, volume_identifiers, interactive)
         except KeyboardInterrupt:
             raise RuntimeError(u'File system scan aborted.')
 
@@ -454,7 +466,7 @@ class DfvfsUtil(object):
 
         return [selected_volume_identifier]
 
-    def _GetVSSStoreIdentifiers(self, scan_node):
+    def _GetVSSStoreIdentifiers(self, scan_node, interactive):
         """Determines the VSS store identifiers.
         Args:
             scan_node: the scan node (instance of dfvfs.ScanNode).
@@ -477,7 +489,7 @@ class DfvfsUtil(object):
 
         try:
             selected_store_identifiers = self._PromptUserForVSSStoreIdentifiers(
-                    volume_system, volume_identifiers)
+                    volume_system, volume_identifiers, interactive)
         except KeyboardInterrupt:
             raise errors.UserAbort(u'File system scan aborted.')
 
@@ -567,6 +579,7 @@ class DfvfsUtil(object):
             print(u'Select a credential to unlock the volume: ', end=u'')
             # TODO: add an input reader.
             input_line = sys.stdin.readline()
+            self.settings.append(input_line.strip())
             input_line = input_line.strip()
 
             if input_line in credentials_list:
@@ -603,7 +616,7 @@ class DfvfsUtil(object):
         return result
 
     def _PromptUserForPartitionIdentifier(
-            self, volume_system, volume_identifiers):
+            self, volume_system, volume_identifiers, interactive):
         """Prompts the user to provide a partition identifier.
         Args:
             volume_system: The volume system (instance of dfvfs.TSKVolumeSystem).
@@ -613,8 +626,11 @@ class DfvfsUtil(object):
         Raises:
             FileSystemScannerError: if the source cannot be processed.
         """
-        print(u'The following partitions were found:')
-        print(u'Identifier\tOffset (in bytes)\tSize (in bytes)')
+        if interactive:
+            print(u'The following partitions were found:')
+            print(u'Identifier\tOffset (in bytes)\tSize (in bytes)')
+        else:
+            self.display = u'The following partitions were found: \nIdentifier\tOffset (in bytes)\tSize (in bytes)\n'
 
         for volume_identifier in sorted(volume_identifiers):
             volume = volume_system.GetVolumeByIdentifier(volume_identifier)
@@ -623,22 +639,34 @@ class DfvfsUtil(object):
                         u'Volume missing for identifier: {0:s}.'.format(volume_identifier))
 
             volume_extent = volume.extents[0]
-            print(u'{0:s}\t\t{1:d} (0x{1:08x})\t{2:s}'.format(
+            if interactive:
+                print(u'{0:s}\t\t{1:d} (0x{1:08x})\t{2:s}'.format(
                     volume.identifier, volume_extent.offset,
                     self._FormatHumanReadableSize(volume_extent.size)))
+            else:
+                self.display += u'{0:s}\t\t{1:d} (0x{1:08x})\t{2:s}\n'.format(
+                    volume.identifier, volume_extent.offset,
+                    self._FormatHumanReadableSize(volume_extent.size))
 
         while True:
-            print(
+            if interactive: 
+                print(
                     u'Please specify the identifier of the partition that should be '
                     u'processed.')
-            print(
+                print(
                     u'All partitions can be defined as: "all". Note that you '
                     u'can abort with Ctrl^C.')
 
-            selected_volume_identifier = sys.stdin.readline()
-            #TODO NEED TO ADD WAY FOR USER TO SPECIFY AND THEN SAVE VALUE
-            #selected_volume_identifier = "0"
-            selected_volume_identifier = selected_volume_identifier.strip()
+                selected_volume_identifier = sys.stdin.readline()
+                self.settings.append(selected_volume_identifier.strip())
+                selected_volume_identifier = selected_volume_identifier.strip()
+            else:
+                if not self.settings:
+                    self.options = sorted(volume_identifiers)
+                    self.initialized = -1
+                    return
+                else:
+                    selected_volume_identifier = self.settings.pop(0)
 
             if not selected_volume_identifier.startswith(u'p'):
                 try:
@@ -651,16 +679,17 @@ class DfvfsUtil(object):
                     selected_volume_identifier in volume_identifiers):
                 break
 
-            print(u'')
-            print(
-                    u'Unsupported partition identifier, please try again or abort '
-                    u'with Ctrl^C.')
-            print(u'')
+            if interactive:
+                print(u'')
+                print(
+                        u'Unsupported partition identifier, please try again or abort '
+                        u'with Ctrl^C.')
+                print(u'')
 
         return selected_volume_identifier
 
     def _PromptUserForVSSStoreIdentifiers(
-            self, volume_system, volume_identifiers):
+            self, volume_system, volume_identifiers, interactive):
         """Prompts the user to provide the VSS store identifiers.
         This method first checks for the preferred VSS stores and falls back
         to prompt the user if no usable preferences were specified.
@@ -687,9 +716,46 @@ class DfvfsUtil(object):
 
         print_header = True
         while True:
-            if print_header:
-                print(u'The following Volume Shadow Snapshots (VSS) were found:')
-                print(u'Identifier\tVSS store identifier')
+            if interactive:
+                if print_header:
+                    print(u'The following Volume Shadow Snapshots (VSS) were found:')
+                    print(u'Identifier\tVSS store identifier')
+
+                    for volume_identifier in volume_identifiers:
+                        volume = volume_system.GetVolumeByIdentifier(volume_identifier)
+                        if not volume:
+                            raise errors.SourceScannerError(
+                                    u'Volume missing for identifier: {0:s}.'.format(
+                                            volume_identifier))
+
+                        vss_identifier = volume.GetAttribute(u'identifier')
+                        print(u'{0:s}\t\t{1:s}'.format(
+                                volume.identifier, vss_identifier.value))
+
+                    print(u'')
+
+                    print_header = False
+
+                print(
+                        u'Please specify the identifier(s) of the VSS that should be '
+                        u'processed:')
+                print(
+                        u'Note that a range of stores can be defined as: 3..5. Multiple '
+                        u'stores can')
+                print(
+                        u'be defined as: 1,3,5 (a list of comma separated values). Ranges '
+                        u'and lists can')
+                print(
+                        u'also be combined as: 1,3..5. The first store is 1. All stores '
+                        u'can be defined')
+                print(u'as "all". If no stores are specified none will be processed. You')
+                print(u'can abort with Ctrl^C.')
+
+                selected_vss_stores = sys.stdin.readline()
+                self.settings.append(selected_vss_stores.strip())
+            else:
+                self.display = u'The following Volume Shadow Snapshots (VSS) were found:\nIdentifier\tVSS store identifier\n'
+                self.options = []
 
                 for volume_identifier in volume_identifiers:
                     volume = volume_system.GetVolumeByIdentifier(volume_identifier)
@@ -699,32 +765,15 @@ class DfvfsUtil(object):
                                         volume_identifier))
 
                     vss_identifier = volume.GetAttribute(u'identifier')
-                    print(u'{0:s}\t\t{1:s}'.format(
-                            volume.identifier, vss_identifier.value))
-
-                print(u'')
-
-                print_header = False
-
-            print(
-                    u'Please specify the identifier(s) of the VSS that should be '
-                    u'processed:')
-            print(
-                    u'Note that a range of stores can be defined as: 3..5. Multiple '
-                    u'stores can')
-            print(
-                    u'be defined as: 1,3,5 (a list of comma separated values). Ranges '
-                    u'and lists can')
-            print(
-                    u'also be combined as: 1,3..5. The first store is 1. All stores '
-                    u'can be defined')
-            print(u'as "all". If no stores are specified none will be processed. You')
-            print(u'can abort with Ctrl^C.')
-
-            #TODO USER INPUT
-            #selected_vss_stores = sys.stdin.readline()
-            selected_vss_stores = []
-            #selected_vss_stores = selected_vss_stores.strip()
+                    self.display += u'{0:s}\t\t{1:s}\n'.format(volume.identifier, vss_identifier.value)
+                    self.options.append(volume.identifier)
+                if self.settings:
+                    selected_vss_stores = self.settings.pop(0)
+                else:
+                    self.initialized = -1
+                    return
+            
+            selected_vss_stores = selected_vss_stores.strip()
             if not selected_vss_stores:
                 break
 
@@ -748,7 +797,7 @@ class DfvfsUtil(object):
 
         return selected_vss_stores
 
-    def _ScanVolume(self, scan_context, volume_scan_node, base_path_specs):
+    def _ScanVolume(self, scan_context, volume_scan_node, base_path_specs, interactive):
         """Scans the volume scan node for volume and file systems.
         Args:
             scan_context: the source scanner context (instance of
@@ -764,16 +813,18 @@ class DfvfsUtil(object):
             raise RuntimeError(u'Invalid or missing volume scan node.')
 
         if len(volume_scan_node.sub_nodes) == 0:
-            self._ScanVolumeScanNode(scan_context, volume_scan_node, base_path_specs)
+            self._ScanVolumeScanNode(scan_context, volume_scan_node, base_path_specs, interactive)
 
         else:
             # Some volumes contain other volume or file systems e.g. BitLocker ToGo
             # has an encrypted and unencrypted volume.
             for sub_scan_node in volume_scan_node.sub_nodes:
-                self._ScanVolumeScanNode(scan_context, sub_scan_node, base_path_specs)
+                self._ScanVolumeScanNode(scan_context, sub_scan_node, base_path_specs, interactive)
+                if self.initialized < 0:
+                    return
 
     def _ScanVolumeScanNode(
-            self, scan_context, volume_scan_node, base_path_specs):
+            self, scan_context, volume_scan_node, base_path_specs, interactive):
         """Scans an individual volume scan node for volume and file systems.
         Args:
             scan_context: the source scanner context (instance of
@@ -797,16 +848,16 @@ class DfvfsUtil(object):
         # a credential to unlock the volume.
         if scan_node.type_indicator in definitions.ENCRYPTED_VOLUME_TYPE_INDICATORS:
             self._ScanVolumeScanNodeEncrypted(
-                    scan_context, scan_node, base_path_specs)
+                    scan_context, scan_node, base_path_specs, interactive)
 
         elif scan_node.type_indicator == definitions.TYPE_INDICATOR_VSHADOW:
-            self._ScanVolumeScanNodeVSS(scan_context, scan_node, base_path_specs)
+            self._ScanVolumeScanNodeVSS(scan_context, scan_node, base_path_specs, interactive)
 
         elif scan_node.type_indicator in definitions.FILE_SYSTEM_TYPE_INDICATORS:
             base_path_specs.append(scan_node.path_spec)
 
     def _ScanVolumeScanNodeEncrypted(
-            self, scan_context, volume_scan_node, base_path_specs):
+            self, scan_context, volume_scan_node, base_path_specs, interactive):
         """Scans an encrypted volume scan node for volume and file systems.
         Args:
             scan_context: the source scanner context (instance of
@@ -821,15 +872,15 @@ class DfvfsUtil(object):
                     volume_scan_node.path_spec)
 
             result = self._PromptUserForEncryptedVolumeCredential(
-                    scan_context, volume_scan_node, credentials)
+                    scan_context, volume_scan_node, credentials, interactive)
 
         if result:
             self._source_scanner.Scan(
                     scan_context, scan_path_spec=volume_scan_node.path_spec)
-            self._ScanVolume(scan_context, volume_scan_node, base_path_specs)
+            self._ScanVolume(scan_context, volume_scan_node, base_path_specs, interactive)
 
     def _ScanVolumeScanNodeVSS(
-            self, scan_context, volume_scan_node, base_path_specs):
+            self, scan_context, volume_scan_node, base_path_specs, interactive):
         """Scans a VSS volume scan node for volume and file systems.
         Args:
             scan_context: the source scanner context (instance of
@@ -840,7 +891,10 @@ class DfvfsUtil(object):
         Raises:
             SourceScannerError: if a VSS sub scan node scannot be retrieved.
         """
-        vss_store_identifiers = self._GetVSSStoreIdentifiers(volume_scan_node)
+        vss_store_identifiers = self._GetVSSStoreIdentifiers(volume_scan_node, interactive)
+
+        if self.initialized < 0:
+            return
 
         self._vss_stores = list(vss_store_identifiers)
 
@@ -856,9 +910,9 @@ class DfvfsUtil(object):
 
             self._source_scanner.Scan(
                     scan_context, scan_path_spec=sub_scan_node.path_spec)
-            self._ScanVolume(scan_context, sub_scan_node, base_path_specs)
+            self._ScanVolume(scan_context, sub_scan_node, base_path_specs, interactive)
 
-    def GetBasePathSpecs(self, source_path):
+    def GetBasePathSpecs(self, source_path, interactive):
         """Determines the base path specifications.
         Args:
             source_path: the source path.
@@ -869,6 +923,8 @@ class DfvfsUtil(object):
                                         is not a file or directory, or if the format of or within
                                         the source file is not supported.
         """
+        self.initialized = 0 
+        
         if (not source_path.startswith(u'\\\\.\\') and
                 not os.path.exists(source_path)):
             raise RuntimeError(
@@ -900,17 +956,24 @@ class DfvfsUtil(object):
             partition_identifiers = None
 
         else:
-            partition_identifiers = self._GetTSKPartitionIdentifiers(scan_node)
+            partition_identifiers = self._GetTSKPartitionIdentifiers(scan_node, interactive)
+
+        if self.initialized < 0:
+            return
 
         base_path_specs = []
         if not partition_identifiers:
-            self._ScanVolume(scan_context, scan_node, base_path_specs)
-
+            self._ScanVolume(scan_context, scan_node, base_path_specs, interactive)
         else:
             for partition_identifier in partition_identifiers:
                 location = u'/{0:s}'.format(partition_identifier)
                 sub_scan_node = scan_node.GetSubNodeByLocation(location)
-                self._ScanVolume(scan_context, sub_scan_node, base_path_specs)
+                self._ScanVolume(scan_context, sub_scan_node, base_path_specs, interactive)
+
+        if self.initialized < 0:
+            return
+        else:
+            self.initialized = 1
 
         if not base_path_specs:
             raise RuntimeError(
@@ -923,120 +986,29 @@ def Main():
             level=logging.INFO, format=u'[%(levelname)s] %(message)s')
 
     return_value = True
-    #dfvfs_util = DfvfsUtil("/mnt/ewf_mount1/ewf1")
-    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/xp-tdungan-10.3.58.7/xp-tdungan-c-drive/xp-tdungan-c-drive.E01")  
+    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/xp-tdungan-10.3.58.7/xp-tdungan-c-drive/xp-tdungan-c-drive.E01", [], False)  
+    print("XPTDUNGAN: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
+    print(dfvfs_util.display)
+    
+    dfvfs_util = DfvfsUtil("/media/sf_Forensics/1-extend-part/1-extend-part/ext-part-test-2.dd", [], False)
+    print("EXTPARTTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
+    print(dfvfs_util.display)
 
-    print(dfvfs_util.GetJson("epic", "0", "/mnt/ewf_mount1/ewf1", "localhost", "8080"))
-    sys.exit(0)
-    try:
-        #TEST GET FILE
-        my_file = dfvfs_util.GetFile("/WINDOWS")
-        print(my_file.__dict__)
-        directory_entry = my_file._tsk_file
-        if directory_entry.info.meta == None:
-            file_type = ''
-            inode = ''
-            mod = ''
-            acc = ''
-            chg = ''
-            cre = ''
-            size = ''
-            uid = ''
-            gid = ''
-        else:
-            file_type = str(directory_entry.info.meta.type)
-            inode = str(directory_entry.info.meta.addr)
-            mod = str(directory_entry.info.meta.mtime)
-            acc = str(directory_entry.info.meta.atime)
-            chg = str(directory_entry.info.meta.ctime)
-            cre = str(directory_entry.info.meta.crtime)
-            size = str(directory_entry.info.meta.size)
-            uid = str(directory_entry.info.meta.uid)
-            gid = str(directory_entry.info.meta.gid)
-        print ("File Type: " + file_type + " | inode: " + inode + " | mod: " + mod + " | acc: " + acc + " | chg: " + chg + " | cre: " + cre + " | size: " + size + " | uid: " + uid + " | gid: " + gid)
-        if my_file is not None:
-            print("1 Success for GetFile(/Windows/System32/Drivers/etc/hosts)")
-        else:
-            print("1 Failed for GetFile")
+    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/win7-32-nromanoff-10.3.58.5/win7-32-nromanoff-c-drive/win7-32-nromanoff-c-drive.E01", [], False)
+    print("VSSONLYTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
+    print(dfvfs_util.display)
 
-        output = dfvfs_util.ListDir("/WINDOWS/")
-        print("\n\t".join(output))
-        sys.exit(1)
+    dfvfs_util = DfvfsUtil("/media/sf_Forensics/1-extend-part/1-extend-part/ext-part-test-2.dd", ['p1'], False)
+    print("EXTPARTTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
+    print(dfvfs_util.display)
 
-        #TEST GET FILE with IGNORE CASE
-        my_file = dfvfs_util.GetFile("/windows/SYSTEM32/dRiVeRs/eTc/HOSTs", True)
-        if my_file is not None:
-            print("2 Success for GetFile Ignore Case")
-        else:
-            print("2 Failed for GetFile Ignore Case")
-        
-        #TEST LIST DIR
-        dir_list = dfvfs_util.ListDir("/")
-        if dir_list is not None:
-            print("\n\t".join(dir_list))
-            print("3 Success for ListDir")
-        else:
-            print("3 Failed for ListDir")        
-
-        #TEST FILE EXISTS true
-        found = dfvfs_util.FileExists("/WINDOWS/system32/drivers/etc/hosts")
-        if found:
-            print("4 Success for FileExists")
-        else:
-            print("4 Failed for FileExists")
-        
-        #TEST FILE EXISTS false
-        found = dfvfs_util.FileExists("/WINDOWS/system32/drivers/etc/hoss")
-        if not found:
-            print("5 Success for FileExists")
-        else:
-            print("5 Failed for FileExists")
-
-        #TEST DIR EXISTS true
-        found = dfvfs_util.DirExists("/WINDOWS/system32/drivers")
-        if found:
-            print("6 Success for DirExists")
-        else:
-            print("6 Failed for DirExists")
-
-        #TEST DIR EXISTS false
-        found = dfvfs_util.DirExists("/WINDOWS/system32/et")
-        if not found:
-            print("7 Success for FileExists")
-        else:
-            print("7 Failed for FileExists")
-
-        #TEST SEARCH FOR FILES true
-        found = dfvfs_util.SearchForFiles('hosts', '/WINDOWS/system32/drivers')
-        if found:
-            print("\n\t".join(found))
-            print("8 Success for search for files")
-        else:
-            print("8 Failed for search for files")
-
-        #TEST SEARCH FOR DIRS true
-        found = dfvfs_util.SearchForDirs('drivers', '/WINDOWS')
-        if found:
-            print("\n\t".join(found))
-            print("9 Success for search for directories")
-        else:
-            print("9 Failed for search for directories")
-        
-        #TEST ICAT
-        pwd = os.path.dirname(os.path.realpath(__file__))
-        dfvfs_util.Icat("/WINDOWS/system32/drivers/etc/hosts", pwd + "/hosts")
-
-        print(u'')
-        print(u'Completed.')
-
-    except KeyboardInterrupt:
-        return_value = False
-
-        print(u'')
-        print(u'Aborted by user.')
-
-    return return_value
-
+    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/win7-32-nromanoff-10.3.58.5/win7-32-nromanoff-c-drive/win7-32-nromanoff-c-drive.E01", ['vss2'], False)
+    print("VSSONLYTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
+    print(dfvfs_util.display)
+    
+    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/win7-32-nromanoff-10.3.58.5/win7-32-nromanoff-c-drive/win7-32-nromanoff-c-drive.E01")
+    print("VSSONLYTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
+    print(dfvfs_util.settings)
 
 if __name__ == '__main__':
     if not Main():

@@ -11,6 +11,8 @@ from bottle import abort
 
 class FaDfvfs(IPlugin):
 
+    utils = {}
+
     def __init__(self):
         IPlugin.__init__(self)
 
@@ -48,14 +50,13 @@ class FaDfvfs(IPlugin):
 
     def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        offset = request.query['offset']
         path = request.query['path']
         image_id = request.query['image_id']
-        self.add_image(image_id, offset, path, helper.db_util, address, port)
+        self.add_image(image_id, path, helper.db_util, [])
         return '<xmp style="white-space: pre-wrap;">Done</xmp>'
 
-    def add_image(self, image_id, offset, image_path, db_util, address, port):
-        """Creates a file listing of the partition at the provided image and offset in the database"""
+    def add_image(self, image_id, image_path, db_util, settings):
+        """Creates a file listing of the partition at the provided image in the database"""
         if not str(image_path).startswith("/"):
             image_path = "/" + image_path
 
@@ -66,20 +67,23 @@ class FaDfvfs(IPlugin):
         logging.info("Adding " + image_id + " to Elastic Search using dfVFS driver")
 
         #try:
-        dfvfs_util = DfvfsUtil(image_path)
-        index_name = 'efetch_timeline_' + image_id
+        dfvfs_util = DfvfsUtil(image_path, settings, False)
+        if dfvfs_util.initialized < 1:
+            return dfvfs_util.display
+        
+        index_name = 'efetch-evidence_' + image_id
         db_util.create_index(index_name)
         root = {
                     '_index': index_name,
                     '_type' : 'event',
-                    '_id' : image_id + '/' + offset + '/',
+                    '_id' : image_id + '/',
                     '_source' : {
-                        'id' : image_id + "/" + offset,
-                        'pid' : image_id + '/' + offset + '/',
-                        'iid' : image_id + '/' + offset + '/',
+                        'id' : image_id,
+                        'pid' : image_id + '/',
+                        'iid' : image_id + '/',
                         'image_id': image_id,
-                        'offset' : offset,
                         'image_path' : image_path,
+                        'evd_type' : 'root',
                         'name' : '/',
                         'path' : '/',
                         'ext' : '',
@@ -93,17 +97,63 @@ class FaDfvfs(IPlugin):
                         'size' : '',
                         'uid' : '',
                         'gid' : '',
-                        'thumbnail' : "http://" + address + ":" + port + "/plguins/fa_thumbnail/" + image_id + "/" + offset + '/',
-                        'analyze' : "http://" + address + ":" + port + "/plugins/fa_analyze/" + image_id + "/" + offset + '/',
-                        'driver' : "fa_tsk"
+                        'driver' : "fa_dfvfs"
                     }
             }
 
-        json = dfvfs_util.GetJson(image_id, offset, image_path, address, port)
+        json = []
         json.append(root)
+        
+        curr_id = image_id + '/'
+        curr_path = '/'
+        settings.append('ROOT')
+
+        for setting in settings:
+            curr_id += setting
+            curr_path += setting + '/'
+            json.append({
+                    '_index': index_name,
+                    '_type' : 'event',
+                    '_id' : curr_id + '/',
+                    '_source' : {
+                        'id' : curr_id,
+                        'pid' : curr_id + '/',
+                        'iid' : curr_id + '/',
+                        'image_id': image_id,
+                        'image_path' : image_path,
+                        'evd_type' : 'part',
+                        'name' : setting + '/',
+                        'path' : curr_path,
+                        'ext' : '',
+                        'dir' : '',
+                        'file_type' : 'directory',
+                        'inode' : '',
+                        'mod' : 0,
+                        'acc' : 0,
+                        'chg' : 0,
+                        'cre' : 0,
+                        'size' : '',
+                        'uid' : '',
+                        'gid' : '',
+                        'driver' : "fa_dfvfs"
+                    }
+            })
+
+        json += dfvfs_util.GetJson(image_id, curr_id, image_path)
         db_util.bulk(json)
 
     def icat(self, curr_file, output_file_path):
         """Returns the specified file using image file, meta or inode address, and outputfile"""
-        dfvfs_util = DfvfsUtil(curr_file['image_path'])
-        dfvfs_util.Icat(curr_file['path'], output_file_path)
+        if not curr_file['id'] in self.utils:
+            settings = []
+            curr_id = curr_file['id'].split('/')[1:]
+            while curr_id[0] != 'ROOT':
+                settings.append(curr_id.pop(0))
+            self.utils[curr_file['id']] = DfvfsUtil(curr_file['image_path'], settings, False)
+        
+        dfvfs_util = self.utils[curr_file['id']]
+        
+        if dfvfs_util.initialized > 0:
+            dfvfs_util.Icat(curr_file['path'], output_file_path)
+        else:
+            logging.warn("Unable to icat file %s because no proper dfVFS settings", curr_file['pid'])

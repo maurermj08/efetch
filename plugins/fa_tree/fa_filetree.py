@@ -54,7 +54,7 @@ class FaRegview(IPlugin):
             return self.get_child(request_file, helper)
         elif 'mode' in request.query and request.query['mode'] == 'root':
             return json.dumps([{
-                    'title': curr_file['image_id'] + ' at offset ' + curr_file['offset'] + '- ' + curr_file['path'],
+                    'title': curr_file['id'] + ' - ' + curr_file['path'],
                     'key': curr_file['pid'],
                     'folder': True,
                     'lazy': True,
@@ -77,12 +77,12 @@ class FaRegview(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/filetree_template.html', 'r')
         html = str(template.read())
-        html = html.replace("<!-- Path -->", curr_file['image_id'] + '/' + curr_file['offset'] + '/' + curr_file['path'])
+        html = html.replace("<!-- Path -->", curr_file['pid'])
         if str(children).startswith(curr_file['image_id']):
-            html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + child_plugins + children + query_string)
+            html = html.replace('<!-- Home -->', "/plugins/" + child_plugins + children + query_string)
         else:
-            html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children + query_string)
-        html = html.replace('<!-- Child -->', "http://" + address + ":" + port + "/plugins/" + child_plugins)
+            html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
+        html = html.replace('<!-- Child -->', "/plugins/" + child_plugins)
         html = html.replace('<!-- Query -->', query_string)
         html = html.replace('<!-- Name -->', 'Navigate')
         template.close()
@@ -96,9 +96,9 @@ class FaRegview(IPlugin):
         if curr_file['file_type'] != 'directory':
             return json.dumps(children)
 
-        curr_folder = curr_file['path'] + "/"
+        #curr_folder = curr_file['path'] + "/"
 
-        for item in helper.db_util.list_dir(helper.db_util.get_file(curr_file['image_id'], curr_file['offset'], curr_folder)):
+        for item in helper.db_util.list_dir(curr_file):
             source = item['_source']
             if source['file_type'] == 'directory':
                 folder = True

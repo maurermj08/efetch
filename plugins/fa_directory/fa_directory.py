@@ -47,20 +47,20 @@ class FaDirectory(IPlugin):
         """Returns a formatted directory listing for the given path"""
         #If path is a folder just set the view to it, if not use the files parent folder
         if curr_file['file_type'] == 'directory':
-            curr_folder = curr_file['path'] + "/"
+            curr_folder = curr_file
         else:
-            curr_folder = curr_file['dir']
+            curr_folder = helper.db_util.get_file(curr_file['image_id'], curr_file['dir'])
 
         listing = []
         #TODO: Change localtime to case time, specifically what is supplied to sleuthkit
-        for item in helper.db_util.list_dir(helper.db_util.get_file(curr_file['image_id'], curr_file['offset'], curr_folder)):
+        for item in helper.db_util.list_dir(curr_folder):
             source = item['_source']
             listing.append("    <tr>") 
-            listing.append('        <td><img src="http://' + address + ':' + port + '/plugins/fa_thumbnail/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" alt="' + source['file_type'] + '-' + source['ext'] + '" title="' + source['file_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
+            listing.append('        <td><img src="/plugins/fa_thumbnail/' + source['pid'] + '" alt="' + source['file_type'] + '-' + source['ext'] + '" title="' + source['file_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
             if source['file_type'] == 'directory':
-                listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_directory/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_self">' + source['name'] + "</a></td>")
+                listing.append('        <td><a href="/plugins/fa_directory/' + source['pid'] + '" target="_self">' + source['name'] + "</a></td>")
             else:
-                listing.append('        <td><a href="http://' + address + ':' + port + '/plugins/fa_analyze/' + source['image_id'] + '/' + source['offset'] + source['path'] + '" target="_parent">' + source['name'] + "</a></td>")
+                listing.append('        <td><a href="/plugins/fa_analyze/' + source['pid'] + '" target="_parent">' + source['name'] + "</a></td>")
             if (source['mod']):
                 listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['mod']))) + "</td>")
             else:

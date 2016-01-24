@@ -94,6 +94,6 @@ class FaUpload(IPlugin):
             #raw = data.file.read() # This is dangerous for big files
             filename = data.filename
             data.save(helper.upload_dir + filename)
-            return '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=http://' + address + ':' + port + '/plugins/fa_dfvfs/?image_id=' + image + '&offset=0&path=' + helper.upload_dir + filename + '" /></head></html>'
+            return '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/plugins/fa_dfvfs/?image_id=' + image + '&path=' + helper.upload_dir + filename + '" /></head></html>'
             #return "Hello %s! You uploaded %s" % (image, filename)
         return "You missed a field."

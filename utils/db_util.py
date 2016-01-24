@@ -43,7 +43,7 @@ class DBUtil(object):
         elasticsearch.indices.put_template(name="efetch-case", body=case_template)
 
         template = {
-            "template" : "efetch_timeline*",
+            "template" : "efetch-evidence*",
             "settings" : {
                 "number_of_shards" : 1
                 },
@@ -55,8 +55,8 @@ class DBUtil(object):
                         "pid" : {"type": "string", "index" : "not_analyzed"},
                         "iid" : {"type": "string", "index" : "not_analyzed"},
                         "image_id": {"type": "string", "index" : "not_analyzed"},
-                        "offset" : {"type": "string", "index" : "not_analyzed"},
                         "image_path" : {"type": "string", "index" : "not_analyzed"},
+                        "evd_type" : {"type": "string", "index" : "not_analyzed"},
                         "name" : {"type": "string", "index" : "not_analyzed"},
                         "path" : {"type": "string", "index" : "not_analyzed"},
                         "ext" : {"type": "string", "index" : "not_analyzed"},
@@ -70,23 +70,16 @@ class DBUtil(object):
                         "size" : {"type": "string", "index" : "not_analyzed"},
                         "uid" : {"type": "string", "index" : "not_analyzed"},
                         "gid" : {"type": "string", "index" : "not_analyzed"},
-                        "thumbnail" : {"type": "string", "index" : "not_analyzed"},
-                        "analyze" : {"type": "string", "index" : "not_analyzed"},
                         "driver" : {"type": "string", "index" : "not_analyzed"}
                         }
                 }
             }
             }
-        elasticsearch.indices.put_template(name="efetch_timeline", body=template)
+        elasticsearch.indices.put_template(name="efetch-evidence", body=template)
 
     def get_file_from_ppid(self, ppid, abort_on_error=True):
         """Returns the file object for the given file in the database"""
-        ppid_split = str(ppid).split('/')
-        image_id = ppid_split[0]
-        offset = ppid_split[1]
-        path = '/'.join(ppid_split[2:])
-
-        return self.get_file(image_id, offset, path, abort_on_error)
+        return self.get_file(ppid.split('/')[0], ppid, abort_on_error)
 
     def create_case(self, name, description, evidence):
         if not name:
@@ -131,7 +124,7 @@ class DBUtil(object):
             indices = elasticsearch.indices.get_aliases().keys()
             evidence = []
             for index in sorted(indices):
-                if str(index).startswith('efetch_timeline_'):
+                if str(index).startswith('efetch-evidence_'):
                     evidence.append(index[16:])
             return evidence
         else:
@@ -146,12 +139,14 @@ class DBUtil(object):
         elasticsearch.delete(index='efetch-cases', doc_type='case', id=name)
         return
 
-    def get_file(self, image_id, offset, path, abort_on_error=True):
+    def get_file(self, image_id, evd_id, abort_on_error=True):
         """Returns the file object for the given file in the database"""
-        if path.endswith('/') and path != '/':
-            path = path[:-1]
-        if str(path).startswith('/'):
-            path = str(path)[1:]
+        
+        #Remove leading and trailing slashes
+        if evd_id.endswith('/'):
+            evd_id = evd_id[:-1]
+        if str(evd_id).startswith('/'):
+            evd_id = str(evd_id)[1:]
 
         #TODO CHECK IF IMAGE EXISTS
         #Check if image and offset are in database
@@ -162,9 +157,9 @@ class DBUtil(object):
         #        return
 
         #TODO Do not hide errors from elasticsearch
-        curr_file =  elasticsearch.get(index='efetch_timeline_' + image_id, doc_type='event', id=image_id + '/' + offset + '/' + path)
+        curr_file =  elasticsearch.get(index='efetch-evidence_' + image_id, doc_type='event', id=evd_id)
         if not curr_file['_source']:
-            logging.error("Could not find file. Image='" + image_id + "' Offset='" + offset + "' Type='" + input_type + "' Path='" + path + "'")
+            logging.error("Could not find file. Image='" + image_id + "' Type='" + input_type + "' _id='" + evd_id + "'")
             if abort_on_error:
                 abort(404, "Could not find file in provided image.")
             else:
@@ -175,10 +170,7 @@ class DBUtil(object):
     #TODO add error checking
     def list_dir(self, directory):
         """Returns the list of files and folders within a directory"""
-        if directory['path'] == '/':
-            query_dir = '/'
-        else:
-            query_dir = directory['path'] + '/'
+        query_dir = directory['pid'] + '/'
 
         query = {
                 "query": { 
@@ -189,7 +181,7 @@ class DBUtil(object):
                     },
                 "size" : 64000
                 }
-        result = elasticsearch.search(index='efetch_timeline_' + directory['image_id'], body=query,)
+        result = elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query,)
         return result['hits']['hits']
 
     def create_index(self, index_name):
@@ -202,16 +194,15 @@ class DBUtil(object):
         """Returns the file object for the given file in the database"""
         ppid_split = str(ppid).split('/')
         image_id = ppid_split[0]
-        offset = ppid_split[1]
-        path = '/'.join(ppid_split[2:])
-        print("path: " + path + ", offset: " + offset + ", image_id: " + image_id)
+        path = '/'.join(ppid_split[1:])
+        print("path: " + path + ", image_id: " + image_id)
         self.update(ppid, image_id, update, abort_on_error)
 
     def update(self, ppid, image_id, update, abort_on_error=True):
         #try:
-        elasticsearch.update(index='efetch_timeline_' + image_id, doc_type='event', id=ppid, body={'doc': update})
+        elasticsearch.update(index='efetch-evidence_' + image_id, doc_type='event', id=ppid, body={'doc': update})
         #except:
         #    if abort_on_error:
-        #        abort(404, "Could not update document with id: " +image_id + '/' + offset + '/' + path)
+        #        abort(404, "Could not update document with id: " +image_id + '/' + path)
         #    else:
         #        return

@@ -1,4 +1,3 @@
-<!-- TODO this page awesomes offset 0, FIX THIS! -->
 <html xmlns="http://www.w3.org/1999/xhtml" > 
 <head> 
     <style> 
@@ -97,7 +96,7 @@
                 if (row){
                     var input = $("<input>")
                        .attr("type", "hidden")
-                       .attr("name", "evidence").val(row.evidence + '/0');
+                       .attr("name", "evidence").val(row.evidence);
                     $('#ff').append($(input));
                     $('#ff').form('submit');
                     $('#add_evidence_window').window('close');

@@ -48,7 +48,7 @@ class FaRegview(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/regview_template.html', 'r')
         html = str(template.read())
-        html = html.replace("<!-- Path -->", curr_file['image_id'] + '/' + curr_file['offset'] + '/' + curr_file['path'])
+        html = html.replace("<!-- Path -->", curr_file['pid'])
         template.close()
  
         return html

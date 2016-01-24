@@ -121,9 +121,9 @@ def plugins(args):
 
     if plugin.plugin_object.parent():
         children = '/'.join(args_list)
-        #Updates the args list so parent plugins can get imaged_id, offset, and path
+        #Updates the args list so parent plugins can get imaged_id,  and path
         while args_list and helper.plugin_manager.getPluginByName(args_list[0]) and helper.plugin_manager.getPluginByName(args_list[0]).plugin_object.parent():
-            print("HERE: " + args_list.pop(0))
+            args_list.pop(0)
         if args_list and helper.plugin_manager.getPluginByName(args_list[0]):
             args_list.pop(0)
 
@@ -133,30 +133,18 @@ def plugins(args):
     else:
         image_id = None
 
-    #Offset
-    if args_list:
-        offset = args_list.pop(0)
-    else:
-        offset = None
-
     #Path
     if args_list:
         path = '/'.join(args_list)
     else:
-        path = None
-    if offset and not path:
-        path = '/'
+        path = ''
     
-    if path:
-        #Remove random P, #TODO Resolve issue at source and remove this patch
-        if path.startswith('p/'):
-            path = path[1:]
-
+    if image_id:
         #Get file from database
         try:
-            curr_file = helper.db_util.get_file(image_id, offset, str(path))
+            curr_file = helper.db_util.get_file(image_id, image_id + '/' + str(path))
         except:
-            abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '" at offset "' + offset + '"')
+            abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
 
         #Cache file
         if plugin.plugin_object.cache():

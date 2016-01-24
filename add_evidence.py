@@ -6,9 +6,11 @@ import pytsk3
 from utils.efetch_helper import EfetchHelper
 from dfvfs_util import DfvfsUtil
 
+global options
+
 def main(argv):
     try: 
-        opts, args = getopt.getopt(argv, "hi:n:a:p:d", ["help", "image=", "name=", "address=", "port=", "output=", "debug"])
+        opts, args = getopt.getopt(argv, "hi:n:a:p:d", ["help", "image=", "name=", "output=", "debug"])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -22,18 +24,12 @@ def main(argv):
 
     image_path = ''
     image_id = ''
-    address = 'localhost'
-    port = '8080'
     max_download_size = 500
 
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             usage()
             sys.exit()
-        elif opt in ("-a", "--address"):
-            address = arg
-        elif opt in ("-p", "--port"):
-            port = str(arg)
         elif opt in ("-i", "--image"):
             image_path = str(arg)
         elif opt in ("-n", "--name"):
@@ -65,35 +61,47 @@ def main(argv):
     test = helper.db_util
     manager = helper.plugin_manager
 
-    add_image(image_id, 0, image_path, helper.db_util, address, port)
+    settings = []
 
-def add_image(image_id, offset, image_path, db_util, address, port):
-    """Creates a file listing of the partition at the provided image and offset in the database"""
+    while not add_image(image_id, image_path, helper.db_util, settings):
+        new_setting = raw_input('Option: ')
+        if str(new_setting).strip() in options:
+            settings.append(str(new_setting).strip())
+        else:
+            print("ERROR: Must be option in " + str(options))
+
+def add_image(image_id, image_path, db_util, settings):
+    """Creates a file listing of the partition at the provided image in the database"""
     if not str(image_path).startswith("/"):
         image_path = "/" + image_path
 
     if not os.path.isfile(image_path):
         logging.error("Could not find file at path '" + str(image_path) + "'")
+        abort(400, "Could not find file at specified path '" + str(image_path) + "'")
 
-    logging.info("Adding " + image_id + " to Elastic Search using dfVFS driver")
-
-    offset = str(offset)
+    logging.info("Adding " + str(image_id) + " to Elastic Search using dfVFS driver")
 
     #try:
-    dfvfs_util = DfvfsUtil(image_path)
-    index_name = 'efetch_timeline_' + image_id
+    dfvfs_util = DfvfsUtil(image_path, list(settings), False)
+    if dfvfs_util.initialized < 1:
+        print(dfvfs_util.display)
+        global options 
+        options = dfvfs_util.options
+        return False
+
+    index_name = 'efetch-evidence_' + image_id
     db_util.create_index(index_name)
     root = {
                 '_index': index_name,
                 '_type' : 'event',
-                '_id' : image_id + '/' + offset + '/',
+                '_id' : image_id,
                 '_source' : {
-                    'id' : image_id + "/" + offset,
-                    'pid' : image_id + '/' + offset + '/',
-                    'iid' : image_id + '/' + offset + '/',
+                    'id' : image_id,
+                    'pid' : image_id,
+                    'iid' : image_id + '/',
                     'image_id': image_id,
-                    'offset' : offset,
                     'image_path' : image_path,
+                    'evd_type' : 'root',
                     'name' : '/',
                     'path' : '/',
                     'ext' : '',
@@ -107,23 +115,61 @@ def add_image(image_id, offset, image_path, db_util, address, port):
                     'size' : '',
                     'uid' : '',
                     'gid' : '',
-                    'thumbnail' : "http://" + address + ":" + port + "/plguins/fa_thumbnail/" + image_id + "/" + offset + '/',
-                    'analyze' : "http://" + address + ":" + port + "/plugins/fa_analyze/" + image_id + "/" + offset + '/',
-                    'driver' : "fa_tsk"
+                    'driver' : "fa_dfvfs"
                 }
         }
-    json = dfvfs_util.GetJson(image_id, offset, image_path, address, port)
+
+    json = []
     json.append(root)
+    
+    curr_id = image_id
+    prev_id = image_id
+    curr_path = '/'
+
+    for setting in settings:
+        print("Setting found: " + setting)
+        curr_id += '/' + setting
+        curr_path += setting + '/'
+        json.append({
+                '_index': index_name,
+                '_type' : 'event',
+                '_id' : curr_id,
+                '_source' : {
+                    'id' : curr_id,
+                    'pid' : curr_id,
+                    'iid' : curr_id + '/',
+                    'image_id': image_id,
+                    'image_path' : image_path,
+                    'evd_type' : 'part',
+                    'name' : setting + '/',
+                    'path' : curr_path,
+                    'ext' : '',
+                    'dir' : prev_id + '/',
+                    'file_type' : 'directory',
+                    'inode' : '',
+                    'mod' : 0,
+                    'acc' : 0,
+                    'chg' : 0,
+                    'cre' : 0,
+                    'size' : '',
+                    'uid' : '',
+                    'gid' : '',
+                    'driver' : "fa_dfvfs"
+                }
+        })
+        prev_id = curr_id
+
+    json += dfvfs_util.GetJson(image_id, curr_id + '/ROOT', image_path)
     db_util.bulk(json)
 
+    return True
+
 def usage():
-    print("usage: add_evidence.py [-h] [-i IMAGE] [-n NAME] [-a ADDRESS] [-p PORT] [-D DATABASE]")
+    print("usage: add_evidence.py [-h] [-d] [-i IMAGE] [-n NAME]")
     print("optional arguments:")
     print("  -h, --help         shows this help message and exits")
     print("  -i, --image        required path to the image to use")
     print("  -n, --name         required image id")
-    print("  -a, --address      sets the IP address or hostname this server runs on, defaults to localhost")
-    print("  -p, --port         sets the port this server runs on, defaults to 8080")
     print("  -d, --debug        displays debug output")
     print("")
 

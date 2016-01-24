@@ -48,7 +48,7 @@ class FaAnalyze(IPlugin):
         
         #Add Directoy link
         plugins = []
-        plugins.append('<a href="http://' + address + ':' + port + '/plugins/fa_loader/fa_overview/' + curr_file['image_id'] + '/' + curr_file['offset'] + curr_file['path'] + '" target="frame">Overview</a><br>')
+        plugins.append('<a href="/plugins/fa_loader/fa_overview/' + curr_file['pid'] + '" target="frame">Overview</a><br>')
 
         if not mimetype:
             mimetype = helper.guess_mimetype(curr_file['ext'])
@@ -62,7 +62,7 @@ class FaAnalyze(IPlugin):
                     #Check if plugin applies to curr file
                     if plugin.plugin_object.display_name() != 'Overview' and plugin.plugin_object.check(curr_file, path_on_disk, mimetype, size):
                         logging.debug("Check matched, adding plugin " + plugin.plugin_object.display_name())
-                        plugins.append('<a href="http://' + address + ':' + port + '/plugins/fa_loader/' + plugin.name + '/' + curr_file['image_id'] + '/' + curr_file['offset'] + '/' + curr_file['path'] + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
+                        plugins.append('<a href="/plugins/fa_loader/' + plugin.name + '/' + curr_file['pid'] + '" target="frame">' + plugin.plugin_object.display_name() + '</a><br>')
                     else:
                         logging.debug("Check did not match, NOT adding plugin " + plugin.plugin_object.display_name())
 
@@ -72,7 +72,7 @@ class FaAnalyze(IPlugin):
         template = open(curr_dir + '/analyze_template.html', 'r')
         html = str(template.read())
         template.close()
-        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/fa_loader/fa_overview/" + curr_file['image_id'] + '/' + curr_file['offset']  + '/' + curr_file['path'])
+        html = html.replace('<!-- Home -->', "/plugins/fa_loader/fa_overview/" + curr_file['pid'])
         
         if curr_file['file_type'] == 'directory':
             html = html.replace('<!-- File -->', curr_file['name'])
