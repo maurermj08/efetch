@@ -64,28 +64,30 @@ class DfvfsUtil(object):
             full_path = full_path[:-1]
         paths = full_path.split('/')
         curr = 1
-        for base_path_spec in self.base_path_specs:
-            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
-            if file_entry is None:
-                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
-            else:
-                myfile = self._GetFile(curr, paths, file_entry, ignore_case)         
-                if myfile is not None:
-                    return myfile
-                continue
+        #for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1]
+        file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        if file_entry is None:
+            logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        else:
+            myfile = self._GetFile(curr, paths, file_entry, ignore_case)         
+            if myfile is not None:
+                return myfile
+            #continue
     
     def GetJson(self, image_id, curr_id, image_path):
         """Returns a full json version for Efetch"""
         json = []
 
-        for base_path_spec in self.base_path_specs:
-            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
-            if file_entry is None:
-                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
-            else:
-                json.extend(self._GetJson(image_id, curr_id, image_path, file_entry, ''))
+        #for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1]
+        file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
+        if file_entry is None:
+            logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        else:
+            json.extend(self._GetJson(image_id, curr_id, image_path, file_entry, ''))
 
         return json
 
@@ -151,7 +153,6 @@ class DfvfsUtil(object):
 
         if file_type != pytsk3.TSK_FS_META_TYPE_DIR:
             file_object.close()
-        print("HERE _id=" + dir_ref + " path=" + curr_path)
         if not curr_path:
             curr_dir = curr_id.split('ROOT')[0]
             name = 'ROOT'
@@ -196,64 +197,67 @@ class DfvfsUtil(object):
         if dir_path == '/' and not recursive:
             return self.ListRoot()
 
-        for base_path_spec in self.base_path_specs:
-            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
-            if file_entry is None:
-                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
-            else:
-                dir_list = self._ListDir(curr, paths, file_entry, recursive)
-                if dir_list is not None:
-                    return dir_list
-                continue
-    
+        #for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1]
+        file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        if file_entry is None:
+            logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        else:
+            dir_list = self._ListDir(curr, paths, file_entry, recursive)
+            if dir_list is not None:
+                return dir_list
+        #    continue
+
     def FileExists(self, full_path, ignore_case=False):
         """Returns true if there is a file at the given full path or false if not"""
         paths = full_path.split('/')
         curr = 1
-        for base_path_spec in self.base_path_specs:
-            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
-            if file_entry is None:
-                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
-            else:
-                found = self._FileExists(curr, paths, file_entry, ignore_case)            
-                if found:
-                    return found
-                continue
+        #for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1]
+        file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        if file_entry is None:
+            logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        else:
+            found = self._FileExists(curr, paths, file_entry, ignore_case)            
+            if found:
+                return found
+         #       continue
 
     def DirExists(self, dir_path):
         """Returns true if the provided path is a directory or false if not"""
         paths = dir_path.split('/')
         curr = 1
-        for base_path_spec in self.base_path_specs:
-            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
-            if file_entry is None:
-                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
-            else:
-                found = self._DirExists(curr, paths, file_entry)
-                if found:
-                    return found
-                continue
+        #for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1]
+        file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        if file_entry is None:
+            logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        else:
+            found = self._DirExists(curr, paths, file_entry)
+            if found:
+                return found
+            #continue
 
     def SearchForFiles(self, file_name, path='/'):
         """Returns the path of all files with the given name, default search starts at root"""
         paths = path.split('/')
         curr = 1
         file_list = []
-        for base_path_spec in self.base_path_specs:
-            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
-            if file_entry is None:
-                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        #for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1] 
+        file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        if file_entry is None:
+            logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        else:
+            if path == '/' or path == '':
+                file_list.extend(self._SearchForFilesSub(file_name, file_entry, '/'))
             else:
-                if path == '/' or path == '':
-                    file_list.extend(self._SearchForFilesSub(file_name, file_entry, '/'))
-                else:
-                    file_list.extend(self._SearchForFiles(curr, paths, file_name, file_entry, '/'))
-                
-                continue
+                file_list.extend(self._SearchForFiles(curr, paths, file_name, file_entry, '/'))           
+       
         if file_list:
             return file_list
         else:
@@ -263,20 +267,20 @@ class DfvfsUtil(object):
         """Returns the path of all directories with the given name, default search starts at root"""
         paths = path.split('/')
         curr = 1
-        dir_list = []
-        for base_path_spec in self.base_path_specs:
-            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
-            if file_entry is None:
-                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        dir_list = []   
+        #for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1] 
+        file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        if file_entry is None:
+            logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        else:
+            if dir_name == '/' or dir_name == '':
+                return ['/']
+            if path == '/' or path == '':
+                dir_list.extend(self._SearchForDirsSub(dir_name, file_entry, '/'))
             else:
-                if dir_name == '/' or dir_name == '':
-                    return ['/']
-                if path == '/' or path == '':
-                    dir_list.extend(self._SearchForDirsSub(dir_name, file_entry, '/'))
-                else:
-                    dir_list.extend(self._SearchForDirs(curr, paths, dir_name, file_entry, '/'))
-                continue
+                dir_list.extend(self._SearchForDirs(curr, paths, dir_name, file_entry, '/'))
         if dir_list:
             return dir_list
         else:
@@ -302,17 +306,18 @@ class DfvfsUtil(object):
    
     def ListRoot(self):
         dir_list = []
-        for base_path_spec in self.base_path_specs:
-            file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-            file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
-            if file_entry is None:
-                logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
-            else:
-                for sub_file_entry in file_entry.sub_file_entries:
-                    dir_list.append(sub_file_entry.name)
-                if dir_list is not None:
-                    return dir_list
-                continue
+        #for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1] 
+        file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        if file_entry is None:
+            logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
+        else:
+            for sub_file_entry in file_entry.sub_file_entries:
+                dir_list.append(sub_file_entry.name)
+            if dir_list is not None:
+                return dir_list
+         #   continue
 
     def _ListDir(self, curr, paths, file_entry, recursive):
         """List the contents of the specified directory"""
@@ -754,8 +759,8 @@ class DfvfsUtil(object):
                 selected_vss_stores = sys.stdin.readline()
                 self.settings.append(selected_vss_stores.strip())
             else:
-                self.display = u'The following Volume Shadow Snapshots (VSS) were found:\nIdentifier\tVSS store identifier\n'
-                self.options = []
+                self.display = u'The following Volume Shadow Snapshots (VSS) were found:\nTo add evidence without any snapshots use "none"\nIdentifier\tVSS store identifier\n'
+                self.options = ['none']
 
                 for volume_identifier in volume_identifiers:
                     volume = volume_system.GetVolumeByIdentifier(volume_identifier)
@@ -769,13 +774,16 @@ class DfvfsUtil(object):
                     self.options.append(volume.identifier)
                 if self.settings:
                     selected_vss_stores = self.settings.pop(0)
+                    if str(selected_vss_stores).lower() == 'none':
+                        selected_vss_stores = []
                 else:
                     self.initialized = -1
                     return
             
-            selected_vss_stores = selected_vss_stores.strip()
             if not selected_vss_stores:
                 break
+            
+            selected_vss_stores = selected_vss_stores.strip()
 
             try:
                 selected_vss_stores = self._ParseVSSStoresString(selected_vss_stores)

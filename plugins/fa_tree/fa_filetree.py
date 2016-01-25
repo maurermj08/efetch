@@ -58,7 +58,7 @@ class FaRegview(IPlugin):
                     'key': curr_file['pid'],
                     'folder': True,
                     'lazy': True,
-                    }])
+                    }], sort_keys=True)
 
         child_plugins = ''
 
@@ -115,4 +115,5 @@ class FaRegview(IPlugin):
                         }
                 children.append(child)
 
+        children.sort()
         return json.dumps(children)

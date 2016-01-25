@@ -149,6 +149,7 @@ class FaDfvfs(IPlugin):
             curr_id = curr_file['id'].split('/')[1:]
             while curr_id[0] != 'ROOT':
                 settings.append(curr_id.pop(0))
+            settings.append('none')
             self.utils[curr_file['id']] = DfvfsUtil(curr_file['image_path'], settings, False)
         
         dfvfs_util = self.utils[curr_file['id']]
