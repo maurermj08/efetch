@@ -141,10 +141,10 @@ def plugins(args):
     
     if image_id:
         #Get file from database
-        try:
-            curr_file = helper.db_util.get_file(image_id, image_id + '/' + str(path))
-        except:
-            abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
+        #try:
+        curr_file = helper.db_util.get_file(image_id, image_id + '/' + str(path))
+        #except:
+        #    abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
 
         #Cache file
         if plugin.plugin_object.cache():

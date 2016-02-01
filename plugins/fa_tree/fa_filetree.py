@@ -54,7 +54,7 @@ class FaRegview(IPlugin):
             return self.get_child(request_file, helper)
         elif 'mode' in request.query and request.query['mode'] == 'root':
             return json.dumps([{
-                    'title': curr_file['id'] + ' - ' + curr_file['path'],
+                    'title': curr_file['name'],
                     'key': curr_file['pid'],
                     'folder': True,
                     'lazy': True,
@@ -93,14 +93,15 @@ class FaRegview(IPlugin):
         """Returns JSON list containing sub keys using Fancy Tree format"""
         children = []
 
-        if curr_file['file_type'] != 'directory':
+        if curr_file['meta_type'] != 'Directory':
             return json.dumps(children)
 
         #curr_folder = curr_file['path'] + "/"
 
         for item in helper.db_util.list_dir(curr_file):
             source = item['_source']
-            if source['file_type'] == 'directory':
+            #TODO: Need to find out why there are weird ';' entries in the root of log2timeline
+            if source['meta_type'] == 'Directory' and ';' not in source['iid']:
                 folder = True
             else:
                 folder = False

@@ -54,6 +54,14 @@ class EfetchHelper(object):
         for plugin in self.plugin_manager.getAllPlugins():
             self.plugin_manager.activatePluginByName(plugin.name)
 
+    def get_request_value(self, request, variable_name, default=None):
+        """Gets the value of a variable in either a GET or POST request"""
+        if variable_name in request.query:
+            return request.query[variable_name]
+        elif request.forms.get(variable_name):
+            return request.forms.get(variable_name)
+        return default
+
     def get_mimetype(self, file_path):
         """Returns the mimetype for the given file"""
         if pymagic:
@@ -65,9 +73,11 @@ class EfetchHelper(object):
         """Caches the provided file and returns the files cached directory"""
         #if curr_file['file_type'] == 'directory':
         #    return
-        if curr_file['file_type'] != 'regular':
+        #if curr_file['file_type'] != 'regular':
+        #    return None
+        if curr_file['meta_type'] != 'File':
             return None
-        if int(curr_file['size']) > self.max_file_size:
+        if int(curr_file['file_size'][0]) > self.max_file_size:
             return None
 
         #TODO: Not everything will have an iid... so need to figure that out

@@ -25,7 +25,7 @@ class FaPdfinfo(IPlugin):
     def check(self, curr_file, path_on_disk, mimetype, size):
         """Checks if the file is compatable with this plugin"""
         allowed = [ 'application/pdf' ]
-        return curr_file['file_type'] == 'regular' and str(mimetype).lower() in allowed
+        return curr_file['meta_type'] == 'File' and str(mimetype).lower() in allowed
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

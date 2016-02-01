@@ -46,7 +46,7 @@ class FaThumbnail(IPlugin):
     def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
         """Returns either an icon or thumbnail of the provided file"""
         #If it is folder just return the folder icon
-        if curr_file['file_type'] == 'directory' or str(curr_file['name']).strip() == "." or str(curr_file['name']).strip() == "..":
+        if curr_file['meta_type'] == 'Directory' or str(curr_file['name']).strip() == "." or str(curr_file['name']).strip() == "..":
             return static_file("_folder.png", root=helper.icon_dir, mimetype='image/png')
 
         #Uses extension to determine if it should create a thumbnail

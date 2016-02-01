@@ -88,7 +88,7 @@ class FaDfvfs(IPlugin):
                         'path' : '/',
                         'ext' : '',
                         'dir' : '',
-                        'file_type' : 'directory',
+                        'meta_type' : 'Directory',
                         'inode' : '',
                         'mod' : 0,
                         'acc' : 0,
@@ -106,7 +106,7 @@ class FaDfvfs(IPlugin):
         
         curr_id = image_id + '/'
         curr_path = '/'
-        settings.append('ROOT')
+        settings.append('TSK')
 
         for setting in settings:
             curr_id += setting
@@ -126,7 +126,7 @@ class FaDfvfs(IPlugin):
                         'path' : curr_path,
                         'ext' : '',
                         'dir' : '',
-                        'file_type' : 'directory',
+                        'meta_type' : 'Directory',
                         'inode' : '',
                         'mod' : 0,
                         'acc' : 0,
@@ -144,15 +144,15 @@ class FaDfvfs(IPlugin):
 
     def icat(self, curr_file, output_file_path):
         """Returns the specified file using image file, meta or inode address, and outputfile"""
-        if not curr_file['id'] in self.utils:
+        if not curr_file['root'] in self.utils:
             settings = []
-            curr_id = curr_file['id'].split('/')[1:]
-            while curr_id[0] != 'ROOT':
-                settings.append(curr_id.pop(0))
+            curr_id = curr_file['root'].split('/')[1:]
+            while curr_id[0] != 'TSK':
+                settings.append(curr_id.pop(0).lower())
             settings.append('none')
-            self.utils[curr_file['id']] = DfvfsUtil(curr_file['image_path'], settings, False)
+            self.utils[curr_file['root']] = DfvfsUtil(curr_file['image_path'], settings, False)
         
-        dfvfs_util = self.utils[curr_file['id']]
+        dfvfs_util = self.utils[curr_file['root']]
         
         if dfvfs_util.initialized > 0:
             dfvfs_util.Icat(curr_file['path'], output_file_path)

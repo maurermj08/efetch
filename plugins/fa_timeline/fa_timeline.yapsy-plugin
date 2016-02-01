@@ -1,0 +1,10 @@
+[Core]
+Name = fa_timeline
+Module = fa_timeline
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Gets all Log2Timeline entries for the current file
+Copyright = 2015

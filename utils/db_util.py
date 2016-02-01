@@ -5,21 +5,19 @@ import sys
 from elasticsearch import Elasticsearch, helpers
 class DBUtil(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
-    global elasticsearch
+    elasticsearch = None
 
     def __init__(self, es_url=None):
-        global elasticsearch
-        
         if es_url:
-            elasticsearch = Elasticsearch([es_url])
+            self.elasticsearch = Elasticsearch([es_url])
         else:
-            elasticsearch = Elasticsearch()
+            self.elasticsearch = Elasticsearch()
    
         #Elastic Search Setup
-        elasticsearch.indices.create(index='efetch-config',ignore=400)
-        elasticsearch.indices.create(index='efetch-log',ignore=400)
-        elasticsearch.indices.create(index='efetch-cases',ignore=400)
-        elasticsearch.indices.create(index='efetch-evidence',ignore=400)
+        self.elasticsearch.indices.create(index='efetch-config',ignore=400)
+        self.elasticsearch.indices.create(index='efetch-log',ignore=400)
+        self.elasticsearch.indices.create(index='efetch-cases',ignore=400)
+        self.elasticsearch.indices.create(index='efetch-evidence',ignore=400)
         case_template = {
             "template" : "efetch-cases",
             "settings" : {
@@ -40,7 +38,7 @@ class DBUtil(object):
                     }
                 }
             }
-        elasticsearch.indices.put_template(name="efetch-case", body=case_template)
+        self.elasticsearch.indices.put_template(name="efetch-case", body=case_template)
 
         template = {
             "template" : "efetch-evidence*",
@@ -61,7 +59,7 @@ class DBUtil(object):
                         "path" : {"type": "string", "index" : "not_analyzed"},
                         "ext" : {"type": "string", "index" : "not_analyzed"},
                         "dir" : {"type": "string", "index" : "not_analyzed"},
-                        "file_type" : {"type": "string", "index" : "not_analyzed"},
+                        "meta_type" : {"type": "string", "index" : "not_analyzed"},
                         "inode" : {"type": "string", "index" : "not_analyzed"},
                         "mod" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
                         "acc" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
@@ -75,7 +73,7 @@ class DBUtil(object):
                 }
             }
             }
-        elasticsearch.indices.put_template(name="efetch-evidence", body=template)
+        self.elasticsearch.indices.put_template(name="efetch-evidence", body=template)
 
     def get_file_from_ppid(self, ppid, abort_on_error=True):
         """Returns the file object for the given file in the database"""
@@ -96,7 +94,7 @@ class DBUtil(object):
             }
         json = []
         json.append(case)
-        helpers.bulk(elasticsearch, json)
+        helpers.bulk(self.elasticsearch, json)
         return
 
     #TODO switch to actual update
@@ -121,7 +119,7 @@ class DBUtil(object):
 
     def get_evidence(self, name=None, abort_on_error=True):
         if not name:
-            indices = elasticsearch.indices.get_aliases().keys()
+            indices = self.elasticsearch.indices.get_aliases().keys()
             evidence = []
             for index in sorted(indices):
                 if str(index).startswith('efetch-evidence_'):
@@ -132,11 +130,11 @@ class DBUtil(object):
 
     def read_case(self, name=None, abort_on_error=True):
         if not name:
-            return elasticsearch.search(index='efetch-cases', doc_type='case')
-        return elasticsearch.get(index='efetch-cases', doc_type='case', id=name)
+            return self.elasticsearch.search(index='efetch-cases', doc_type='case')
+        return self.elasticsearch.get(index='efetch-cases', doc_type='case', id=name)
 
     def delete_case(self, name):
-        elasticsearch.delete(index='efetch-cases', doc_type='case', id=name)
+        self.elasticsearch.delete(index='efetch-cases', doc_type='case', id=name)
         return
 
     def get_file(self, image_id, evd_id, abort_on_error=True):
@@ -157,21 +155,25 @@ class DBUtil(object):
         #        return
 
         #TODO Do not hide errors from elasticsearch
-        curr_file =  elasticsearch.get(index='efetch-evidence_' + image_id, doc_type='event', id=evd_id)
-        if not curr_file['_source']:
+        #curr_file =  elasticsearch.get(index='efetch-evidence_' + image_id, doc_type='event', id=evd_id)
+        curr_file = self.elasticsearch.search(index='efetch-evidence_' + image_id, doc_type='event', body={"query": {"match": {"pid": evd_id}}})
+        if not curr_file['hits'] or not curr_file['hits']['hits'] or not curr_file['hits']['hits'][0]['_source']:
             logging.error("Could not find file. Image='" + image_id + "' Type='" + input_type + "' _id='" + evd_id + "'")
             if abort_on_error:
                 abort(404, "Could not find file in provided image.")
             else:
                 return
-        
-        return curr_file['_source']
+    
+        if len(curr_file['hits']['hits']) > 1:
+            logging.warn("Found more than one file with pid " + evd_id)
+
+        return curr_file['hits']['hits'][0]['_source']
 
     #TODO add error checking
     def list_dir(self, directory):
         """Returns the list of files and folders within a directory"""
         query_dir = directory['pid'] + '/'
-
+       
         query = {
                 "query": { 
                     "match" : 
@@ -181,14 +183,15 @@ class DBUtil(object):
                     },
                 "size" : 64000
                 }
-        result = elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query,)
+        result = self.elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query)
+        logging.debug("Listed directory " + directory['name'] + " and found " + str(len(result['hits']['hits'])) + " entries")
         return result['hits']['hits']
 
     def create_index(self, index_name):
-        elasticsearch.indices.create(index=index_name, ignore=400)
+        self.elasticsearch.indices.create(index=index_name, ignore=400)
 
     def bulk(self, json):
-        helpers.bulk(elasticsearch, json)
+        helpers.bulk(self.elasticsearch, json)
 
     def update_by_ppid(self, ppid, update, abort_on_error=True):
         """Returns the file object for the given file in the database"""
@@ -200,7 +203,7 @@ class DBUtil(object):
 
     def update(self, ppid, image_id, update, abort_on_error=True):
         #try:
-        elasticsearch.update(index='efetch-evidence_' + image_id, doc_type='event', id=ppid, body={'doc': update})
+        self.elasticsearch.update(index='efetch-evidence_' + image_id, doc_type='event', id=ppid, body={'doc': update})
         #except:
         #    if abort_on_error:
         #        abort(404, "Could not update document with id: " +image_id + '/' + path)

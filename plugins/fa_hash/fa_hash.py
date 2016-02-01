@@ -25,7 +25,7 @@ class FaHash(IPlugin):
 
     def check(self, curr_file, path_on_disk, mimetype, size):
         """Checks if the file is compatable with this plugin"""
-        return curr_file['file_type'] == 'regular'
+        return curr_file['meta_type'] == 'File'
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

@@ -53,7 +53,7 @@ class FaAnalyze(IPlugin):
         if not mimetype:
             mimetype = helper.guess_mimetype(curr_file['ext'])
         if not size:
-            size = curr_file['size']
+            size = curr_file['file_size'][0]
 
         #Order Plugins by populatiry from highest to lowest
         for pop in reversed(range(1, 11)):
@@ -74,10 +74,10 @@ class FaAnalyze(IPlugin):
         template.close()
         html = html.replace('<!-- Home -->', "/plugins/fa_loader/fa_directory/" + curr_file['pid'])
         
-        if curr_file['file_type'] == 'directory':
+        if curr_file['meta_type'] == 'Directory':
             html = html.replace('<!-- File -->', curr_file['name'])
             html = html.replace('<!-- Mimetype -->', 'Directory')
-            html = html.replace('<!-- Size -->', str(curr_file['size']) + " Bytes")
+            html = html.replace('<!-- Size -->', str(curr_file['file_size'][0]) + " Bytes")
             html = html.replace('<!-- Links -->', "\n".join(plugins))
         else:
             html = html.replace('<!-- File -->', curr_file['name'])

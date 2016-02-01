@@ -24,7 +24,7 @@ class FaHexdump(IPlugin):
     def check(self, curr_file, path_on_disk, mimetype, size):
         """Checks if the file is compatable with this plugin"""
         maxsize = 100000000 
-        return size < maxsize
+        return size < maxsize and curr_file['meta_type'] != 'Directory'
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

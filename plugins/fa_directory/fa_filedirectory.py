@@ -46,7 +46,7 @@ class FaFileDirectory(IPlugin):
     def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
         """Returns a formatted directory listing for the given path"""
         #If path is a folder just set the view to it, if not use the files parent folder
-        if curr_file['file_type'] == 'directory':
+        if curr_file['meta_type'] == 'Directory':
             curr_folder = curr_file
         else:
             curr_folder = helper.db_util.get_file(curr_file['image_id'], curr_file['dir'])
@@ -70,30 +70,30 @@ class FaFileDirectory(IPlugin):
         #TODO: Change localtime to case time, specifically what is supplied to sleuthkit
         for item in helper.db_util.list_dir(curr_folder):
             source = item['_source']
-            if show_dirs or source['file_type'] != 'directory':
+            if show_dirs or source['meta_type'] != 'Directory':
                 listing.append('    <tr>')
-                listing.append('        <td><img src="/plugins/fa_thumbnail/' + source['pid'] + '" alt="' + source['file_type'] + '-' + source['ext'] + '" title="' + source['file_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
-                if source['file_type'] == 'directory':
+                listing.append('        <td><img src="/plugins/fa_thumbnail/' + source['pid'] + '" alt="' + source['meta_type'] + '-' + source['ext'] + '" title="' + source['meta_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
+                if source['meta_type'] == 'Directory':
                     listing.append('        <td><a href="/plugins/fa_filedirectory/' + child_plugins + source['pid'] + query_string + '" target="_self">' + source['name'] + "</a></td>")
                 else:
                     listing.append('        <td><a href="/plugins/' + child_plugins + source['pid'] + query_string + '" target="file_dir_frame">' + source['name'] + "</a></td>")
-                if (source['mod']):
-                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['mod']))) + "</td>")
+                if ('mtime' in source):
+                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['mtime'])/1000000)) + "</td>")
                 else:
                     listing.append("        <td> - </td>")
-                if (source['acc']):
-                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['acc']))) + "</td>")
+                if ('atime' in source):
+                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['atime'])/1000000)) + "</td>")
                 else:
                     listing.append("        <td> - </td>")
-                if (source['chg']):
-                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['chg']))) + "</td>")
+                if ('ctime' in source):
+                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['ctime'])/1000000)) + "</td>")
                 else:
                     listing.append("        <td> - </td>")
-                if (source['cre']):
-                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(source['cre']))) + "</td>")
+                if ('crtime' in source):
+                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(source['crtime'])/1000000)) + "</td>")
                 else:
                     listing.append("        <td> - </td>")
-                listing.append("        <td>" + source['size'] + "</td>")
+                listing.append("        <td>" + str(source['file_size'][0]) + "</td>")
                 listing.append("    </tr>")
 
         html = ""

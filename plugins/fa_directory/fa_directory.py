@@ -46,7 +46,7 @@ class FaDirectory(IPlugin):
     def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
         """Returns a formatted directory listing for the given path"""
         #If path is a folder just set the view to it, if not use the files parent folder
-        if curr_file['file_type'] == 'directory':
+        if curr_file['meta_type'] == 'Directory':
             curr_folder = curr_file
         else:
             curr_folder = helper.db_util.get_file(curr_file['image_id'], curr_file['dir'])
@@ -56,8 +56,8 @@ class FaDirectory(IPlugin):
         for item in helper.db_util.list_dir(curr_folder):
             source = item['_source']
             listing.append("    <tr>") 
-            listing.append('        <td><img src="/plugins/fa_thumbnail/' + source['pid'] + '" alt="' + source['file_type'] + '-' + source['ext'] + '" title="' + source['file_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
-            if source['file_type'] == 'directory':
+            listing.append('        <td><img src="/plugins/fa_thumbnail/' + source['pid'] + '" alt="' + source['meta_type'] + '-' + source['ext'] + '" title="' + source['meta_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
+            if source['meta_type'] == 'Directory':
                 listing.append('        <td><a href="/plugins/fa_directory/' + source['pid'] + '" target="_self">' + source['name'] + "</a></td>")
             else:
                 listing.append('        <td><a href="/plugins/fa_analyze/' + source['pid'] + '" target="_parent">' + source['name'] + "</a></td>")
@@ -77,7 +77,7 @@ class FaDirectory(IPlugin):
                 listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(source['cre']))) + "</td>")
             else:
                 listing.append("        <td> - </td>")
-            listing.append("        <td>" + source['size'] + "</td>")
+            listing.append("        <td>" + str(source['file_size']) + "</td>")
             listing.append("    </tr>")
 
         html = ""

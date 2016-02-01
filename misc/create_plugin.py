@@ -156,7 +156,7 @@ def get_check():
                 size = 0
         checks.append("size <= " + str(size))
     if answer == 2 or answer == 5 or answer ==6 or answer == 8:
-        print("1 - Regular")
+        print("1 - File")
         print("2 - Directory")
         file_type = 0
         while file_type < 1 or file_type > 2:
@@ -165,9 +165,9 @@ def get_check():
             except:
                 file_type = 0
         if file_type == 1:
-            checks.append("curr_file['file_type'] == 'regular'")
+            checks.append("curr_file['meta_type'] == 'File'")
         else:
-            checks.append("curr_file['file_type'] == 'directory'")
+            checks.append("curr_file['meta_type'] == 'Directory'")
     if answer == 4 or answer == 6 or answer == 7 or answer == 8:
         cont = True
         mimetypes = []

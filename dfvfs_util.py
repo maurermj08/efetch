@@ -154,8 +154,8 @@ class DfvfsUtil(object):
         if file_type != pytsk3.TSK_FS_META_TYPE_DIR:
             file_object.close()
         if not curr_path:
-            curr_dir = curr_id.split('ROOT')[0]
-            name = 'ROOT'
+            curr_dir = curr_id.split('TSK', 1)[0]
+            name = 'TSK'
         else:
             curr_dir = curr_id + curr_path
 
