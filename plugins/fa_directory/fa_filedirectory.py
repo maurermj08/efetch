@@ -78,19 +78,19 @@ class FaFileDirectory(IPlugin):
                 else:
                     listing.append('        <td><a href="/plugins/' + child_plugins + source['pid'] + query_string + '" target="file_dir_frame">' + source['name'] + "</a></td>")
                 if ('mtime' in source):
-                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['mtime'])/1000000)) + "</td>")
+                    listing.append("        <td>" + source['mtime'] + "</td>")
                 else:
                     listing.append("        <td> - </td>")
                 if ('atime' in source):
-                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['atime'])/1000000)) + "</td>")
+                    listing.append("        <td>" + source['atime'] + "</td>")
                 else:
                     listing.append("        <td> - </td>")
                 if ('ctime' in source):
-                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(source['ctime'])/1000000)) + "</td>")
+                    listing.append("        <td>" + source['ctime'] + "</td>")
                 else:
                     listing.append("        <td> - </td>")
                 if ('crtime' in source):
-                    listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(source['crtime'])/1000000)) + "</td>")
+                    listing.append("        <td>" + source['crtime'] + "</td>")
                 else:
                     listing.append("        <td> - </td>")
                 listing.append("        <td>" + str(source['file_size'][0]) + "</td>")

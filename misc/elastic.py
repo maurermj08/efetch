@@ -48,6 +48,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
     self._index_name = None
     self._image_id = None
     self._roots = []
+    self._efetch_event_queue = {}
     self._image_path = None
 
   def _EventToDict(self, event_object):
@@ -121,7 +122,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
 
     return ret_dict
 
-  def _EventToEfetch(self, event_object):
+  def _EventToEfetch(self, event_object, event_times):
     """Returns a dict built from an event object.
 
     Args:
@@ -151,7 +152,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
     name = os.path.basename(path)
     directory = os.path.dirname(pid) + '/'
     ext = os.path.splitext(name)[1][1:] or ""
-    
+
     #file_entry = resolver.Resolver.OpenFileEntry(ret_dict['pathspec'])
     #stat_object = file_entry.GetStat()
     #if stat_object:
@@ -215,9 +216,13 @@ class ElasticSearchOutputModule(interface.OutputModule):
     # Adding attributes in that are calculated/derived.
     # We want to remove millisecond precision (causes some issues in
     # conversion).
-    ret_dict['datetime'] = timelib.Timestamp.CopyToIsoFormat(
-        timelib.Timestamp.RoundToSeconds(event_object.timestamp),
-        timezone=self._output_mediator.timezone)
+    #ret_dict['datetime'] = timelib.Timestamp.CopyToIsoFormat(
+    #    timelib.Timestamp.RoundToSeconds(event_object.timestamp),
+    #    timezone=self._output_mediator.timezone)
+    for time_attribute in ['atime', 'ctime', 'crtime', 'mtime']:   
+      ret_dict[time_attribute] = timelib.Timestamp.CopyToIsoFormat(
+          timelib.Timestamp.RoundToSeconds(event_times[time_attribute]),
+          timezone=self._output_mediator.timezone)
 
     message, _ = self._output_mediator.GetFormattedMessages(event_object)
     if message is None:
@@ -319,8 +324,25 @@ class ElasticSearchOutputModule(interface.OutputModule):
     """
     self._data.append(self._EventToDict(event_object))
     #EFETCH#####
-    if event_object.GetValues()['parser'] == 'filestat' and 'crtime' in event_object.GetValues()['timestamp_desc']:
-      self._data.append(self._EventToEfetch(event_object))
+    if event_object.GetValues()['parser'] == 'filestat':
+      if event_object.GetValues()['display_name'] not in self._efetch_event_queue:
+        self._efetch_event_queue[event_object.GetValues()['display_name']] = {}
+      if 'crtime' in event_object.GetValues()['timestamp_desc']:
+        self._efetch_event_queue[event_object.GetValues()['display_name']]['crtime'] = event_object.timestamp
+      if 'atime' in event_object.GetValues()['timestamp_desc']:
+        self._efetch_event_queue[event_object.GetValues()['display_name']]['atime'] = event_object.timestamp
+      if 'mtime' in event_object.GetValues()['timestamp_desc']:
+        self._efetch_event_queue[event_object.GetValues()['display_name']]['mtime'] = event_object.timestamp
+      if 'ctime' in event_object.GetValues()['timestamp_desc']:
+        self._efetch_event_queue[event_object.GetValues()['display_name']]['ctime'] = event_object.timestamp
+      if 'crtime' in self._efetch_event_queue[event_object.GetValues()['display_name']] and \
+          'atime' in self._efetch_event_queue[event_object.GetValues()['display_name']] and \
+          'mtime' in self._efetch_event_queue[event_object.GetValues()['display_name']] and \
+          'ctime' in self._efetch_event_queue[event_object.GetValues()['display_name']]:
+        self._data.append(self._EventToEfetch(event_object, self._efetch_event_queue[event_object.GetValues()['display_name']]))
+        del self._efetch_event_queue[event_object.GetValues()['display_name']]
+    
+    logging.info('Number of values in Efetch Queue: ' + str(len(self._efetch_event_queue)))
     ############
     self._counter += 1
 
