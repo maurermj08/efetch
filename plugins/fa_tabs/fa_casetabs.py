@@ -42,7 +42,7 @@ class FaCasetabs(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -56,11 +56,11 @@ class FaCasetabs(IPlugin):
 
         cases = []
         cases.append('       <div title="Demo" style="height:100%;width:100%">')
-        cases.append('           <iframe src="http://' + address + ':' + port + '/plugins/' + children + query_string + '?case=test">')
+        cases.append('           <iframe src="/plugins/' + children + query_string + '?case=test">')
         cases.append('           </iframe>')
         cases.append('       </div>')
 
-        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/fa_casemanager/")
+        html = html.replace('<!-- Home -->', "/plugins/fa_casemanager/")
         html = html.replace('<!-- Cases -->', '\n'.join(cases))
         
         return html

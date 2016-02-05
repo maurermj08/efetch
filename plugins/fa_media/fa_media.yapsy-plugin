@@ -1,0 +1,10 @@
+[Core]
+Name = fa_media
+Module = fa_media
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Converts a multimedia file to a HTML5 compatable file and displays it
+Copyright = 2015

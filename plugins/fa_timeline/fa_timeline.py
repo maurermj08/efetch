@@ -43,51 +43,46 @@ class FaTimeline(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
 
         mode = helper.get_request_value(request, 'mode')
         page = int(helper.get_request_value(request, 'page', 1))
         rows = int(helper.get_request_value(request, 'rows', 100))
-
+        sort = helper.get_request_value(request, 'sort')
+        order = helper.get_request_value(request, 'order', 'asc')
+    
+        query_body = {}
+        query_body['from'] = rows * (page - 1)
+        query_body['size'] = rows
+        if sort:
+            query_body['sort'] = { sort : order } 
         if curr_file['meta_type'] == 'Directory':
-            query_body = {
-                    "from": rows * (page - 1),
-                    "size": rows, 
-                    "query":
+            query_body['query'] = {
+                "bool" : {
+                    "must": 
+                        { 
+                            "match_phrase": { "display_name": curr_file['display_name'] }
+                        },
+                    "must_not":
                         {
-                        "bool" : {
-                            "must": 
-                                { 
-                                    "match_phrase": { "display_name": curr_file['display_name'] }
-                                },
-                            "must_not":
-                                {
-                                    "term": { "parser": 'efetch' }
-                                }
-                            }
+                            "term": { "parser": 'efetch' }
                         }
                     }
+                }
         else:
-            query_body = {
-                            "from": rows * (page - 1),
-                            "size": rows, 
-                            "query":
-                                {
-                                "bool" : {
-                                    "must": 
-                                        { 
-                                            "term": { "inode": curr_file['inode'] }
-                                        },
-                                    "must_not":
-                                        {
-                                            "term": { "parser": 'efetch' }
-                                        }
-                                    }
-                                }
-                            }
-
-
+            query_body["query"] = {
+                "bool" : {
+                    "must": 
+                        { 
+                            "term": { "inode": curr_file['inode'] }
+                        },
+                    "must_not":
+                        {
+                            "term": { "parser": 'efetch' }
+                        }
+                    }
+                }
 
         events = helper.db_util.elasticsearch.search(index='efetch-evidence_' + curr_file['image_id'], doc_type='event', body=query_body)
 

@@ -43,7 +43,7 @@ class FaHash(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         block_size = 65536
         hashers = { 'md5': hashlib.md5(), 'sha1': hashlib.sha1(), 'sha224': hashlib.sha224(), 'sha256': hashlib.sha256(), 'sha384': hashlib.sha384(), 'sha512': hashlib.sha512() }

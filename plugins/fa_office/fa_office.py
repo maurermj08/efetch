@@ -44,7 +44,7 @@ class FaOffice(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         newname = os.path.splitext(path_on_disk)[0] + ".pdf"
         if not os.path.isfile(newname):

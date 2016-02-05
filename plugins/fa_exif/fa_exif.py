@@ -43,7 +43,7 @@ class FaExif(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         fh = open(path_on_disk,'rb') 
         exif_dict = exifread.process_file(fh)

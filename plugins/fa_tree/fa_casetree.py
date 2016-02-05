@@ -45,7 +45,7 @@ class FaCasetree(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         if "case" not in request.query and not request.forms.getall('case'):
             abort(400, 'No case specified')
@@ -86,7 +86,7 @@ class FaCasetree(IPlugin):
         if evidence[0]:
             html = html.replace('<!-- Home -->', "/plugins/" + children + evidence[0] + '/' + query_string)
         html = html.replace('<!-- Tree -->', '\n'.join(tree))
-        html = html.replace('<!-- Child -->', "http://" + address + ":" + port + "/plugins/" + child_plugins)
+        html = html.replace('<!-- Child -->', "/plugins/" + child_plugins)
         html = html.replace('<!-- Query -->', query_string)
         html = html.replace('<!-- Name -->', 'Evidence')
         template.close()

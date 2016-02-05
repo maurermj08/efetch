@@ -44,19 +44,16 @@ class FaStrings(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         input_file = open(path_on_disk, 'rb')
         strings = list(self.get_file_strings(input_file))
+        input_file.close()
         return '<xmp style="white-space: pre-wrap;">' + "\n".join(strings) + '</xmp>'
-    
+
     def get_file_strings(self, input_file, min=4):
-        result = ""
-        exclude = re.compile(ur'[\u0080-\u009f]')
-        for c in input_file.read():
-            if c in string.printable or not bool(exclude.search(c)):
-                result += c
-                continue
-            if len(result) >= min:
-                yield result
-            result = ""
+        chars = r"A-Za-z0-9/\-:.,_$%'()[\]<> "
+        regexp = '[%s]{%d,}' % (chars, min)
+        pattern = re.compile(regexp)
+        data = input_file.read()
+        return pattern.findall(data)

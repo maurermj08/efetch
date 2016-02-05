@@ -43,7 +43,7 @@ class FaCase(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         if "method" not in request.query and not request.forms.get('method'):
             abort(400, 'No method specified')

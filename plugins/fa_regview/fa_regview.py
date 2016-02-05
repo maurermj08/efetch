@@ -43,7 +43,7 @@ class FaRegview(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/regview_template.html', 'r')

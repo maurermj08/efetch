@@ -32,9 +32,8 @@ def main(argv):
     #Default Values
     max_download_size = 100 #In MegaBytes
     address = "localhost"
-    port = str(8080)
+    port = "8080"
 
-    #MOVE DIRS TO HELPER (NOT CURR & OUTPUT)
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     output_dir = curr_dir + "/cache/"
     upload_dir = curr_dir + "/uploads/"
@@ -86,6 +85,11 @@ def get_resource(resource_path):
         res_dir = os.path.dirname(full_path)
         res_name = os.path.basename(full_path)    
         return static_file(res_name, root=res_dir)        
+
+@route('/')
+def index():
+    """Returns the home page for Efetch"""
+    return get_resource('cases_table.html')
 
 @route('/plugins/')
 def list_plugins():
@@ -141,10 +145,10 @@ def plugins(args):
     
     if image_id:
         #Get file from database
-        #try:
-        curr_file = helper.db_util.get_file(image_id, image_id + '/' + str(path))
-        #except:
-        #    abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
+        try:
+            curr_file = helper.db_util.get_file(image_id, image_id + '/' + str(path))
+        except:
+            abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
 
         #Cache file
         if plugin.plugin_object.cache():
@@ -159,7 +163,7 @@ def plugins(args):
     accept=request.headers.get("Accept")
     
     #Return plugins frame
-    return plugin.plugin_object.get(curr_file, helper, file_cache_path, actual_mimetype, actual_size, address, port, request, children)
+    return plugin.plugin_object.get(curr_file, helper, file_cache_path, actual_mimetype, actual_size, request, children)
 
 def usage():
     print("usage: efetch.py [-h] [-a ADDRESS] [-p PORT] [-o DIR ] [-s SIZE] [-d] [-D DATABASE] [-m maxfilesize]")

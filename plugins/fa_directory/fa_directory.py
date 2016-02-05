@@ -43,7 +43,7 @@ class FaDirectory(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns a formatted directory listing for the given path"""
         #If path is a folder just set the view to it, if not use the files parent folder
         if curr_file['meta_type'] == 'Directory':

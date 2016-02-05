@@ -42,7 +42,7 @@ class FaUpload(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         upload = False
         
@@ -53,7 +53,7 @@ class FaUpload(IPlugin):
             pass
     
         if upload:
-            return self.upload(helper, address, port, request)
+            return self.upload(helper, request)
         
         template = """
         <html>
@@ -87,7 +87,7 @@ class FaUpload(IPlugin):
         
         return template 
     
-    def upload(self, helper, address, port, request):
+    def upload(self, helper, request):
         image = request.forms.name
         data = request.files.data
         if image and data and data.file:

@@ -42,7 +42,7 @@ class FaHeader(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, address, port, request, children):
+    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -54,7 +54,7 @@ class FaHeader(IPlugin):
         else:
             query_string = ""
 
-        html = html.replace('<!-- Home -->', "http://" + address + ":" + port + "/plugins/" + children + query_string)
+        html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
 
         return html
  
