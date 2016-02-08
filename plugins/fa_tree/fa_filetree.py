@@ -24,10 +24,10 @@ class FaRegview(IPlugin):
         """Returns the name displayed in the webview"""
         return "File Tree"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         allowed = [ 'application/octet-stream' ]
-        return str(mimetype).lower() in allowed
+        return str(evidence['mimetype']).lower() in allowed
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -45,7 +45,7 @@ class FaRegview(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         if 'mode' in request.query and request.query['mode'] == 'children':
             if 'parent' not in request.query:
@@ -54,16 +54,16 @@ class FaRegview(IPlugin):
             return self.get_child(request_file, helper)
         elif 'mode' in request.query and request.query['mode'] == 'root':
             return json.dumps([{
-                    'title': curr_file['name'],
-                    'key': curr_file['pid'],
+                    'title': evidence['name'],
+                    'key': evidence['pid'],
                     'folder': True,
                     'lazy': True,
                     }], sort_keys=True)
 
         child_plugins = ''
 
-        if children and curr_file['image_id'] in children:
-            child_plugins = str(children).split(curr_file['image_id'])[0]
+        if children and evidence['image_id'] in children:
+            child_plugins = str(children).split(evidence['image_id'])[0]
         if not child_plugins:
             child_plugins = 'fa_loader/fa_filedirectory/fa_fileanalyze/'
         if not children:
@@ -77,8 +77,8 @@ class FaRegview(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/filetree_template.html', 'r')
         html = str(template.read())
-        html = html.replace("<!-- Path -->", curr_file['pid'])
-        if str(children).startswith(curr_file['image_id']):
+        html = html.replace("<!-- Path -->", evidence['pid'])
+        if str(children).startswith(evidence['image_id']):
             html = html.replace('<!-- Home -->', "/plugins/" + child_plugins + children + query_string)
         else:
             html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
@@ -89,16 +89,16 @@ class FaRegview(IPlugin):
 
         return html
 
-    def get_child(self, curr_file, helper):
+    def get_child(self, evidence, helper):
         """Returns JSON list containing sub keys using Fancy Tree format"""
         children = []
 
-        if curr_file['meta_type'] != 'Directory':
+        if evidence['meta_type'] != 'Directory':
             return json.dumps(children)
 
-        #curr_folder = curr_file['path'] + "/"
+        #curr_folder = evidence['path'] + "/"
 
-        for item in helper.db_util.list_dir(curr_file):
+        for item in helper.db_util.list_dir(evidence):
             source = item['_source']
             #TODO: Need to find out why there are weird ';' entries in the root of log2timeline
             if source['meta_type'] == 'Directory' and ';' not in source['iid']:

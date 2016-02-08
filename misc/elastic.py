@@ -50,6 +50,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
     self._roots = []
     self._efetch_event_queue = {}
     self._image_path = None
+    self._ids = []
 
   def _EventToDict(self, event_object):
     """Returns a dict built from an event object.
@@ -185,7 +186,14 @@ class ElasticSearchOutputModule(interface.OutputModule):
     else:
       iid = root + '/none'
 
+    if pid in self._ids:
+      logging.warn('_ID %s already exists', pid)
+      return
+    else:
+      self._ids.append(pid)
+
     ret_dict['root'] = root
+    ret_dict['id'] = pid
     ret_dict['pid'] = pid
     ret_dict['name'] = name
     ret_dict['dir'] = directory
@@ -224,23 +232,23 @@ class ElasticSearchOutputModule(interface.OutputModule):
           timelib.Timestamp.RoundToSeconds(event_times[time_attribute]),
           timezone=self._output_mediator.timezone)
 
-    message, _ = self._output_mediator.GetFormattedMessages(event_object)
-    if message is None:
-      raise errors.NoFormatterFound(
-          u'Unable to find event formatter for: {0:s}.'.format(
-              getattr(event_object, u'data_type', u'UNKNOWN')))
+    #message, _ = self._output_mediator.GetFormattedMessages(event_object)
+    #if message is None:
+    #  raise errors.NoFormatterFound(
+    #      u'Unable to find event formatter for: {0:s}.'.format(
+    #          getattr(event_object, u'data_type', u'UNKNOWN')))
+    #
+    #ret_dict['message'] = message
 
-    ret_dict['message'] = message
+    #source_short, source = self._output_mediator.GetFormattedSources(
+    #    event_object)
+    #if source is None or source_short is None:
+    #  raise errors.NoFormatterFound(
+    #      u'Unable to find event formatter for: {0:s}.'.format(
+    #          getattr(event_object, u'data_type', u'UNKNOWN')))
 
-    source_short, source = self._output_mediator.GetFormattedSources(
-        event_object)
-    if source is None or source_short is None:
-      raise errors.NoFormatterFound(
-          u'Unable to find event formatter for: {0:s}.'.format(
-              getattr(event_object, u'data_type', u'UNKNOWN')))
-
-    ret_dict['source_short'] = source_short
-    ret_dict['source_long'] = source
+    #ret_dict['source_short'] = source_short
+    #ret_dict['source_long'] = source
 
     hostname = self._output_mediator.GetHostname(event_object)
     ret_dict['hostname'] = hostname
@@ -255,6 +263,12 @@ class ElasticSearchOutputModule(interface.OutputModule):
     dictionary = {}
     dictionary['image_id'] = sections[0]
     dictionary['pid'] = root
+    if root in self._ids:
+      logging.warn('_ID %s already exists', pid)
+      return
+    else:
+      self._ids.append(root)
+    dictionary['id'] = root
     dictionary['dir'] = '/'.join(sections[:-1]) + '/'
     dictionary['path'] = root
     dictionary['iid'] = root + '/'
@@ -271,6 +285,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
     """Disconnects from the elastic search server."""
     for root in self._roots:
         self._data.append(self.RootToDict(root))
+    logging.info('What is left in the QUEUE: %s', str(self._efetch_event_queue))
     self._elastic_db.bulk_index(self._index_name, self._doc_type, self._data)
     self._data = []
     sys.stdout.write('. [DONE]\n')
@@ -339,19 +354,29 @@ class ElasticSearchOutputModule(interface.OutputModule):
           'atime' in self._efetch_event_queue[event_object.GetValues()['display_name']] and \
           'mtime' in self._efetch_event_queue[event_object.GetValues()['display_name']] and \
           'ctime' in self._efetch_event_queue[event_object.GetValues()['display_name']]:
-        self._data.append(self._EventToEfetch(event_object, self._efetch_event_queue[event_object.GetValues()['display_name']]))
+        efetch_event = self._EventToEfetch(event_object, self._efetch_event_queue[event_object.GetValues()['display_name']])
+        if efetch_event:
+          self._data.append(efetch_event)
+          self._counter += 1
+          if self._counter % 10000 == 0:
+            self._elastic_db.bulk_index(self._index_name, self._doc_type, self._data)
+            self._data = []
+            sys.stdout.write('.')
+            sys.stdout.flush()
+            logging.info('Total: %d Queue: %d', self._counter, len(self._efetch_event_queue))
         del self._efetch_event_queue[event_object.GetValues()['display_name']]
-    
-    logging.info('Number of values in Efetch Queue: ' + str(len(self._efetch_event_queue)))
-    ############
-    self._counter += 1
 
+    self._counter += 1
+    
+    #logging.info('Number of values in Efetch Queue: ' + str(len(self._efetch_event_queue)))
+    ############
     # Check if we need to flush.
-    if self._counter % 5000 == 0:
+    if self._counter % 10000 == 0:
       self._elastic_db.bulk_index(self._index_name, self._doc_type, self._data)
       self._data = []
       sys.stdout.write('.')
       sys.stdout.flush()
+      logging.info('Total: %d Queue: %d', self._counter, len(self._efetch_event_queue))
 
   def WriteHeader(self):
     """Writes the header to the output."""

@@ -106,8 +106,6 @@ def add_image(image_id, image_path, db_util, settings):
         options = dfvfs_util.options
         return False
 
-    print("HERE: " + str(settings))
-
     index_name = 'efetch-evidence_' + image_id
     db_util.create_index(index_name)
     root = {
@@ -115,23 +113,21 @@ def add_image(image_id, image_path, db_util, settings):
                 '_type' : 'event',
                 '_id' : image_id,
                 '_source' : {
-                    'id' : image_id,
                     'pid' : image_id,
                     'iid' : image_id + '/',
                     'image_id': image_id,
                     'image_path' : image_path,
-                    'evd_type' : 'root',
-                    'name' : '/',
-                    'path' : '/',
+                    'name' : image_id,
+                    'path' : image_id,
                     'ext' : '',
-                    'dir' : '',
-                    'file_type' : 'directory',
+                    'dir' : '/',
+                    'meta_type' : 'Directory',
                     'inode' : '',
-                    'mod' : 0,
-                    'acc' : 0,
-                    'chg' : 0,
-                    'cre' : 0,
-                    'size' : '',
+                    'mtime' : '',
+                    'atime' : '',
+                    'ctime' : '',
+                    'crtime' : '',
+                    'file_size' : [0],
                     'uid' : '',
                     'gid' : '',
                     'driver' : "fa_dfvfs"
@@ -149,29 +145,26 @@ def add_image(image_id, image_path, db_util, settings):
         print("Setting found: " + setting)
         if setting.lower() != 'none':
             curr_id += '/' + setting
-            curr_path += setting + '/'
             json.append({
                     '_index': index_name,
                     '_type' : 'event',
                     '_id' : curr_id,
                     '_source' : {
-                        'id' : curr_id,
                         'pid' : curr_id,
                         'iid' : curr_id + '/',
                         'image_id': image_id,
                         'image_path' : image_path,
-                        'evd_type' : 'part',
-                        'name' : setting + '/',
-                        'path' : curr_path,
+                        'name' : setting,
+                        'path' : curr_id,
                         'ext' : '',
                         'dir' : prev_id + '/',
-                        'file_type' : 'directory',
+                        'meta_type' : 'Directory',
                         'inode' : '',
-                        'mod' : 0,
-                        'acc' : 0,
-                        'chg' : 0,
-                        'cre' : 0,
-                        'size' : '',
+                        'mtime' : '',
+                        'atime' : '',
+                        'ctime' : '',
+                        'crtime' : '',
+                        'file_size' : [0],
                         'uid' : '',
                         'gid' : '',
                         'driver' : "fa_dfvfs"
@@ -179,7 +172,7 @@ def add_image(image_id, image_path, db_util, settings):
             })
             prev_id = curr_id
 
-    json += dfvfs_util.GetJson(image_id, curr_id + '/ROOT', image_path)
+    json += dfvfs_util.GetJson(image_id, curr_id + "/TSK", image_path)
     db_util.bulk(json)
 
     return True

@@ -22,10 +22,10 @@ class FaRegview(IPlugin):
         """Returns the name displayed in the webview"""
         return "Reg. View"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         allowed = [ 'application/octet-stream' ]
-        return str(mimetype).lower() in allowed
+        return str(evidence['mimetype']).lower() in allowed
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -43,12 +43,12 @@ class FaRegview(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/regview_template.html', 'r')
         html = str(template.read())
-        html = html.replace("<!-- Path -->", curr_file['pid'])
+        html = html.replace("<!-- Path -->", evidence['pid'])
         template.close()
  
         return html

@@ -22,7 +22,7 @@ class FaCasemanager(IPlugin):
         """Returns the name displayed in the webview"""
         return "Case Manager"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
 
@@ -42,7 +42,7 @@ class FaCasemanager(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         cases = helper.db_util.read_case()['hits']['hits']
         table = []
@@ -50,12 +50,12 @@ class FaCasemanager(IPlugin):
             source = case['_source']
             name = source['name']
             description = ""
-            evidence = []
+            evidence_list = []
             if source['description']:
                 description = source['description']
             if source['evidence']:
-                evidence = source['evidence']
-            table.append('<tr><td>' + name + '</td><td>' + description + '</td><td>' + ','.join(evidence) + '</td></tr>')
+                evidence_list = source['evidence']
+            table.append('<tr><td>' + name + '</td><td>' + description + '</td><td>' + ','.join(evidence_list) + '</td></tr>')
         
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))

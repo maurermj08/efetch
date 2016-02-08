@@ -21,10 +21,9 @@ class FaHexdump(IPlugin):
         """Returns the name displayed in the webview"""
         return "Hex View"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
-        maxsize = 100000000 
-        return size < maxsize and curr_file['meta_type'] != 'Directory'
+        return True
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -42,7 +41,7 @@ class FaHexdump(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         input_file = open(path_on_disk, 'rb')
         return "<xmp>" + self.hex_dump(input_file.read()) + "</xmp>"

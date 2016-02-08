@@ -22,7 +22,7 @@ class FaLoader(IPlugin):
         """Returns the name displayed in the webview"""
         return "Loading"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
 
@@ -42,7 +42,7 @@ class FaLoader(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))

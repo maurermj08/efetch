@@ -49,7 +49,7 @@ class DBUtil(object):
                 "_default_" : {
                     "_source" : { "enabled" : True },
                     "properties" : {
-                        "id" : {"type": "string", "index" : "not_analyzed"},
+                        "root" : {"type": "string", "index" : "not_analyzed"},
                         "pid" : {"type": "string", "index" : "not_analyzed"},
                         "iid" : {"type": "string", "index" : "not_analyzed"},
                         "image_id": {"type": "string", "index" : "not_analyzed"},
@@ -61,11 +61,11 @@ class DBUtil(object):
                         "dir" : {"type": "string", "index" : "not_analyzed"},
                         "meta_type" : {"type": "string", "index" : "not_analyzed"},
                         "inode" : {"type": "string", "index" : "not_analyzed"},
-                        "mod" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
-                        "acc" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
-                        "chg" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
-                        "cre" : {"type": "date", "format": "epoch_second", "index" : "not_analyzed"},
-                        "size" : {"type": "string", "index" : "not_analyzed"},
+                        "mtime" : {"type": "string", "index" : "not_analyzed"},
+                        "atime" : {"type": "string", "index" : "not_analyzed"},
+                        "ctime" : {"type": "string", "index" : "not_analyzed"},
+                        "crtime" : {"type": "string","index" : "not_analyzed"},
+                        "file_size" : {"type": "string", "index" : "not_analyzed"},
                         "uid" : {"type": "string", "index" : "not_analyzed"},
                         "gid" : {"type": "string", "index" : "not_analyzed"},
                         "driver" : {"type": "string", "index" : "not_analyzed"}
@@ -181,7 +181,7 @@ class DBUtil(object):
                         "dir" : query_dir
                         } 
                     },
-                "size" : 64000
+                "size" : 10000
                 }
         result = self.elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query)
         logging.debug("Listed directory " + directory['name'] + " and found " + str(len(result['hits']['hits'])) + " entries")

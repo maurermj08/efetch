@@ -23,10 +23,10 @@ class FaMedia(IPlugin):
         """Returns the name displayed in the webview"""
         return "Multimedia"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         allowed = [ 'video/x-ms-asf','video/x-ms-asf','video/x-ms-asf-plugin','video/x-ms-asf','video/avi','video/msvideo','video/x-msvideo','video/avs-video','video/x-dv','video/dl','video/x-dl','video/x-dv','video/fli','video/x-fli','video/x-atomic3d-feature','video/gl','video/x-gl','video/x-isvideo','video/mpeg','video/mpeg','video/x-motion-jpeg','video/quicktime','video/quicktime','video/x-sgi-movie','video/mpeg','video/x-mpeg','video/x-mpeq2a','video/mpeg','video/x-mpeg','video/mpeg','video/mpeg','video/x-sgi-movie','video/x-qtc','video/x-scm','video/vnd.rn-realvideo','video/vdo','video/vivo','video/vnd.vivo','video/vosaic','video/x-amt-demorun','video/x-amt-showrun','audio/x-ms-wmv' ]
-        return curr_file['meta_type'] == 'File' and str(mimetype).lower() in allowed
+        return evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -44,7 +44,7 @@ class FaMedia(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         newname = os.path.splitext(path_on_disk)[0] + ".mp4"
         if not os.path.isfile(newname):

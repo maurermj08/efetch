@@ -22,10 +22,10 @@ class FaTimeline(IPlugin):
         """Returns the name displayed in the webview"""
         return "Log2Timeline"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
 
-        return 'parser' in curr_file
+        return 'parser' in evidence
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -43,7 +43,7 @@ class FaTimeline(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
 
         mode = helper.get_request_value(request, 'mode')
@@ -57,12 +57,12 @@ class FaTimeline(IPlugin):
         query_body['size'] = rows
         if sort:
             query_body['sort'] = { sort : order } 
-        if curr_file['meta_type'] == 'Directory':
+        if evidence['meta_type'] == 'Directory':
             query_body['query'] = {
                 "bool" : {
                     "must": 
                         { 
-                            "match_phrase": { "display_name": curr_file['display_name'] }
+                            "match_phrase": { "display_name": evidence['display_name'] }
                         },
                     "must_not":
                         {
@@ -75,7 +75,7 @@ class FaTimeline(IPlugin):
                 "bool" : {
                     "must": 
                         { 
-                            "term": { "inode": curr_file['inode'] }
+                            "term": { "inode": evidence['inode'] }
                         },
                     "must_not":
                         {
@@ -84,7 +84,7 @@ class FaTimeline(IPlugin):
                     }
                 }
 
-        events = helper.db_util.elasticsearch.search(index='efetch-evidence_' + curr_file['image_id'], doc_type='event', body=query_body)
+        events = helper.db_util.elasticsearch.search(index='efetch-evidence_' + evidence['image_id'], doc_type='event', body=query_body)
 
         #Create Table
         table = '<thead>\n<tr>\n'
@@ -123,6 +123,6 @@ class FaTimeline(IPlugin):
         template.close()
 
         html = html.replace('<!-- Table -->', table)
-        html = html.replace('<!-- PID -->', curr_file['pid'])
+        html = html.replace('<!-- PID -->', evidence['pid'])
 
         return html

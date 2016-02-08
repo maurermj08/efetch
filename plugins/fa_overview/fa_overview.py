@@ -22,7 +22,7 @@ class FaOverview(IPlugin):
         """Returns the name displayed in the webview"""
         return "Overview"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
 
@@ -42,13 +42,13 @@ class FaOverview(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         
         listing = []
 
-        for item in curr_file:
-            listing.append('<tr><td>' + str(item) + '</td><td>' + str(curr_file[item]) + '</td></tr>')
+        for item in evidence:
+            listing.append('<tr><td>' + str(item) + '</td><td>' + str(evidence[item]) + '</td></tr>')
 
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))

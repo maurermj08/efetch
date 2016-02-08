@@ -25,7 +25,7 @@ class FaCasetree(IPlugin):
         """Returns the name displayed in the webview"""
         return "Case Tree View"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
 
@@ -45,7 +45,7 @@ class FaCasetree(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         if "case" not in request.query and not request.forms.getall('case'):
             abort(400, 'No case specified')
@@ -60,9 +60,9 @@ class FaCasetree(IPlugin):
         except:
             abort(404, 'Could not find case ' + case)
 
-        evidence = cases['_source']['evidence']
+        evidence_list = cases['_source']['evidence']
         tree = []
-        for item in evidence:
+        for item in evidence_list:
             tree.append('<li>' + item)
 
         child_plugins = ''
@@ -81,10 +81,10 @@ class FaCasetree(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/casetree_template.html', 'r')
         html = str(template.read())
-        if not evidence:
+        if not evidence_list:
             return "<xmp>Oops! Case contains no evidence! Please Add Evidence.</xmp>"
-        if evidence[0]:
-            html = html.replace('<!-- Home -->', "/plugins/" + children + evidence[0] + '/' + query_string)
+        if evidence_list[0]:
+            html = html.replace('<!-- Home -->', "/plugins/" + children + evidence_list[0] + '/' + query_string)
         html = html.replace('<!-- Tree -->', '\n'.join(tree))
         html = html.replace('<!-- Child -->', "/plugins/" + child_plugins)
         html = html.replace('<!-- Query -->', query_string)

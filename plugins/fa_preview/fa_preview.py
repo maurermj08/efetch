@@ -23,14 +23,14 @@ class FaPreview(IPlugin):
         """Returns the name displayed in the webview"""
         return "Preview"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         allowed = ['image/jpeg', 'image/png', 'image/gif', 'text/plain', 'text/html', 'application/pdf']
-        return str(mimetype).lower() in allowed and curr_file['meta_type'] != 'Directory'
+        return str(evidence['mimetype']).lower() in allowed and evidence['meta_type'] != 'Directory'
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
-        return mimetype
+        return evidence['mimetype']
 
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
@@ -44,6 +44,6 @@ class FaPreview(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk))

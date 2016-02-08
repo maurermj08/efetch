@@ -14,6 +14,7 @@ import logging
 import os
 import sys
 import pytsk3
+import datetime
 
 from dfvfs.credentials import manager as credentials_manager
 from dfvfs.helpers import source_scanner
@@ -56,6 +57,7 @@ class DfvfsUtil(object):
         while data:
             out_file.write(data)
             data = in_file.read(self._READ_BUFFER_SIZE)
+        in_file.close()
         out_file.close()
 
     def GetFile(self, full_path, ignore_case = False):
@@ -131,18 +133,17 @@ class DfvfsUtil(object):
             uid = str(tsk_object.info.meta.uid)
             gid = str(tsk_object.info.meta.gid)
 
-        dir_ref = curr_id + curr_path + name
         inode_ref = curr_id + "/" + inode
         ext = os.path.splitext(name)[1][1:] or ""
 
         if file_type == None:
             file_type_str = 'None'
         elif file_type == pytsk3.TSK_FS_META_TYPE_REG:
-            file_type_str = 'regular'
+            file_type_str = 'File'
         elif file_type == pytsk3.TSK_FS_META_TYPE_DIR:
-            file_type_str = 'directory'
+            file_type_str = 'Directory'
         elif file_type == pytsk3.TSK_FS_META_TYPE_LNK:
-            file_type_str = 'link'
+            file_type_str = 'Link'
         else:
             file_type_str = str(file_type)
 
@@ -151,6 +152,8 @@ class DfvfsUtil(object):
         chgtime = long(chg) if chg else 0
         cretime = long(cre) if cre else 0
 
+        dir_ref = curr_id + curr_path + name
+        
         if file_type != pytsk3.TSK_FS_META_TYPE_DIR:
             file_object.close()
         if not curr_path:
@@ -158,29 +161,29 @@ class DfvfsUtil(object):
             name = 'TSK'
         else:
             curr_dir = curr_id + curr_path
+        
 
         return {
                 '_index': index_name,
                 '_type' : 'event',
                 '_id' : dir_ref,
                 '_source' : {
-                    'id' : curr_id,
+                    'root' : curr_id,
                     'pid' : dir_ref,
                     'iid' : inode_ref,
                     'image_id': image_id,
                     'image_path' : image_path,
-                    'evd_type' : 'item',
                     'name' : name,
                     'path' : curr_path + name,
                     'ext' : ext,
                     'dir' : curr_dir,
-                    'file_type' : file_type_str,
+                    'meta_type' : file_type_str,
                     'inode' : inode,
-                    'mod' : modtime,
-                    'acc' : acctime,
-                    'chg' : chgtime,
-                    'cre' : cretime,
-                    'size' : size,
+                    'mtime' : datetime.datetime.fromtimestamp(modtime).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                    'atime' : datetime.datetime.fromtimestamp(acctime).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                    'ctime' : datetime.datetime.fromtimestamp(chgtime).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                    'crtime' : datetime.datetime.fromtimestamp(cretime).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                    'file_size' : [size],
                     'uid' : uid,
                     'gid' : gid,
                     'driver' : "fa_dfvfs"

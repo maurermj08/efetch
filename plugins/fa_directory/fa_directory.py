@@ -23,7 +23,7 @@ class FaDirectory(IPlugin):
         """Returns the name displayed in the webview"""
         return "Directory"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
 
@@ -43,13 +43,13 @@ class FaDirectory(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns a formatted directory listing for the given path"""
         #If path is a folder just set the view to it, if not use the files parent folder
-        if curr_file['meta_type'] == 'Directory':
-            curr_folder = curr_file
+        if evidence['meta_type'] == 'Directory':
+            curr_folder = evidence
         else:
-            curr_folder = helper.db_util.get_file(curr_file['image_id'], curr_file['dir'])
+            curr_folder = helper.db_util.get_file(evidence['image_id'], evidence['dir'])
 
         listing = []
         #TODO: Change localtime to case time, specifically what is supplied to sleuthkit

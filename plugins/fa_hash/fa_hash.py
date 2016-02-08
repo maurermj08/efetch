@@ -23,9 +23,9 @@ class FaHash(IPlugin):
         """Returns the name displayed in the webview"""
         return "File Hasher"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
-        return curr_file['meta_type'] == 'File'
+        return evidence['meta_type'] == 'File'
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -43,7 +43,7 @@ class FaHash(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         block_size = 65536
         hashers = { 'md5': hashlib.md5(), 'sha1': hashlib.sha1(), 'sha224': hashlib.sha224(), 'sha256': hashlib.sha256(), 'sha384': hashlib.sha384(), 'sha512': hashlib.sha512() }
@@ -64,7 +64,7 @@ class FaHash(IPlugin):
             hash_time = datetime.datetime.now()
             hash_result = hasher.hexdigest()
             update = {hash_type: hash_time, hash_type + "_digest": hash_result}
-            file_id = curr_file['pid']
+            file_id = evidence['pid']
             helper.db_util.update_by_ppid(file_id, update)
             return '<xmp style="white-space: pre-wrap;">Done</xmp>'
         return '<xmp style="white-space: pre-wrap;">Error</xmp>'

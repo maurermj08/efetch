@@ -28,7 +28,7 @@ class FaDfvfs(IPlugin):
         """Returns the name displayed in the webview"""
         return "dfVFS"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
 
@@ -48,7 +48,7 @@ class FaDfvfs(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         path = request.query['path']
         image_id = request.query['image_id']
@@ -142,19 +142,19 @@ class FaDfvfs(IPlugin):
         json += dfvfs_util.GetJson(image_id, curr_id, image_path)
         db_util.bulk(json)
 
-    def icat(self, curr_file, output_file_path):
+    def icat(self, evidence, output_file_path):
         """Returns the specified file using image file, meta or inode address, and outputfile"""
-        if not curr_file['root'] in self.utils:
+        if not evidence['root'] in self.utils:
             settings = []
-            curr_id = curr_file['root'].split('/')[1:]
+            curr_id = evidence['root'].split('/')[1:]
             while curr_id[0] != 'TSK':
                 settings.append(curr_id.pop(0).lower())
             settings.append('none')
-            self.utils[curr_file['root']] = DfvfsUtil(curr_file['image_path'], settings, False)
+            self.utils[evidence['root']] = DfvfsUtil(evidence['image_path'], settings, False)
         
-        dfvfs_util = self.utils[curr_file['root']]
+        dfvfs_util = self.utils[evidence['root']]
         
         if dfvfs_util.initialized > 0:
-            dfvfs_util.Icat(curr_file['path'], output_file_path)
+            dfvfs_util.Icat(evidence['path'], output_file_path)
         else:
-            logging.warn("Unable to icat file %s because no proper dfVFS settings", curr_file['pid'])
+            logging.warn("Unable to icat file %s because no proper dfVFS settings", evidence['pid'])

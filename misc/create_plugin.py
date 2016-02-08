@@ -165,9 +165,9 @@ def get_check():
             except:
                 file_type = 0
         if file_type == 1:
-            checks.append("curr_file['meta_type'] == 'File'")
+            checks.append("evidence['meta_type'] == 'File'")
         else:
-            checks.append("curr_file['meta_type'] == 'Directory'")
+            checks.append("evidence['meta_type'] == 'Directory'")
     if answer == 4 or answer == 6 or answer == 7 or answer == 8:
         cont = True
         mimetypes = []
@@ -179,7 +179,7 @@ def get_check():
                 cont = False
         if mimetypes:
             pre.append("allowed = [ " + ",".join(mimetypes) + " ]")
-            checks.append("str(mimetype).lower() in allowed")
+            checks.append("evidence['mimetype'].lower() in allowed")
     if pre:
         check = '\n        '.join(pre) + '\n        ' + 'return ' + ' and '.join(checks)
     else:

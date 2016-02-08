@@ -22,10 +22,10 @@ class FaExif(IPlugin):
         """Returns the name displayed in the webview"""
         return "Exif Info"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         allowed = [ 'image/jpeg','image/tiff','image/x-tiff' ]
-        return str(mimetype).lower() in allowed
+        return str(evidence['mimetype']).lower() in allowed
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -43,7 +43,7 @@ class FaExif(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         fh = open(path_on_disk,'rb') 
         exif_dict = exifread.process_file(fh)

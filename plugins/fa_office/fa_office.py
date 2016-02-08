@@ -23,10 +23,10 @@ class FaOffice(IPlugin):
         """Returns the name displayed in the webview"""
         return "Adv. Preview"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         allowed = ['application/mspowerpoint', 'application/vnd.ms-powerpoint', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/x-latex', 'application/application/vnd.oasis.opendocument.text', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.openxmlformats-officedocument.presentationml.slide', 'application/vnd.openxmlformats-officedocument.presentationml.slideshow', 'application/vnd.openxmlformats-officedocument.presentationml.template', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.openxmlformats-officedocument.spreadsheetml.template', 'application/vnd.openxmlformats-officedocument.wordprocessingml.template', 'application/vnd.palm', 'application/rtf', 'application/vnd.sun.xml.writer.template', 'application/vnd.sun.xml.writer', 'application/vnd.ms-works', 'application/vnd.oasis.opendocument.graphics', 'application/vnd.oasis.opendocument.presentation', 'application/vnd.oasis.opendocument.presentation-template', 'application/vnd.sun.xml.impress', 'application/vnd.ms-excel', 'text/rtf']
-        return curr_file['meta_type'] == 'File' and str(mimetype).lower() in allowed
+        return evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -44,7 +44,7 @@ class FaOffice(IPlugin):
         """Returns if caching is required"""
         return True
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         newname = os.path.splitext(path_on_disk)[0] + ".pdf"
         if not os.path.isfile(newname):

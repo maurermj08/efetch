@@ -23,7 +23,7 @@ class FaCase(IPlugin):
         """Returns the name displayed in the webview"""
         return "Case API"
 
-    def check(self, curr_file, path_on_disk, mimetype, size):
+    def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return False
 
@@ -43,7 +43,7 @@ class FaCase(IPlugin):
         """Returns if caching is required"""
         return False
 
-    def get(self, curr_file, helper, path_on_disk, mimetype, size, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         if "method" not in request.query and not request.forms.get('method'):
             abort(400, 'No method specified')
@@ -66,18 +66,18 @@ class FaCase(IPlugin):
             new_name = request.forms.get('new_name')
         #TODO: Determine if this is the best way to get a list
         if "evidence" in request.query:
-            evidence = request.query['evidence'].split(',')
+            evidence_list = request.query['evidence'].split(',')
         elif request.forms.get('evidence'):
-            evidence = request.forms.get('evidence').split(',')
+            evidence_list = request.forms.get('evidence').split(',')
         else:
-            evidence = []
+            evidence_list = []
 
         if method == "read":
             return helper.db_util.read_case(name)
         elif method == "read_table":
             return self.read_table(helper.db_util.read_case())
         elif method == "add_evidence":
-            return helper.db_util.add_evidence_to_case(name, evidence)
+            return helper.db_util.add_evidence_to_case(name, evidence_list)
         elif method == "get_evidence":
             result = helper.db_util.get_evidence(name)
             result_table = []
@@ -87,11 +87,11 @@ class FaCase(IPlugin):
         elif not name:
             abort(400, 'No name specified')
         elif method == "remove_evidence":
-            return helper.db_util.remove_evidence_from_case(name, evidence)
+            return helper.db_util.remove_evidence_from_case(name, evidence_list)
         elif method == "create":
-            return helper.db_util.create_case(name, description, evidence)
+            return helper.db_util.create_case(name, description, evidence_list)
         elif method == "update":
-            return helper.db_util.update_case(name, new_name, description, evidence)
+            return helper.db_util.update_case(name, new_name, description, evidence_list)
         elif method == "delete":
             return helper.db_util.delete_case(name)
 
