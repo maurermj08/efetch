@@ -5,6 +5,7 @@ import os
 import sys
 from bottle import Bottle, request, static_file, abort
 from utils.efetch_helper import EfetchHelper
+from gevent import monkey; monkey.patch_all()
 
 class Efetch(object):
     def __init__(self, argv):
@@ -46,7 +47,7 @@ class Efetch(object):
             elif opt in ("-s", "--size"):
                 self._max_cache = arg
             elif opt in ('-d', "--debug"):
-                self._logging.basicConfig(level=logging.DEBUG)
+                logging.basicConfig(level=logging.DEBUG)
             elif opt in ('-m', "--maxfilesize"):
                 self._max_download_size = arg
             else:
@@ -66,7 +67,7 @@ class Efetch(object):
 
     def start(self):
         """Starts the Bottle server."""
-        self._app.run(host=self._address, port=self._port)
+        self._app.run(host=self._address, port=self._port, server='gevent')
 
     def _route(self):
         """Applies the routes to Efetch methods."""
@@ -131,11 +132,11 @@ class Efetch(object):
         file_cache_path = None
         children = None
 
-        if plugin.plugin_object.parent():
+        if plugin.plugin_object._parent:
             children = '/'.join(args_list)
             #Updates the args list so parent plugins can get imaged_id,  and path
             while (args_list and self._helper.plugin_manager.getPluginByName(args_list[0]) and
-                    self._helper.plugin_manager.getPluginByName(args_list[0]).plugin_object.parent()):
+                    self._helper.plugin_manager.getPluginByName(args_list[0]).plugin_object._parent):
                 args_list.pop(0)
             if args_list and self._helper.plugin_manager.getPluginByName(args_list[0]):
                 args_list.pop(0)
@@ -160,7 +161,7 @@ class Efetch(object):
                 abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
 
             #Cache file
-            if plugin.plugin_object.cache():
+            if plugin.plugin_object._cache:
                 file_cache_path = self._helper.cache_file(evidence)
 
             #Get Mimetype if file is cached else guess Mimetype

@@ -1,0 +1,10 @@
+[Core]
+Name = fa_blank
+Module = fa_blank
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = A blank parent plugin that simply returns an iframe of its child
+Copyright = 2015

@@ -9,6 +9,10 @@ import os
 class FaMedia(IPlugin):
 
     def __init__(self):
+        self._display_name = 'Multimedia'
+        self._popularity = 7
+        self._parent = False
+        self._cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -19,10 +23,6 @@ class FaMedia(IPlugin):
         IPlugin.deactivate(self)
         return
 
-    def display_name(self):
-        """Returns the name displayed in the webview"""
-        return "Multimedia"
-
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         allowed = [ 'video/x-ms-asf','video/x-ms-asf','video/x-ms-asf-plugin','video/x-ms-asf','video/avi','video/msvideo','video/x-msvideo','video/avs-video','video/x-dv','video/dl','video/x-dl','video/x-dv','video/fli','video/x-fli','video/x-atomic3d-feature','video/gl','video/x-gl','video/x-isvideo','video/mpeg','video/mpeg','video/x-motion-jpeg','video/quicktime','video/quicktime','video/x-sgi-movie','video/mpeg','video/x-mpeg','video/x-mpeq2a','video/mpeg','video/x-mpeg','video/mpeg','video/mpeg','video/x-sgi-movie','video/x-qtc','video/x-scm','video/vnd.rn-realvideo','video/vdo','video/vivo','video/vnd.vivo','video/vosaic','video/x-amt-demorun','video/x-amt-showrun','audio/x-ms-wmv' ]
@@ -31,18 +31,6 @@ class FaMedia(IPlugin):
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
-
-    def popularity(self):
-        """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 7
-
-    def parent(self):
-        """Returns if the plugin accepts other plugins (True) or only files (False)"""
-        return False
-
-    def cache(self):
-        """Returns if caching is required"""
-        return True
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""

@@ -1,13 +1,15 @@
 #!/usr/bin/python
-from bottle import abort
 import logging
 import sys
+from bottle import abort
 from elasticsearch import Elasticsearch, helpers
+
 class DBUtil(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
     elasticsearch = None
 
     def __init__(self, es_url=None):
+        """Creates the Efetch indices in Eleasticsearch if they do not exist"""
         if es_url:
             self.elasticsearch = Elasticsearch([es_url])
         else:
@@ -18,68 +20,33 @@ class DBUtil(object):
         self.elasticsearch.indices.create(index='efetch-log',ignore=400)
         self.elasticsearch.indices.create(index='efetch-cases',ignore=400)
         self.elasticsearch.indices.create(index='efetch-evidence',ignore=400)
-        case_template = {
-            "template" : "efetch-cases",
-            "settings" : {
-                "number_of_shards" : 1
-                },
-            "mapping" : {
-                "_default_" : {
-                    "_source" : { "enabled" : True },
-                    "properties" : {
-                        "name" : {"type": "string", "index" : "not_analyzed"},
-                        "description" : {"type": "string", "index" : "analyzed"},
-                        "evidence" : {
-                            "properties" : {
-                                    "evidence" : {"type" : "string", "index" : "not_analyzed" }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        self.elasticsearch.indices.put_template(name="efetch-case", body=case_template)
-
-        template = {
-            "template" : "efetch-evidence*",
-            "settings" : {
-                "number_of_shards" : 1
-                },
-            "mappings" : {
-                "_default_" : {
-                    "_source" : { "enabled" : True },
-                    "properties" : {
-                        "root" : {"type": "string", "index" : "not_analyzed"},
-                        "pid" : {"type": "string", "index" : "not_analyzed"},
-                        "iid" : {"type": "string", "index" : "not_analyzed"},
-                        "image_id": {"type": "string", "index" : "not_analyzed"},
-                        "image_path" : {"type": "string", "index" : "not_analyzed"},
-                        "evd_type" : {"type": "string", "index" : "not_analyzed"},
-                        "name" : {"type": "string", "index" : "not_analyzed"},
-                        "path" : {"type": "string", "index" : "not_analyzed"},
-                        "ext" : {"type": "string", "index" : "not_analyzed"},
-                        "dir" : {"type": "string", "index" : "not_analyzed"},
-                        "meta_type" : {"type": "string", "index" : "not_analyzed"},
-                        "inode" : {"type": "string", "index" : "not_analyzed"},
-                        "mtime" : {"type": "string", "index" : "not_analyzed"},
-                        "atime" : {"type": "string", "index" : "not_analyzed"},
-                        "ctime" : {"type": "string", "index" : "not_analyzed"},
-                        "crtime" : {"type": "string","index" : "not_analyzed"},
-                        "file_size" : {"type": "string", "index" : "not_analyzed"},
-                        "uid" : {"type": "string", "index" : "not_analyzed"},
-                        "gid" : {"type": "string", "index" : "not_analyzed"},
-                        "driver" : {"type": "string", "index" : "not_analyzed"}
-                        }
-                }
-            }
-            }
-        self.elasticsearch.indices.put_template(name="efetch-evidence", body=template)
+        self.elasticsearch.indices.put_template(name="efetch-case", body=case_template())
+        self.elasticsearch.indices.put_template(name="efetch-evidence", body=evidence_template())
 
     def get_file_from_ppid(self, ppid, abort_on_error=True):
         """Returns the file object for the given file in the database"""
         return self.get_file(ppid.split('/')[0], ppid, abort_on_error)
+    
+    def query(self, directory, must = {}, must_not = {}):
+        """Returns a list of evidence based on a Elastic Search based on must dic, must not dic, and directory"""
+        #REF: https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
+        #TODO: Loop through if size > 10000
+        query_dir = { 'term' : { 'dir' : directory['pid'] + '/' } }
+        if not must:
+            must = query_dir
+        elif isinstance(must, list):
+            must.append(query_dir)
+        else:
+            must = [ must, query_dir ]
+
+        query = { 'query' : { 'bool' : { 'must' : must } }, 'size' : 10000 }
+        if must_not:
+            query['query']['bool']['must_not'] = must_not
+        result = self.elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query)
+        return result['hits']['hits']
 
     def create_case(self, name, description, evidence):
+        """Creates a case in Elastic Search under the efetch-cases index"""
         if not name:
             return
         case = {
@@ -97,9 +64,9 @@ class DBUtil(object):
         helpers.bulk(self.elasticsearch, json)
         return
 
-    #TODO switch to actual update
     def update_case(self, name, new_name, description, evidence):
         """Updates the current case"""
+        #TODO switch to actual update
         self.delete_case(name)
         return self.create_case(new_name, description, evidence)
 
@@ -118,6 +85,7 @@ class DBUtil(object):
         return self.update_case(name, name, description, [e for e in curr_evidence if e not in evidence])
 
     def get_evidence(self, name=None, abort_on_error=True):
+        """Gets Efetch root evidence by name from Elastic Search"""
         if not name:
             indices = self.elasticsearch.indices.get_aliases().keys()
             evidence = []
@@ -129,11 +97,13 @@ class DBUtil(object):
             return self.read_case(name)['_source']['evidence']
 
     def read_case(self, name=None, abort_on_error=True):
+        """Gets Efetch case by name from Elastic Search"""
         if not name:
             return self.elasticsearch.search(index='efetch-cases', doc_type='case')
         return self.elasticsearch.get(index='efetch-cases', doc_type='case', id=name)
 
     def delete_case(self, name):
+        """Deletes Efetch case by name from Elastic Search"""
         self.elasticsearch.delete(index='efetch-cases', doc_type='case', id=name)
         return
 
@@ -147,15 +117,7 @@ class DBUtil(object):
             evd_id = str(evd_id)[1:]
 
         #TODO CHECK IF IMAGE EXISTS
-        #Check if image and offset are in database
-        #    logging.error("Could not find image with provided id and offset " + image_id + "/" + offset)
-        #    if abort_on_error:
-        #        abort(400, "No image with id " + image_id + " and offset " + offset)
-        #    else:
-        #        return
-
         #TODO Do not hide errors from elasticsearch
-        #curr_file =  elasticsearch.get(index='efetch-evidence_' + image_id, doc_type='event', id=evd_id)
         curr_file = self.elasticsearch.search(index='efetch-evidence_' + image_id, doc_type='event', body={"query": {"match": {"pid": evd_id}}})
         if not curr_file['hits'] or not curr_file['hits']['hits'] or not curr_file['hits']['hits'][0]['_source']:
             logging.error("Could not find file. Image='" + image_id + "' Type='" + input_type + "' _id='" + evd_id + "'")
@@ -169,28 +131,12 @@ class DBUtil(object):
 
         return curr_file['hits']['hits'][0]['_source']
 
-    #TODO add error checking
-    def list_dir(self, directory):
-        """Returns the list of files and folders within a directory"""
-        query_dir = directory['pid'] + '/'
-       
-        query = {
-                "query": { 
-                    "match" : 
-                    { 
-                        "dir" : query_dir
-                        } 
-                    },
-                "size" : 10000
-                }
-        result = self.elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query)
-        logging.debug("Listed directory " + directory['name'] + " and found " + str(len(result['hits']['hits'])) + " entries")
-        return result['hits']['hits']
-
     def create_index(self, index_name):
+        """Create index in Elastic Search with the provided name"""
         self.elasticsearch.indices.create(index=index_name, ignore=400)
 
     def bulk(self, json):
+        """Bulk adds json to Elastic Search"""
         helpers.bulk(self.elasticsearch, json)
 
     def update_by_ppid(self, ppid, update, abort_on_error=True):
@@ -202,10 +148,66 @@ class DBUtil(object):
         self.update(ppid, image_id, update, abort_on_error)
 
     def update(self, ppid, image_id, update, abort_on_error=True):
-        #try:
+        """Updates evidence event in Elastic Search"""
         self.elasticsearch.update(index='efetch-evidence_' + image_id, doc_type='event', id=ppid, body={'doc': update})
-        #except:
-        #    if abort_on_error:
-        #        abort(404, "Could not update document with id: " +image_id + '/' + path)
-        #    else:
-        #        return
+    
+def evidence_template():
+    """Returns the Elastic Search mapping for Evidence"""
+    return {
+        "template" : "efetch-evidence*",
+        "settings" : {
+            "number_of_shards" : 1
+            },
+        "mappings" : {
+            "_default_" : {
+                "_source" : { "enabled" : True },
+                "properties" : {
+                    "root" : {"type": "string", "index" : "not_analyzed"},
+                    "pid" : {"type": "string", "index" : "not_analyzed"},
+                    "iid" : {"type": "string", "index" : "not_analyzed"},
+                    "image_id": {"type": "string", "index" : "not_analyzed"},
+                    "image_path" : {"type": "string", "index" : "not_analyzed"},
+                    "evd_type" : {"type": "string", "index" : "not_analyzed"},
+                    "name" : {"type": "string", "index" : "not_analyzed"},
+                    "path" : {"type": "string", "index" : "not_analyzed"},
+                    "ext" : {"type": "string", "index" : "not_analyzed"},
+                    "dir" : {"type": "string", "index" : "not_analyzed"},
+                    "meta_type" : {"type": "string", "index" : "not_analyzed"},
+                    "inode" : {"type": "string", "index" : "not_analyzed"},
+                    "mtime" : {"type": "string", "index" : "not_analyzed"},
+                    "atime" : {"type": "string", "index" : "not_analyzed"},
+                    "ctime" : {"type": "string", "index" : "not_analyzed"},
+                    "crtime" : {"type": "string","index" : "not_analyzed"},
+                    "file_size" : {"type": "string", "index" : "not_analyzed"},
+                    "uid" : {"type": "string", "index" : "not_analyzed"},
+                    "gid" : {"type": "string", "index" : "not_analyzed"},
+                    "driver" : {"type": "string", "index" : "not_analyzed"}
+                    }
+            }
+        }
+    }
+
+def case_template():
+    """Returns the Elastic Search mapping for Efetch Cases"""
+    return {
+        "template" : "efetch-cases",
+        "settings" : {
+            "number_of_shards" : 1
+            },
+        "mapping" : {
+            "_default_" : {
+                "_source" : { "enabled" : True },
+                "properties" : {
+                    "name" : {"type": "string", "index" : "not_analyzed"},
+                    "description" : {"type": "string", "index" : "analyzed"},
+                    "evidence" : {
+                        "properties" : {
+                                "evidence" : {"type" : "string", "index" : "not_analyzed" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+

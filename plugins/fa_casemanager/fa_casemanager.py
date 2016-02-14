@@ -8,6 +8,10 @@ import os
 class FaCasemanager(IPlugin):
 
     def __init__(self):
+        self._display_name = 'Case Manager'
+        self._popularity = 0
+        self._parent = False
+        self._cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -17,10 +21,6 @@ class FaCasemanager(IPlugin):
     def deactivate(self):
         IPlugin.deactivate(self)
         return
-
-    def display_name(self):
-        """Returns the name displayed in the webview"""
-        return "Case Manager"
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
@@ -33,14 +33,6 @@ class FaCasemanager(IPlugin):
     def popularity(self):
         """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
         return 0
-
-    def parent(self):
-        """Returns if the plugin accepts other plugins (True) or only files (False)"""
-        return False
-
-    def cache(self):
-        """Returns if caching is required"""
-        return True
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""

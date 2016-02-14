@@ -9,6 +9,10 @@ import os
 class FaOffice(IPlugin):
 
     def __init__(self):
+        self._display_name = 'Adv. Preview'
+        self._popularity = 8
+        self._parent = False
+        self._cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -19,10 +23,6 @@ class FaOffice(IPlugin):
         IPlugin.deactivate(self)
         return
 
-    def display_name(self):
-        """Returns the name displayed in the webview"""
-        return "Adv. Preview"
-
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         allowed = ['application/mspowerpoint', 'application/vnd.ms-powerpoint', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/x-latex', 'application/application/vnd.oasis.opendocument.text', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.openxmlformats-officedocument.presentationml.slide', 'application/vnd.openxmlformats-officedocument.presentationml.slideshow', 'application/vnd.openxmlformats-officedocument.presentationml.template', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.openxmlformats-officedocument.spreadsheetml.template', 'application/vnd.openxmlformats-officedocument.wordprocessingml.template', 'application/vnd.palm', 'application/rtf', 'application/vnd.sun.xml.writer.template', 'application/vnd.sun.xml.writer', 'application/vnd.ms-works', 'application/vnd.oasis.opendocument.graphics', 'application/vnd.oasis.opendocument.presentation', 'application/vnd.oasis.opendocument.presentation-template', 'application/vnd.sun.xml.impress', 'application/vnd.ms-excel', 'text/rtf']
@@ -31,18 +31,6 @@ class FaOffice(IPlugin):
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
         return mimetype
-
-    def popularity(self):
-        """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 8
-
-    def parent(self):
-        """Returns if the plugin accepts other plugins (True) or only files (False)"""
-        return False
-
-    def cache(self):
-        """Returns if caching is required"""
-        return True
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""

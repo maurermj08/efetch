@@ -1,21 +1,20 @@
 #!/usr/bin/python
-from bottle import abort
+import logging
 import magic
 import os
-import logging
-from PIL import Image
+from bottle import abort
 from db_util import DBUtil
+from PIL import Image
 from yapsy.PluginManager import PluginManager
 
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
-    global pymagic
-    global my_magic
 
-    def __init__(self, curr_directory, output_directory, upload_directory, max_file_size, es_url=None):
+    def __init__(self, curr_directory, output_directory, upload_directory,
+            max_file_size, es_url=None):
         """Initializes the Efetch Helper"""
-        global pymagic
-        global my_magic
+        _pymagic = None
+        _my_magic = None
 
         self.max_file_size = max_file_size
 
@@ -23,10 +22,10 @@ class EfetchHelper(object):
         self.curr_dir = curr_directory
         self.output_dir = output_directory
         self.upload_dir = upload_directory
-        self.resource_dir = self.curr_dir + "/resources/"
-        self.icon_dir = self.curr_dir + "/icons/"
+        self.resource_dir = self.curr_dir + '/resources/'
+        self.icon_dir = self.curr_dir + '/icons/'
         if not os.path.isdir(self.icon_dir):
-            logging.error("Could not find icon directory " + self.icon_dir)
+            logging.error('Could not find icon directory ' + self.icon_dir)
             sys.exit(2)
 
         #Elastic Search DB setup
@@ -37,16 +36,16 @@ class EfetchHelper(object):
         
         #Plugin Manager Setup
         self.plugin_manager = PluginManager()
-        self.plugin_manager.setPluginPlaces([self.curr_dir + "/plugins/"])
+        self.plugin_manager.setPluginPlaces([self.curr_dir + '/plugins/'])
         self.reload_plugins()
 
         #Determine which magic lib to use
         try:
-            my_magic = magic.Magic(mime = True)
-            pymagic = True
+            self._my_magic = magic.Magic(mime=True)
+            self._pymagic = True
         except:
-            my_magic = magic.Magic(flags=magic.MAGIC_MIME_TYPE)
-            pymagic = False
+            self._my_magic = magic.Magic(flags=magic.MAGIC_MIME_TYPE)
+            self._pymagic = False
 
     def reload_plugins(self):
         """Reloads all Yapsy plugins"""
@@ -64,17 +63,13 @@ class EfetchHelper(object):
 
     def get_mimetype(self, file_path):
         """Returns the mimetype for the given file"""
-        if pymagic:
-            return my_magic.from_file(file_path)
+        if self._pymagic:
+            return self._my_magic.from_file(file_path)
         else:
-            return my_magic.id_filename(file_path)
+            return self._my_magic.id_filename(file_path)
 
     def cache_file(self, curr_file, create_thumbnail=True):
         """Caches the provided file and returns the files cached directory"""
-        #if curr_file['file_type'] == 'directory':
-        #    return
-        #if curr_file['file_type'] != 'regular':
-        #    return None
         if curr_file['meta_type'] != 'File':
             return None
         if int(curr_file['file_size'][0]) > self.max_file_size:
@@ -83,7 +78,8 @@ class EfetchHelper(object):
         #TODO: Not everything will have an iid... so need to figure that out
         file_cache_path = self.output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
         file_cache_dir = self.output_dir + 'files/' + curr_file['iid'] + '/'
-        thumbnail_cache_path = self.output_dir + 'thumbnails/' + curr_file['iid'] + '/' + curr_file['name']
+        thumbnail_cache_path = self.output_dir + 'thumbnails/' + curr_file['iid'] + '/' + \
+                curr_file['name']
         thumbnail_cache_dir = self.output_dir + 'thumbnails/' + curr_file['iid'] + '/'
 
         #Makesure cache directories exist 
@@ -94,19 +90,22 @@ class EfetchHelper(object):
 
         #If file does not exist cat it to directory
         if not os.path.isfile(file_cache_path):
-            self.plugin_manager.getPluginByName(curr_file['driver']).plugin_object.icat(curr_file, file_cache_path)
+            self.plugin_manager.getPluginByName(curr_file['driver']).plugin_object.icat(curr_file, 
+                    file_cache_path)
 
         #Uses extension to determine if it should create a thumbnail
         assumed_mimetype = self.guess_mimetype(str(curr_file['ext']).lower())
 
         #If the file is an image create a thumbnail
-        if assumed_mimetype.startswith('image') and create_thumbnail and not os.path.isfile(thumbnail_cache_path):
+        if assumed_mimetype.startswith('image') and create_thumbnail and \
+                not os.path.isfile(thumbnail_cache_path):
             try:
                 image = Image.open(file_cache_path)
-                image.thumbnail("42x42")
+                image.thumbnail('42x42')
                 image.save(thumbnail_cache_path)
             except IOError:
-                logging.warn("Failed to create thumbnail for " + curr_file['name'] + " at cached path " + file_cache_path)
+                logging.warn('Failed to create thumbnail for ' + curr_file['name'] + \
+                        ' at cached path ' + file_cache_path)
 
         return file_cache_path
 
@@ -125,9 +124,7 @@ class EfetchHelper(object):
             'bin'    : 'application/octet-stream',
             'bmp'    : 'image/x-ms-bmp',
             'c'      : 'text/plain',
-            # Duplicates :(
             'cdf'    : 'application/x-cdf',
-            'cdf'    : 'application/x-netcdf',
             'cpio'   : 'application/x-cpio',
             'csh'    : 'application/x-csh',
             'css'    : 'text/css',
@@ -229,9 +226,7 @@ class EfetchHelper(object):
             'wsdl'   : 'application/xml',
             'xbm'    : 'image/x-xbitmap',
             'xlb'    : 'application/vnd.ms-excel',
-            # Duplicates :(
             'xls'    : 'application/excel',
-            'xls'    : 'application/vnd.ms-excel',
             'xml'    : 'text/xml',
             'xpdl'   : 'application/xml',
             'xpm'    : 'image/x-xpixmap',
@@ -243,4 +238,4 @@ class EfetchHelper(object):
         if extension in types_map:
             return types_map[extension]
         else:
-            return "" 
+            return '' 

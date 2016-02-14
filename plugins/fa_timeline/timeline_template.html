@@ -7,6 +7,18 @@
         <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
         <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
         <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
+        <script type="text/javascript" src="/resources/datagrid-detailview.js"></script>
+        <!-- <script>
+        $(function(){
+            $('#tl01').datagrid({
+                columns:[[
+                    {field:'datetime',title:'Date/Time', width:100},
+                    {field:'parser',title:'Parser', width:100},
+                    {field:'message',title:'Message', width:400}
+                ]]
+            });
+        });
+        </script> -->
 <style>
     html{
         height: 100%;
@@ -22,9 +34,41 @@
     <body>
         <div class="easyui-layout" style="width:100%;height:100%;">
             <table id="tl01" class="easyui-datagrid" style="width:100%;height:100%;" url="/plugins/fa_timeline/<!-- PID -->?mode=events"
-                title="Log2timeline" sortName="datetime" sortOrder="asc" rownumbers="false" pagination="true">
+                title="Log2timeline" sortName="datetime" sortOrder="asc" rownumbers="false" pagination="true" singleSelect="true">
                 <!-- Table -->
             </table>
         </div>
+    <script type="text/javascript">
+        function formatLinkUrl(val,row){
+            var url = '/plugins/fa_fileanalyze/'+row.image_id+'/'+row.display_name.replace("TSK:", "TSK");
+            return '<a href="'+url+'" target="_blank">Analyze</a>';
+        }
+        function formatThumbnail(val,row){
+            var url = '/plugins/fa_thumbnail/'+row.image_id+'/'+row.display_name.replace("TSK:", "TSK");
+            return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';
+        }
+        /* $(function(){
+            $('#tl01').datagrid({
+                view: detailview,
+                detailFormatter:function(index,row){
+                    return '<div class="ddv" style="padding:2px 0"></div>';
+                },
+                onExpandRow: function(index,row){
+                    var ddv = $(this).datagrid('getRowDetail',index).find('div.ddv');
+                    ddv.panel({
+                        height:600,
+                        width:800,
+                        border:false,
+                        cache:false,
+                        href:'/plugins/fa_blank/fa_fileanalyze/'+row.image_id+'/'+row.display_name.replace("TSK:", "TSK"),
+                        onLoad:function(){
+                            $('#dg').datagrid('fixDetailRowHeight',index);
+                        }
+                    });
+                    $('#dg').datagrid('fixDetailRowHeight',index);
+                }
+            });
+        }); */
+    </script>
     </body>
 </html>

@@ -1,17 +1,16 @@
 """
-Prints the metadata of a PDF file
+A blank parent plugin that simply returns an iframe of its child
 """
 
 from yapsy.IPlugin import IPlugin
-import os
 
-class FaPdfinfo(IPlugin):
+class FaBlank(IPlugin):
 
     def __init__(self):
-        self._display_name = 'PDF Info'
-        self._popularity = 5
-        self._parent = False
-        self._cache = True
+        self._display_name = 'Frame'
+        self._popularity = 0
+        self._parent = True
+        self._cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -21,11 +20,10 @@ class FaPdfinfo(IPlugin):
     def deactivate(self):
         IPlugin.deactivate(self)
         return
-        
+
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
-        allowed = [ 'application/pdf' ]
-        return evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed
+        return True
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -33,7 +31,9 @@ class FaPdfinfo(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        process = os.popen('pdfinfo ' + path_on_disk)
-        pdfinfo = process.read()
-        process.close()
-        return '<xmp style="white-space: pre-wrap;">' + pdfinfo + '</xmp>'
+        if request.query_string:
+            query_string = "?" + request.query_string
+        else:
+            query_string = ""
+
+        return '<iframe src="/plugins/' + children + query_string + '" style="height: 100%; width: 100%; position: absolute"></iframe>'

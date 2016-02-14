@@ -11,6 +11,10 @@ class FaCasetree(IPlugin):
     DEFAULT_CHILDREN="/fa_casetree/fa_menu/fa_filetree/fa_filedirectory/"
 
     def __init__(self):
+        self._display_name = 'Case Tree View'
+        self._popularity = 0
+        self._parent = True
+        self._cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -21,10 +25,6 @@ class FaCasetree(IPlugin):
         IPlugin.deactivate(self)
         return
 
-    def display_name(self):
-        """Returns the name displayed in the webview"""
-        return "Case Tree View"
-
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
@@ -32,18 +32,6 @@ class FaCasetree(IPlugin):
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
-
-    def popularity(self):
-        """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 0
-
-    def parent(self):
-        """Returns if the plugin accepts other plugins (True) or only files (False)"""
-        return True
-
-    def cache(self):
-        """Returns if caching is required"""
-        return False
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""

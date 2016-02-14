@@ -11,6 +11,10 @@ import reglib
 class FaRegviewAjax(IPlugin):
 
     def __init__(self):
+        self._display_name = 'Regview Ajax'
+        self._popularity = 0
+        self._parent = False
+        self._cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -21,10 +25,6 @@ class FaRegviewAjax(IPlugin):
         IPlugin.deactivate(self)
         return
 
-    def display_name(self):
-        """Returns the name displayed in the webview"""
-        return "Regview Ajax"
-
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
@@ -32,18 +32,6 @@ class FaRegviewAjax(IPlugin):
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
         return "application/json"
-
-    def popularity(self):
-        """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 0
-
-    def parent(self):
-        """Returns if the plugin accepts other plugins (True) or only files (False)"""
-        return False
-
-    def cache(self):
-        """Returns if caching is required"""
-        return True
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""

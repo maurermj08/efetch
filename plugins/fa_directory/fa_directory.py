@@ -9,6 +9,10 @@ import time
 class FaDirectory(IPlugin):
 
     def __init__(self):
+        self._display_name = 'Directory'
+        self._popularity = 0
+        self._parent = False
+        self._cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -19,10 +23,6 @@ class FaDirectory(IPlugin):
         IPlugin.deactivate(self)
         return
 
-    def display_name(self):
-        """Returns the name displayed in the webview"""
-        return "Directory"
-
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
@@ -30,18 +30,6 @@ class FaDirectory(IPlugin):
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
-
-    def popularity(self):
-        """Returns the popularity which is used to order the apps from 1 (low) to 10 (high), default is 5"""
-        return 0
-
-    def parent(self):
-        """Returns if the plugin accepts other plugins (True) or only files (False)"""
-        return False
-
-    def cache(self):
-        """Returns if caching is required"""
-        return False
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns a formatted directory listing for the given path"""
@@ -53,7 +41,7 @@ class FaDirectory(IPlugin):
 
         listing = []
         #TODO: Change localtime to case time, specifically what is supplied to sleuthkit
-        for item in helper.db_util.list_dir(curr_folder):
+        for item in helper.db_util.query(curr_folder):
             source = item['_source']
             listing.append("    <tr>") 
             listing.append('        <td><img src="/plugins/fa_thumbnail/' + source['pid'] + '" alt="' + source['meta_type'] + '-' + source['ext'] + '" title="' + source['meta_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')
@@ -77,6 +65,10 @@ class FaDirectory(IPlugin):
                 listing.append("        <td>" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(source['cre']))) + "</td>")
             else:
                 listing.append("        <td> - </td>")
+            if 'bookmark' not in source or source['bookmark'] == 'false':
+                listing.append("        <td> NONE </td>")
+            else:
+                listing.append("        <td> BOOKMARKED </td>")
             listing.append("        <td>" + str(source['file_size']) + "</td>")
             listing.append("    </tr>")
 
