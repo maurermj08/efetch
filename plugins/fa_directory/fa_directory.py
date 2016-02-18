@@ -41,7 +41,7 @@ class FaDirectory(IPlugin):
 
         listing = []
         #TODO: Change localtime to case time, specifically what is supplied to sleuthkit
-        for item in helper.db_util.query(curr_folder):
+        for item in helper.db_util.bool_query_evidence(curr_folder):
             source = item['_source']
             listing.append("    <tr>") 
             listing.append('        <td><img src="/plugins/fa_thumbnail/' + source['pid'] + '" alt="' + source['meta_type'] + '-' + source['ext'] + '" title="' + source['meta_type'] + '-' + source['ext'] + '" style="width:32px;height:32px;"></td>')

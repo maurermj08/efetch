@@ -7,4 +7,4 @@ Author = %{author}
 Version = 0.1
 Website = http://diftdisk.blogspot.com
 Description = %{description}
-Copyright = 2015
+Copyright = 2016

@@ -5,7 +5,8 @@ import os
 import sys
 from bottle import Bottle, request, static_file, abort
 from utils.efetch_helper import EfetchHelper
-from gevent import monkey; monkey.patch_all()
+#from gevent import monkey; monkey.patch_all()
+import cherrypy
 
 class Efetch(object):
     def __init__(self, argv):
@@ -67,7 +68,9 @@ class Efetch(object):
 
     def start(self):
         """Starts the Bottle server."""
-        self._app.run(host=self._address, port=self._port, server='gevent')
+        #self._app.run(host=self._address, port=self._port, server='gevent')
+        #self._app.run(host=self._address, port=self._port)
+        self._app.run(host=self._address, port=self._port, server='cherrypy')
 
     def _route(self):
         """Applies the routes to Efetch methods."""

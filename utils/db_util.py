@@ -26,24 +26,38 @@ class DBUtil(object):
     def get_file_from_ppid(self, ppid, abort_on_error=True):
         """Returns the file object for the given file in the database"""
         return self.get_file(ppid.split('/')[0], ppid, abort_on_error)
-    
-    def query(self, directory, must = {}, must_not = {}):
-        """Returns a list of evidence based on a Elastic Search based on must dic, must not dic, and directory"""
+   
+    def query(self, query, image_id):
+        """Returns the results of an Elastic Search query without error checking"""
+        return self.elasticsearch.search(index='efetch-evidence_' + image_id, body=query)
+
+    def bool_query(self, directory, bool_query = {}, size=10000, use_directory=True):
+        """Returns the results of an Elastic Search boolean query within a given directory"""
         #REF: https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
         #TODO: Loop through if size > 10000
-        query_dir = { 'term' : { 'dir' : directory['pid'] + '/' } }
-        if not must:
-            must = query_dir
-        elif isinstance(must, list):
-            must.append(query_dir)
-        else:
-            must = [ must, query_dir ]
+        if 'readyState' in bool_query:
+            del bool_query['readyState']
+        bool_query = self.append_dict(bool_query, 'must', { 'term': { 'dir': directory['pid'] + '/' } })
+        query = { 'query': { 'bool': bool_query, }, 'size': size} 
+        return self.elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query)
 
-        query = { 'query' : { 'bool' : { 'must' : must } }, 'size' : 10000 }
-        if must_not:
-            query['query']['bool']['must_not'] = must_not
-        result = self.elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query)
+    def bool_query_evidence(self, directory, bool_query = {}, size=10000):
+        """Returns a list of evidence for an Elastic Search boolean query within a directory"""
+        result = self.bool_query(directory, bool_query, size)
         return result['hits']['hits']
+
+    def append_dict(self, dictionary, key, value):
+        """Appends values to a dictionary in the format Elasticsearch expects"""
+        if not dictionary:
+            dictionary = {}
+        if not key in dictionary:
+            dictionary[key] = value
+        elif isinstance(dictionary[key], list):
+            list(dictionary[key]).append(value)
+        else:
+            dictionary[key] = [ dictionary[key], value]
+        
+        return dictionary
 
     def create_case(self, name, description, evidence):
         """Creates a case in Elastic Search under the efetch-cases index"""
@@ -181,7 +195,8 @@ def evidence_template():
                     "file_size" : {"type": "string", "index" : "not_analyzed"},
                     "uid" : {"type": "string", "index" : "not_analyzed"},
                     "gid" : {"type": "string", "index" : "not_analyzed"},
-                    "driver" : {"type": "string", "index" : "not_analyzed"}
+                    "driver" : {"type": "string", "index" : "not_analyzed"},
+                    "source_short" : {"type": "string", "index" : "not_analyzed"}
                     }
             }
         }

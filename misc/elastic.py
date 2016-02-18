@@ -70,6 +70,18 @@ class ElasticSearchOutputModule(interface.OutputModule):
       self._image_path = parent['location']
     ret_dict['image_path'] = self._image_path
 
+    root, path = ret_dict['display_name'].split(':/',1)   
+    path = '/' + path
+    pid = root + path
+    name = os.path.basename(path)
+    directory = os.path.dirname(pid) + '/'
+    ext = os.path.splitext(name)[1][1:] or ""
+
+    ret_dict['pid'] = pid
+    ret_dict['name'] = name
+    ret_dict['dir'] = directory
+    ret_dict['path'] = path
+    ret_dict['ext'] = ext.lower()
     ret_dict['image_id'] = self._image_id
     ##########################################################
 
@@ -198,7 +210,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
     ret_dict['name'] = name
     ret_dict['dir'] = directory
     ret_dict['path'] = path
-    ret_dict['ext'] = ext
+    ret_dict['ext'] = ext.lower()
     ret_dict['iid'] = iid
     ret_dict['driver'] = 'fa_dfvfs'
     ret_dict['parser'] = 'efetch'

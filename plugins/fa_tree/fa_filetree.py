@@ -86,7 +86,7 @@ class FaRegview(IPlugin):
 
         #curr_folder = evidence['path'] + "/"
 
-        for item in helper.db_util.query(evidence):
+        for item in helper.db_util.bool_query_evidence(evidence):
             source = item['_source']
             #TODO: Need to find out why there are weird ';' entries in the root of log2timeline
             if source['meta_type'] == 'Directory' and ';' not in source['iid']:

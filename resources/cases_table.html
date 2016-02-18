@@ -4,8 +4,8 @@
         <script src="/resources/jquery-1.11.3.min.js"></script>
         <script src="/resources/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
         <link rel="stylesheet" type="text/css" href="/resources/themes/default/easyui.css">
-        <link rel="stylesheet" type="text/css" href="http://www.jeasyui.com/easyui/themes/color.css">
-        <link rel="stylesheet" type="text/css" href="http://www.jeasyui.com/easyui/demo/demo.css">
+        <link rel="stylesheet" type="text/css" href="/resources/themes/color.css">
+        <!--<link rel="stylesheet" type="text/css" href="/resources/demo/demo.css">-->
         <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
         <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
 
@@ -96,7 +96,7 @@
             function openCase(){
                 var row = $('#dg').datagrid('getSelected');
                 if (row){
-                    var win = window.open('/plugins/fa_header/fa_menu/fa_casetree/fa_filetree/fa_filedirectory/fa_fileanalyze/?case=' + row.name, '_blank');
+                    var win = window.open('/plugins/fa_header/fa_menu/fa_casetree/fa_filetree/fa_filedirectory/fa_blank/fa_fileanalyze/?case=' + row.name, '_blank');
                     win.focus();
                 }
             }

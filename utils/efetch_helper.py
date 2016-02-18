@@ -23,7 +23,7 @@ class EfetchHelper(object):
         self.output_dir = output_directory
         self.upload_dir = upload_directory
         self.resource_dir = self.curr_dir + '/resources/'
-        self.icon_dir = self.curr_dir + '/icons/'
+        self.icon_dir = self.resource_dir + 'icons/'
         if not os.path.isdir(self.icon_dir):
             logging.error('Could not find icon directory ' + self.icon_dir)
             sys.exit(2)
@@ -104,6 +104,9 @@ class EfetchHelper(object):
                 image.thumbnail('42x42')
                 image.save(thumbnail_cache_path)
             except IOError:
+                logging.warn('IOError when trying to create thumbnail for ' + curr_file['name'] + \
+                        ' at cached path ' + file_cache_path)
+            except:
                 logging.warn('Failed to create thumbnail for ' + curr_file['name'] + \
                         ' at cached path ' + file_cache_path)
 

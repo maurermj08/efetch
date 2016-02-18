@@ -14,6 +14,7 @@ class FaFileDirectory(IPlugin):
         self._popularity = 0
         self._parent = True
         self._cache = False
+        self._default_child = 'fa_fileanalyze/'
         IPlugin.__init__(self)
 
     def activate(self):
@@ -40,7 +41,6 @@ class FaFileDirectory(IPlugin):
         else:
             curr_folder = helper.db_util.get_file(evidence['image_id'], evidence['dir'])
 
-        listing = []
 
         if evidence['image_id'] in children:
             child_plugins = str(children).split(evidence['image_id'])[0]
@@ -54,18 +54,20 @@ class FaFileDirectory(IPlugin):
         if 'show_dirs' in request.query:
             show_dirs = request.query['show_dirs'].lower() == 'true'
 
-        must = ast.literal_eval(helper.get_request_value(request, 'must', '{}'))
-        print("HERE: " + str(must))
-        must_not = ast.literal_eval(helper.get_request_value(request, 'must_not', '{}'))
+        #Gets the filter
+        filter_query = ast.literal_eval(helper.get_request_value(request, 'filter', '{}'))
 
+        #If no child plugin specified uses the default in new tab
         if child_plugins:
-            target = '_blank'
+            target = 'file_dir_frame'
             url = child_plugins
         else:
-            target = 'file_dir_frame'
-            url = 'fa_fileanalyze/'
+            url = self._default_child
+            target = '_blank'
 
-        for item in helper.db_util.query(curr_folder, must, must_not):
+        #Runs the query with the given filter and creates an HTML table from the results
+        listing = []
+        for item in helper.db_util.bool_query_evidence(curr_folder, filter_query):
             source = item['_source']
             if show_dirs or source['meta_type'] != 'Directory':
                 listing.append('    <tr>')
@@ -97,6 +99,7 @@ class FaFileDirectory(IPlugin):
                 #    listing.append("        <td><img src='/resources/images/bookmarked.png'></td>")
                 listing.append("    </tr>")
 
+        #Creates HTML page
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
 

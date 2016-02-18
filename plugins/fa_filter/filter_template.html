@@ -1,0 +1,151 @@
+<html xmlns="http://www.w3.org/1999/xhtml" > 
+<head > 
+        <script src="/resources/jquery-1.11.3.min.js"></script>
+        <script src="/resources/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
+        <link rel="stylesheet" type="text/css" href="/resources/themes/default/easyui.css">
+        <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
+        <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
+        <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
+        <script type="text/javascript" src="/resources/datagrid-detailview.js"></script>
+    <style> 
+        #fa_filter_iframe {
+            height: calc(100% - 28px);
+            width: 100%;
+            top:0; 
+            bottom:0; 
+            right:0;    
+            left:0;
+            border: 0px;
+        }
+        html{
+            height: 100%;
+        }
+
+        body {
+            min-height: 100%;
+            margin: 0px;
+        }
+        .combo-panel {
+            height: inherit !important;
+        }
+        #header {
+            background-color:#EDF7FF;
+            text-align:left;
+            height: 28px;
+            width: 100%;
+        }
+        #bottom {
+            width: 100%;
+        }
+    </style>
+</head> 
+<body> 
+    <div id="header"> 
+        <div class="easyui-panel" id='filter_panel' style="width:100%;">
+        </div>
+        <script>
+            var filters = <!-- Filters -->;
+
+            reloadPanel();
+ 
+            function addFilter(value,term){
+                console.log('Adding filter with value='+value+' and term='+term);
+                console.log('OLD: Filters='+JSON.stringify(filters));
+                $.getJSON('/plugins/fa_filter?fa_filter_method=add_filter&value='+value+'&term='+term+
+                    '&type='+$('#filter_type').combobox('getValue')+'&filters='+encodeURI(JSON.stringify(filters)),
+                    function(data) { 
+                        filters = data; 
+                        console.log('NEW: Filters='+JSON.stringify(filters));
+                        reloadPanel();
+                        updateFilter();
+                        });
+            };
+            function removeFilter(uid){
+                console.log('Removing filter '+uid);
+                console.log('OLD: Filters='+JSON.stringify(filters));
+                filters = $.getJSON('/plugins/fa_filter?fa_filter_method=remove_filter&uid='+uid+
+                    '&filters='+encodeURI(JSON.stringify(filters)),
+                    function(data) {
+                        filters = data; 
+                        console.log('NEW: Filters='+JSON.stringify(filters));
+                        reloadPanel();
+                        updateFilter();
+                    });
+            };
+            function updateFilter(){
+                console.log('Updating filter');
+                var filter = $.getJSON('/plugins/fa_filter?fa_filter_method=get_fitler&filters='+encodeURI(JSON.stringify(filters)),
+                        function(data) {
+                            filter = data;
+                            var new_encoded_filter = encodeURI(JSON.stringify(filter));
+                            var url = document.getElementById("fa_filter_iframe").contentWindow.location.href;
+                            
+                            //Replaces existing filters or adds a new filter variable to child's url
+                            if (url.indexOf('filter=') >= 0) {
+                                var new_url = (url + '&').replace(/(filter=).*?(&)/,'$1' + new_encoded_filter + '$2');
+                            }
+                            else if (url.indexOf('?') >= 0) {
+                                var new_url = url + '&filter=' + new_encoded_filter;
+                            }
+                            else {
+                                var new_url = url + '?filter=' + new_encoded_filter;
+                            }
+
+                            document.getElementById("fa_filter_iframe").src=new_url;            
+                        }); 
+            };
+            function reloadPanel() {
+                console.log('Reloading panel');
+                console.log('CURR: Filters='+JSON.stringify(filters))
+                $('#filter_panel').panel({ href:'/plugins/fa_filter?fa_filter_method=get_panel_content&filters='+encodeURI(JSON.stringify(filters))});
+            };
+
+            /*function doSearch(value,term){
+                alert($('#filter_panel').content)
+                if ('must' in filter && filter['must'].isArray){
+                    var temp = filter['must'];
+                    filter['must'] = [ temp ];
+                }
+                if ('must_not' in filter && filter['must_not'].isArray) {
+                    var temp = filter['must_not'];
+                    filter['must_not'] = [ temp ];
+                }
+                if ('should' in filter && filter['should'].isArray) {
+                    var temp = filter['should'];
+                    filter['should'] = [ temp ];
+                }
+                
+                var type = $('#filter_type').combobox('getValue');
+                if (!(type in filter)) {
+                    filter[type] = [];
+                }
+                alert("TERM: "+term);
+                var term_object = {};
+                term_object[term] = value;
+                filter[$('#filter_type').combobox('getValue')].push({ "term" : term_object });
+
+                var new_encoded_filter = encodeURI(JSON.stringify(filter));
+
+                var url = document.getElementById("fa_filter_iframe").contentWindow.location.href;
+                //var new_filter = '{ "'+$('#filter_type').combobox('getValue')+'": { "term" : {"'+term+'": "'+value+'" }} }';
+                //var new_encoded_filter = encodeURI(new_filter);
+                if (url.indexOf('filter=') >= 0) {
+                    alert('HERE!!!')
+                    var new_url = (url + '&').replace(/(filter=).*?(&)/,'$1' + new_encoded_filter + '$2');
+                }
+                else if (url.indexOf('?') >= 0) {
+                    var new_url = url + '&filter=' + new_encoded_filter;
+                }
+                else {
+                    var new_url = url + '?filter=' + new_encoded_filter;
+                }
+                document.getElementById("fa_filter_iframe").src=new_url;
+            }*/
+        </script>
+    </div> 
+    <div id="bottom"> 
+        <iframe id="fa_filter_iframe" src="<!-- Home -->"> 
+        </iframe> 
+    </div> 
+</body> 
+</html> 

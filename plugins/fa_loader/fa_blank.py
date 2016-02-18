@@ -36,4 +36,4 @@ class FaBlank(IPlugin):
         else:
             query_string = ""
 
-        return '<iframe src="/plugins/' + children + query_string + '" style="height: 100%; width: 100%; position: absolute"></iframe>'
+        return '<body style="margin:0px;"><iframe src="/plugins/' + children + query_string + '" style="border: 0px;height: 100%; width: 100%; position: absolute"></iframe></body>'
