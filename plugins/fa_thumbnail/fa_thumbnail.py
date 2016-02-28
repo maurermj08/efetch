@@ -12,7 +12,7 @@ class FaThumbnail(IPlugin):
         self._display_name = 'Thumbnail'
         self._popularity = 0
         self._parent = False
-        self._cache = True
+        self._cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -38,10 +38,10 @@ class FaThumbnail(IPlugin):
             return static_file("_folder.png", root=helper.icon_dir, mimetype='image/png')
 
         #Uses extension to determine if it should create a thumbnail
-        assumed_mimetype = helper.guess_mimetype(str(evidence['ext']).lower())
+        #assumed_mimetype = helper.guess_mimetype(str(evidence['ext']).lower())
 
         #If the file is an image create a thumbnail
-        if assumed_mimetype.startswith('image'):
+        if evidence['mimetype'].startswith('image'):
             #Cache file
             file_cache_path = helper.cache_file(evidence)
             thumbnail_cache_path = helper.output_dir + 'thumbnails/' + evidence['iid'] + '/' + evidence['name']

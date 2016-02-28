@@ -32,6 +32,7 @@ class Efetch(object):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         output_dir = curr_dir + "/cache/"
         upload_dir = curr_dir + "/uploads/"
+        logging.basicConfig(level=logging.INFO)
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
 
@@ -123,6 +124,7 @@ class Efetch(object):
             /child_plugin/image_id/
             /child_plugin/
         """
+        logging.info('Plugin called "%s"', args)
         args_list = args.split('/')
 
         name = str(args_list.pop(0))

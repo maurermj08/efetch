@@ -1,6 +1,6 @@
 [Core]
-Name = fa_filedirectory
-Module = fa_filedirectory
+Name = fa_filebrowser
+Module = fa_filebrowser
 
 [Documentation]
 Author = Michael Maurer

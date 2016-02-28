@@ -90,6 +90,7 @@ class EfetchHelper(object):
 
         #If file does not exist cat it to directory
         if not os.path.isfile(file_cache_path):
+            logging.info('Caching file "%s"', curr_file['pid'])
             self.plugin_manager.getPluginByName(curr_file['driver']).plugin_object.icat(curr_file, 
                     file_cache_path)
 

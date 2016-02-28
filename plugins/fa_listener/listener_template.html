@@ -1,0 +1,43 @@
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" > 
+<head runat="server"> 
+    <title></title> 
+    <script src="/resources/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript"> 
+        var current_pid = '<!-- PID -->'
+        var current_plugins = '<!-- PLUGINS -->'
+        var current_query = '<!-- QUERY -->'
+        if (typeof(Storage) !== "undefined") {
+            // Store
+            localStorage.setItem("fa_listener_pid", current_pid);
+        } else {
+            document.getElementById("result").innerHTML = "Sorry, your browser does not support the Listener plugin...";
+        }
+        $(window).bind('storage', function (e) {
+            // Retrieve
+            new_pid = localStorage.getItem("fa_listener_pid");
+
+            if (new_pid != current_pid)
+            {
+                current_pid = new_pid;
+                document.getElementById('fa_listener_iframe').src = current_plugins + current_pid + current_query;
+            }
+        });
+    </script>
+    <style> 
+        iframe {
+            height: 100%;
+            width: 100%;
+            position:absolute; 
+            top:0; 
+            bottom:0; 
+            right:0;    
+            left:0;
+        }
+    </style>
+</head> 
+<body> 
+    <iframe id='fa_listener_iframe' src="<!-- Home -->" frameborder="0"></iframe> 
+</body> 
+</html> 

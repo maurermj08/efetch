@@ -1,0 +1,10 @@
+[Core]
+Name = fa_listener
+Module = fa_listener
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Listens and sends any changes to the current evidence item
+Copyright = 2016

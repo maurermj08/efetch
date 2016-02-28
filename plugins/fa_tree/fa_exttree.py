@@ -1,20 +1,19 @@
 """
-Displays all primary evidence in a case in a tree view
+Displays all exts in a tree view
 """
 
 from yapsy.IPlugin import IPlugin
 import os
 from bottle import route, run, static_file, response, post, request, abort
 
-class FaCasetree(IPlugin):
-
-    DEFAULT_CHILDREN="/fa_casetree/fa_menu/fa_dirtree/fa_filebrowser/"
+class FaExttree(IPlugin):
 
     def __init__(self):
         self._display_name = 'Case Tree View'
         self._popularity = 0
         self._parent = True
         self._cache = False
+        self._default_child = '/fa_dirbrowser/fa_analyze/'
         IPlugin.__init__(self)
 
     def activate(self):
@@ -35,20 +34,7 @@ class FaCasetree(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        if "case" not in request.query and not request.forms.getall('case'):
-            abort(400, 'No case specified')
-
-        if "case" in request.query:
-            case = request.query['case']
-        else:
-            case = request.forms.get('case')
-         
-        try:
-            cases = helper.db_util.read_case(case)
-        except:
-            abort(404, 'Could not find case ' + case)
-
-        evidence_list = cases['_source']['evidence']
+        
         tree = []
         for item in evidence_list:
             tree.append('<li>' + item)
@@ -58,25 +44,45 @@ class FaCasetree(IPlugin):
         if children:
             child_plugins = children 
         else:
-            child_plugins = DEFAULT_CHILDREN
-            children = DEFAULT_CHILDREN
+            child_plugins = self._default_child
+            children = self._default_child
 
         if request.query_string:
             query_string = "?" + request.query_string
         else:
             query_string = ""
 
+        events = helper.db_util.elasticsearch.search(index='efetch-evidence_' + evidence['image_id'], doc_type='event', body=ext_query(evidence['pid']))
+
+        #TODO LOOP THROUGH EVENTS
+        
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/casetree_template.html', 'r')
         html = str(template.read())
-        if not evidence_list:
-            return "<xmp>Oops! Case contains no evidence! Please Add Evidence.</xmp>"
-        if evidence_list[0]:
-            html = html.replace('<!-- Home -->', "/plugins/" + children + evidence_list[0] + '/' + query_string)
+        html = html.replace('<!-- Home -->', "/plugins/" + children + evidence['image_id'] + '/' + query_string)
         html = html.replace('<!-- Tree -->', '\n'.join(tree))
         html = html.replace('<!-- Child -->', "/plugins/" + child_plugins)
         html = html.replace('<!-- Query -->', query_string)
-        html = html.replace('<!-- Name -->', 'Evidence')
+        html = html.replace('<!-- Name -->', 'Extensions')
         template.close()
 
         return html
+
+    #TODO ADD MUST
+    def ext_query(pid):
+        return {
+            "size": 0,
+            "query": {
+                 "term": {
+                     'parser': 'efetch', 
+                     'dir' : 'pid' + '/'
+                 }
+            },
+            "aggregations": {
+               "event": {
+                  "terms": {
+                     "field": "ext"
+                    }
+                }
+            }
+        } 

@@ -15,7 +15,7 @@ class FaTimeline(IPlugin):
         self._popularity = 6
         self._parent = True
         self._cache = False
-        self._default_plugin = 'fa_fileanalyze/'
+        self._default_plugin = 'fa_analyze/'
         IPlugin.__init__(self)
 
     def activate(self):

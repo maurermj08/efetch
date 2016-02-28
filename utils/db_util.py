@@ -44,7 +44,7 @@ class DBUtil(object):
     def bool_query_evidence(self, directory, bool_query = {}, size=10000):
         """Returns a list of evidence for an Elastic Search boolean query within a directory"""
         result = self.bool_query(directory, bool_query, size)
-        return result['hits']['hits']
+        return [(evidence['_source']) for evidence in result['hits']['hits']]
 
     def append_dict(self, dictionary, key, value):
         """Appends values to a dictionary in the format Elasticsearch expects"""
@@ -158,7 +158,6 @@ class DBUtil(object):
         ppid_split = str(ppid).split('/')
         image_id = ppid_split[0]
         path = '/'.join(ppid_split[1:])
-        print("path: " + path + ", image_id: " + image_id)
         self.update(ppid, image_id, update, abort_on_error)
 
     def update(self, ppid, image_id, update, abort_on_error=True):

@@ -25,7 +25,7 @@ class FaStrings(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
-        return True
+        return evidence['meta_type'] == 'File'
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

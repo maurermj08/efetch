@@ -1,16 +1,16 @@
 """
-Lazy loading file browsing tree
+Simple file browser
 """
 
 from yapsy.IPlugin import IPlugin
-from bottle import abort
+import ast
 import os
-import json
+import time
 
-class FaFileTree(IPlugin):
+class FaFileBrowser(IPlugin):
 
     def __init__(self):
-        self._display_name = 'File Tree'
+        self._display_name = 'FileBrowser'
         self._popularity = 0
         self._parent = True
         self._cache = False
@@ -33,6 +33,6 @@ class FaFileTree(IPlugin):
         return "text/plain"
 
     def get(self, evidence, helper, path_on_disk, request, children):
-        """Returns the result of this plugin to be displayed in a browser"""
-        return helper.plugin_manager.getPluginByName('fa_tree').plugin_object.get(evidence,
-                helper, path_on_disk, request, children, True, False, 'fa_filetree')
+        """Returns a formatted directory listing for the given path"""
+        return helper.plugin_manager.getPluginByName('fa_browser').plugin_object.get(evidence,
+                helper, path_on_disk, request, children, True, False, 'fa_filebrowser')
