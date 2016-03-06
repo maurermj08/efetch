@@ -5,13 +5,13 @@ Prints the metadata of a PDF file
 from yapsy.IPlugin import IPlugin
 import os
 
-class FaPdfinfo(IPlugin):
 
+class FaPdfinfo(IPlugin):
     def __init__(self):
-        self._display_name = 'PDF Info'
-        self._popularity = 5
-        self._parent = False
-        self._cache = True
+        self.display_name = 'PDF Info'
+        self.popularity = 5
+        self.parent = False
+        self.cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -21,10 +21,10 @@ class FaPdfinfo(IPlugin):
     def deactivate(self):
         IPlugin.deactivate(self)
         return
-        
+
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
-        allowed = [ 'application/pdf' ]
+        allowed = ['application/pdf']
         return evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed
 
     def mimetype(self, mimetype):

@@ -7,13 +7,13 @@ from bottle import abort
 import os
 import json
 
-class FaFileTree(IPlugin):
 
+class FaFileTree(IPlugin):
     def __init__(self):
-        self._display_name = 'Directory Tree'
-        self._popularity = 0
-        self._parent = True
-        self._cache = False
+        self.display_name = 'Directory Tree'
+        self.popularity = 0
+        self.parent = True
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -35,4 +35,5 @@ class FaFileTree(IPlugin):
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         return helper.plugin_manager.getPluginByName('fa_tree').plugin_object.get(evidence,
-                helper, path_on_disk, request, children, False, True, 'fa_dirtree')
+                                                                                  helper, path_on_disk, request,
+                                                                                  children, False, True, 'fa_dirtree')

@@ -6,13 +6,13 @@ from yapsy.IPlugin import IPlugin
 from bottle import route, run, static_file, response, post, request, abort
 import json
 
-class FaCase(IPlugin):
 
+class FaCase(IPlugin):
     def __init__(self):
-        self._display_name = 'Case API'
-        self._popularity = 0
-        self._parent = False
-        self._cache = False
+        self.display_name = 'Case API'
+        self.popularity = 0
+        self.parent = False
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -52,7 +52,7 @@ class FaCase(IPlugin):
             new_name = request.query['new_name']
         else:
             new_name = request.forms.get('new_name')
-        #TODO: Determine if this is the best way to get a list
+        # TODO: Determine if this is the best way to get a list
         if "evidence" in request.query:
             evidence_list = request.query['evidence'].split(',')
         elif request.forms.get('evidence'):
@@ -70,8 +70,8 @@ class FaCase(IPlugin):
             result = helper.db_util.get_evidence(name)
             result_table = []
             for item in result:
-                result_table.append({ "evidence" : item })
-            return {"rows" : result_table, "total" : len(result_table) }
+                result_table.append({"evidence": item})
+            return {"rows": result_table, "total": len(result_table)}
         elif not name:
             abort(400, 'No name specified')
         elif method == "remove_evidence":
@@ -90,6 +90,6 @@ class FaCase(IPlugin):
         for hit in result['hits']['hits']:
             cases.append(hit['_source'])
 
-        table = {"rows" : cases, "total" : len(cases) }
+        table = {"rows": cases, "total": len(cases)}
 
         return table

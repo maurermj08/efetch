@@ -1,7 +1,10 @@
 #!/usr/bin/python
+import ast
 import logging
 import magic
 import os
+import time
+import threading
 from bottle import abort
 from db_util import DBUtil
 from PIL import Image
@@ -15,7 +18,8 @@ class EfetchHelper(object):
         """Initializes the Efetch Helper"""
         _pymagic = None
         _my_magic = None
-
+        self._edit_lock = threading.Lock()
+        self._write_dict = {}
         self.max_file_size = max_file_size
 
         #Setup directory references
@@ -61,12 +65,50 @@ class EfetchHelper(object):
             return request.forms.get(variable_name)
         return default
 
-    def get_mimetype(self, file_path):
-        """Returns the mimetype for the given file"""
-        if self._pymagic:
-            return self._my_magic.from_file(file_path)
+    def get_children(self, image_id, children, default_children = ''):
+        """Returns a forward slash delimited string of child plugins"""
+        if children and image_id in children:
+            return str(children).split(image_id)[0]
         else:
-            return self._my_magic.id_filename(file_path)
+            return default_children
+
+    def get_query_string(self, request, default_query=''):
+        """Returns the query string of the given request"""
+        if request.query_string:
+            return "?" + request.query_string
+        else:
+            return default_query
+
+    def get_filter(self, request):
+        """Returns the filter dictionary from a request"""
+        raw_filter = self.get_request_value(request, 'filter', '{}')
+
+        try:
+            filter_query = ast.literal_eval(raw_filter)
+        except:
+            logging.warn('Bad filter %s', raw_filter)
+            filter_query = {}
+        finally:
+            return filter_query
+
+    def get_mimetype(self, file_path, repeat=8):
+        """Returns the mimetype for the given file"""
+        try:
+            if self._pymagic:
+                return self._my_magic.from_file(file_path)
+            else:
+                return self._my_magic.id_filename(file_path)
+        except:
+            if repeat > 0:
+                logging.warn('Failed to get the mimetype for "%s" attempting again in 500ms', file_path)
+                time.sleep(0.500)
+                self.get_mimetype(file_path, repeat - 1)
+            logging.warn('Failed to get the mimetype for "%s"', file_path)
+    
+    def wait_for_cache(self, path, seconds=0.100):
+        """Waits until a file is finished being cached"""
+        while path in self._write_dict:
+            time.sleep(seconds)
 
     def cache_file(self, curr_file, create_thumbnail=True):
         """Caches the provided file and returns the files cached directory"""
@@ -88,28 +130,45 @@ class EfetchHelper(object):
         if not os.path.isdir(file_cache_dir):
             os.makedirs(file_cache_dir)
 
+        self.wait_for_cache(file_cache_path)
+        
+        write = False
+
         #If file does not exist cat it to directory
         if not os.path.isfile(file_cache_path):
-            logging.info('Caching file "%s"', curr_file['pid'])
-            self.plugin_manager.getPluginByName(curr_file['driver']).plugin_object.icat(curr_file, 
-                    file_cache_path)
+            with self._edit_lock:
+                if file_cache_path in self._write_dict or os.path.isfile(file_cache_path):
+                    write = False
+                else:
+                    self._write_dict[file_cache_path] = True
+                    write = True
+        
+        if write:
+            if file_cache_path in self._write_dict:
+                logging.info('Caching file "%s"', curr_file['pid'])
+                self.plugin_manager.getPluginByName(curr_file['driver']).plugin_object.icat(curr_file, 
+                        file_cache_path)
 
-        #Uses extension to determine if it should create a thumbnail
-        assumed_mimetype = self.guess_mimetype(str(curr_file['ext']).lower())
+                #Uses extension to determine if it should create a thumbnail
+                assumed_mimetype = self.guess_mimetype(str(curr_file['ext']).lower())
 
-        #If the file is an image create a thumbnail
-        if assumed_mimetype.startswith('image') and create_thumbnail and \
-                not os.path.isfile(thumbnail_cache_path):
-            try:
-                image = Image.open(file_cache_path)
-                image.thumbnail('42x42')
-                image.save(thumbnail_cache_path)
-            except IOError:
-                logging.warn('IOError when trying to create thumbnail for ' + curr_file['name'] + \
-                        ' at cached path ' + file_cache_path)
-            except:
-                logging.warn('Failed to create thumbnail for ' + curr_file['name'] + \
-                        ' at cached path ' + file_cache_path)
+                #If the file is an image create a thumbnail
+                if assumed_mimetype.startswith('image') and create_thumbnail and \
+                        not os.path.isfile(thumbnail_cache_path):
+                    try:
+                        image = Image.open(file_cache_path)
+                        image.thumbnail('42x42')
+                        image.save(thumbnail_cache_path)
+                    except IOError:
+                        logging.warn('IOError when trying to create thumbnail for ' + curr_file['name'] + \
+                                ' at cached path ' + file_cache_path)
+                    except:
+                        logging.warn('Failed to create thumbnail for ' + curr_file['name'] + \
+                                ' at cached path ' + file_cache_path)
+                with self._edit_lock:
+                    del self._write_dict[file_cache_path]
+        else:
+            self.wait_for_cache(file_cache_path)
 
         return file_cache_path
 

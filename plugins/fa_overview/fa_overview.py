@@ -5,13 +5,13 @@ Gets an overview of the file without using cache
 from yapsy.IPlugin import IPlugin
 import os
 
-class FaOverview(IPlugin):
 
+class FaOverview(IPlugin):
     def __init__(self):
-        self._display_name = 'Overview'
-        self._popularity = 10
-        self._parent = False
-        self._cache = False
+        self.display_name = 'Overview'
+        self.popularity = 10
+        self.parent = False
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -32,7 +32,7 @@ class FaOverview(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        
+
         listing = []
 
         for item in evidence:

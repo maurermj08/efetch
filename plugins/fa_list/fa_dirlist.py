@@ -1,14 +1,15 @@
 """
-Simple menu bar
+Displays folders using a list view
 """
 
 from yapsy.IPlugin import IPlugin
-import os
 
 
-class FaMenu(IPlugin):
+
+class FaDirlist(IPlugin):
+
     def __init__(self):
-        self.display_name = 'Menu'
+        self.display_name = 'Directory List'
         self.popularity = 0
         self.parent = True
         self.cache = False
@@ -32,14 +33,7 @@ class FaMenu(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        html = ""
-        curr_dir = os.path.dirname(os.path.realpath(__file__))
-        template = open(curr_dir + '/menu_template.html', 'r')
-        html = str(template.read())
-        query_string = helper.get_query_string(request)
-
-        html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
-        html = html.replace('<!-- Upload -->', "/plugins/fa_upload")
-        html = html.replace('<!-- Case -->', request.query['case'])
-
-        return html
+        return helper.plugin_manager.getPluginByName('fa_timeline').plugin_object.get(evidence,
+                                                                                     helper, path_on_disk, request,
+                                                                                     children, False, False, True,
+                                                                                      False, 'fa_dirlist')

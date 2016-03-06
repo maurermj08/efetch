@@ -8,13 +8,13 @@ import json
 import os
 import reglib
 
-class FaRegviewAjax(IPlugin):
 
+class FaRegviewAjax(IPlugin):
     def __init__(self):
-        self._display_name = 'Regview Ajax'
-        self._popularity = 0
-        self._parent = False
-        self._cache = True
+        self.display_name = 'Regview Ajax'
+        self.popularity = 0
+        self.parent = False
+        self.cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -45,11 +45,11 @@ class FaRegviewAjax(IPlugin):
             return self.get_children(request, path_on_disk)
         elif method == "values":
             return self.values(request, path_on_disk)
-        
+
         return abort(400, 'Unknown method')
-    
+
     def base_tree(self, path_on_disk):
-        data = self.get_sub_keys("", path_on_disk) 
+        data = self.get_sub_keys("", path_on_disk)
         response.content_type = 'application/json'
         return json.dumps(data)
 
@@ -72,7 +72,7 @@ class FaRegviewAjax(IPlugin):
     def get_sub_keys(self, key, path_on_disk):
         registry = reglib.get_registry(path_on_disk)
         subkeys = reglib.get_subkeys(key, registry)
-        registry_keys =  []
+        registry_keys = []
         for subkey in subkeys:
             if len(key) > 0:
                 fqkp = key + "\\" + subkey

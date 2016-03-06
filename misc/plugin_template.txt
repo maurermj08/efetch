@@ -5,13 +5,14 @@
 from yapsy.IPlugin import IPlugin
 %{import}
 
+
 class %{cname}(IPlugin):
 
     def __init__(self):
-        self._disply_name = '%{display}'
-        self._popularity = %{popularity}
-        self._parent = False
-        self._cache = False
+        self.display_name = '%{display}'
+        self.popularity = %{popularity}
+        self.parent = %{parent}
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):

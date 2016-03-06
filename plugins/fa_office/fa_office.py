@@ -6,13 +6,13 @@ from yapsy.IPlugin import IPlugin
 from bottle import static_file
 import os
 
-class FaOffice(IPlugin):
 
+class FaOffice(IPlugin):
     def __init__(self):
-        self._display_name = 'Adv. Preview'
-        self._popularity = 8
-        self._parent = False
-        self._cache = True
+        self.display_name = 'Adv. Preview'
+        self.popularity = 8
+        self.parent = False
+        self.cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -25,7 +25,21 @@ class FaOffice(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
-        allowed = ['application/mspowerpoint', 'application/vnd.ms-powerpoint', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/x-latex', 'application/application/vnd.oasis.opendocument.text', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.openxmlformats-officedocument.presentationml.slide', 'application/vnd.openxmlformats-officedocument.presentationml.slideshow', 'application/vnd.openxmlformats-officedocument.presentationml.template', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.openxmlformats-officedocument.spreadsheetml.template', 'application/vnd.openxmlformats-officedocument.wordprocessingml.template', 'application/vnd.palm', 'application/rtf', 'application/vnd.sun.xml.writer.template', 'application/vnd.sun.xml.writer', 'application/vnd.ms-works', 'application/vnd.oasis.opendocument.graphics', 'application/vnd.oasis.opendocument.presentation', 'application/vnd.oasis.opendocument.presentation-template', 'application/vnd.sun.xml.impress', 'application/vnd.ms-excel', 'text/rtf']
+        allowed = ['application/mspowerpoint', 'application/vnd.ms-powerpoint', 'application/msword',
+                   'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/x-latex',
+                   'application/application/vnd.oasis.opendocument.text',
+                   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                   'application/vnd.openxmlformats-officedocument.presentationml.slide',
+                   'application/vnd.openxmlformats-officedocument.presentationml.slideshow',
+                   'application/vnd.openxmlformats-officedocument.presentationml.template',
+                   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                   'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
+                   'application/vnd.openxmlformats-officedocument.wordprocessingml.template', 'application/vnd.palm',
+                   'application/rtf', 'application/vnd.sun.xml.writer.template', 'application/vnd.sun.xml.writer',
+                   'application/vnd.ms-works', 'application/vnd.oasis.opendocument.graphics',
+                   'application/vnd.oasis.opendocument.presentation',
+                   'application/vnd.oasis.opendocument.presentation-template', 'application/vnd.sun.xml.impress',
+                   'application/vnd.ms-excel', 'text/rtf']
         return evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed
 
     def mimetype(self, mimetype):

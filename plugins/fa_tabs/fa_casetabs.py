@@ -5,13 +5,13 @@ Displays case manager and open cases in tabs
 from yapsy.IPlugin import IPlugin
 import os
 
-class FaCasetabs(IPlugin):
 
+class FaCasetabs(IPlugin):
     def __init__(self):
-        self._display_name = 'Case Tabs'
-        self._popularity = 0
-        self._parent = True
-        self._cache = False
+        self.display_name = 'Case Tabs'
+        self.popularity = 0
+        self.parent = True
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -50,6 +50,5 @@ class FaCasetabs(IPlugin):
 
         html = html.replace('<!-- Home -->', "/plugins/fa_casemanager/")
         html = html.replace('<!-- Cases -->', '\n'.join(cases))
-        
-        return html
 
+        return html

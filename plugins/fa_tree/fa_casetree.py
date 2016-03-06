@@ -6,15 +6,15 @@ from yapsy.IPlugin import IPlugin
 import os
 from bottle import route, run, static_file, response, post, request, abort
 
-class FaCasetree(IPlugin):
 
-    DEFAULT_CHILDREN="/fa_casetree/fa_menu/fa_dirtree/fa_filebrowser/"
+class FaCasetree(IPlugin):
+    DEFAULT_CHILDREN = "/fa_casetree/fa_menu/fa_dirtree/fa_filebrowser/"
 
     def __init__(self):
-        self._display_name = 'Case Tree View'
-        self._popularity = 0
-        self._parent = True
-        self._cache = False
+        self.display_name = 'Case Tree View'
+        self.popularity = 0
+        self.parent = True
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -42,7 +42,7 @@ class FaCasetree(IPlugin):
             case = request.query['case']
         else:
             case = request.forms.get('case')
-         
+
         try:
             cases = helper.db_util.read_case(case)
         except:
@@ -56,7 +56,7 @@ class FaCasetree(IPlugin):
         child_plugins = ''
 
         if children:
-            child_plugins = children 
+            child_plugins = children
         else:
             child_plugins = DEFAULT_CHILDREN
             children = DEFAULT_CHILDREN

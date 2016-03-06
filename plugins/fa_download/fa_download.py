@@ -6,13 +6,13 @@ from yapsy.IPlugin import IPlugin
 from bottle import static_file
 import os
 
-class FaDownload(IPlugin):
 
+class FaDownload(IPlugin):
     def __init__(self):
-        self._display_name = 'Download'
-        self._popularity = 1
-        self._parent = False
-        self._cache = True
+        self.display_name = 'Download'
+        self.popularity = 1
+        self.parent = False
+        self.cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -33,4 +33,5 @@ class FaDownload(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk), download=os.path.basename(path_on_disk))
+        return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk),
+                           download=os.path.basename(path_on_disk))

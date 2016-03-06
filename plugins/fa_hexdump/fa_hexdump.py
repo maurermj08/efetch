@@ -4,13 +4,13 @@ Returns a static HTML page with the hexdump output, similar to Hexdump -C
 
 from yapsy.IPlugin import IPlugin
 
-class FaHexdump(IPlugin):
 
+class FaHexdump(IPlugin):
     def __init__(self):
-        self._display_name = 'Hex View'
-        self._popularity = 5
-        self._parent = False
-        self._cache = True
+        self.display_name = 'Hex View'
+        self.popularity = 5
+        self.parent = False
+        self.cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -20,7 +20,7 @@ class FaHexdump(IPlugin):
     def deactivate(self):
         IPlugin.deactivate(self)
         return
-        
+
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return evidence['meta_type'] == 'File'
@@ -38,10 +38,10 @@ class FaHexdump(IPlugin):
         FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or sep for x in range(256)])
         lines = []
         for c in xrange(0, len(src), length):
-            chars = src[c:c+length]
+            chars = src[c:c + length]
             hex = ' '.join(["%02x" % ord(x) for x in chars])
             if len(hex) > 24:
                 hex = "%s %s" % (hex[:24], hex[24:])
             printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or sep) for x in chars])
-            lines.append("%08x:  %-*s  |%s|\n" % (c, length*3, hex, printable))
+            lines.append("%08x:  %-*s  |%s|\n" % (c, length * 3, hex, printable))
         return ''.join(lines)

@@ -5,13 +5,13 @@ Allows for the adding, deleting, and modifying of cases
 from yapsy.IPlugin import IPlugin
 import os
 
-class FaCasemanager(IPlugin):
 
+class FaCasemanager(IPlugin):
     def __init__(self):
-        self._display_name = 'Case Manager'
-        self._popularity = 0
-        self._parent = False
-        self._cache = False
+        self.display_name = 'Case Manager'
+        self.popularity = 0
+        self.parent = False
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -47,8 +47,9 @@ class FaCasemanager(IPlugin):
                 description = source['description']
             if source['evidence']:
                 evidence_list = source['evidence']
-            table.append('<tr><td>' + name + '</td><td>' + description + '</td><td>' + ','.join(evidence_list) + '</td></tr>')
-        
+            table.append(
+                '<tr><td>' + name + '</td><td>' + description + '</td><td>' + ','.join(evidence_list) + '</td></tr>')
+
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/case_manager_template.html', 'r')

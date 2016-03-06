@@ -74,7 +74,7 @@
             };
             function updateFilter(){
                 console.log('Updating filter');
-                var filter = $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=get_fitler&filters='+encodeURI(JSON.stringify(filters)),
+                var filter = $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=get_filter&filters='+encodeURI(JSON.stringify(filters)),
                         function(data) {
                             filter = data;
                             var new_encoded_filter = encodeURI(JSON.stringify(filter));

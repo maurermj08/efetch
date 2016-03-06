@@ -5,13 +5,13 @@ Listens and sends any changes to the current evidence item
 from yapsy.IPlugin import IPlugin
 import os
 
-class FaListener(IPlugin):
 
+class FaListener(IPlugin):
     def __init__(self):
-        self._disply_name = 'Listener'
-        self._popularity = 0
-        self._parent = True
-        self._cache = False
+        self.display_name = 'Listener'
+        self.popularity = 0
+        self.parent = True
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -36,11 +36,7 @@ class FaListener(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/listener_template.html', 'r')
         html = str(template.read())
-
-        if request.query_string:
-            query_string = "?" + request.query_string
-        else:
-            query_string = ""
+        query_string = helper.get_query_string(request)
 
         html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
         html = html.replace('<!-- PID -->', evidence['pid'])

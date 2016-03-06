@@ -7,13 +7,14 @@ from bottle import abort
 import os
 import json
 
-class FaTree(IPlugin):
 
+class FaTree(IPlugin):
     def __init__(self):
-        self._display_name = 'Tree'
-        self._popularity = 0
-        self._parent = True
-        self._cache = False
+        self.display_name = 'Tree'
+        self.popularity = 0
+        self.parent = True
+        self.cache = False
+        self._default_child = 'fa_loader/fa_dirbrowser/fa_analyze/'
         IPlugin.__init__(self)
 
     def activate(self):
@@ -32,41 +33,35 @@ class FaTree(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
-    def get(self, evidence, helper, path_on_disk, request, children, files=True, directories=True, source_plugin='fa_tree'):
+    def get(self, evidence, helper, path_on_disk, request, children, files=True, directories=True,
+            source_plugin='fa_tree'):
         """Returns the result of this plugin to be displayed in a browser"""
         mode = helper.get_request_value(request, 'mode', '')
-        
+        filter_query = helper.get_filter(request)
+
         if mode == 'children':
             parent = helper.get_request_value(request, 'parent', '')
             if not parent:
                 abort(200, 'Bad request, mode children requires a parent in the form of a Path ID')
             request_file = helper.db_util.get_file_from_ppid(parent)
 
-            return self.get_child(request_file, helper, files, directories)
+            return self.get_child(request_file, helper, files, directories, filter_query)
         elif mode == 'root' and not directories:
-            return self.get_child(evidence, helper, files, directories)
+            return self.get_child(evidence, helper, files, directories, filter_query)
         elif mode == 'root':
             return json.dumps([{
-                    'title': evidence['name'],
-                    'key': evidence['pid'],
-                    'folder': True,
-                    'lazy': True,
-                    'icon': '/plugins/fa_thumbnail/' + evidence['pid']
-                    }], sort_keys=True)
+                'title': evidence['name'],
+                'key': evidence['pid'],
+                'folder': True,
+                'lazy': True,
+                'icon': '/plugins/fa_thumbnail/' + evidence['pid']
+            }], sort_keys=True)
 
-        child_plugins = ''
-
-        if children and evidence['image_id'] in children:
-            child_plugins = str(children).split(evidence['image_id'])[0]
-        if not child_plugins:
-            child_plugins = 'fa_loader/fa_dirbrowser/fa_analyze/'
+        child_plugins = helper.get_children(evidence['image_id'], children, self._default_child)
         if not children:
-            children = 'fa_loader/fa_dirbrowser/fa_analyze/'
+            children = self._default_child
 
-        if request.query_string:
-            query_string = "?" + request.query_string
-        else:
-            query_string = ""
+        query_string = helper.get_query_string(request)
 
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/tree_template.html', 'r')
@@ -86,18 +81,18 @@ class FaTree(IPlugin):
 
         return html
 
-    def get_child(self, evidence, helper, files=True, directories=True):
+    def get_child(self, evidence, helper, files=True, directories=True, filter_query={}):
         """Returns JSON list containing sub keys using Fancy Tree format"""
         children = []
 
         if evidence['meta_type'] != 'Directory':
             return json.dumps(children)
 
-        for evidence_item in helper.db_util.bool_query_evidence(evidence):
+        for evidence_item in helper.db_util.bool_query_evidence(evidence, filter_query):
             append = False
             folder = False
 
-            #TODO: Need to find out why there are weird ';' entries in the root of log2timeline
+            # TODO: Need to find out why there are weird ';' entries in the root of log2timeline
             if ';' not in evidence_item['iid']:
                 if files and evidence_item['meta_type'] == 'File':
                     append = True
@@ -106,13 +101,13 @@ class FaTree(IPlugin):
                     folder = True
 
             if append:
-                children.append( {
-                        'title': evidence_item['name'],
-                        'key': evidence_item['pid'],
-                        'lazy': folder,
-                        'folder': folder,
-                        'icon': '/plugins/fa_thumbnail/' + evidence_item['pid']
-                        } )
+                children.append({
+                    'title': evidence_item['name'],
+                    'key': evidence_item['pid'],
+                    'lazy': folder,
+                    'folder': folder,
+                    'icon': '/plugins/fa_thumbnail/' + evidence_item['pid']
+                })
 
         children.sort()
         return json.dumps(children)

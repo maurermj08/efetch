@@ -1,8 +1,10 @@
 #!/usr/bin/python
 import logging
 import sys
+import time
 from bottle import abort
 from elasticsearch import Elasticsearch, helpers
+from elasticsearch.exceptions import ConflictError
 
 class DBUtil(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
@@ -35,14 +37,13 @@ class DBUtil(object):
         """Returns the results of an Elastic Search boolean query within a given directory"""
         #REF: https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
         #TODO: Loop through if size > 10000
-        if 'readyState' in bool_query:
-            del bool_query['readyState']
         bool_query = self.append_dict(bool_query, 'must', { 'term': { 'dir': directory['pid'] + '/' } })
         query = { 'query': { 'bool': bool_query, }, 'size': size} 
         return self.elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query)
 
     def bool_query_evidence(self, directory, bool_query = {}, size=10000):
         """Returns a list of evidence for an Elastic Search boolean query within a directory"""
+        bool_query = self.append_dict(bool_query, 'must', {'term': {'parser': 'efetch'}})
         result = self.bool_query(directory, bool_query, size)
         return [(evidence['_source']) for evidence in result['hits']['hits']]
 
@@ -53,9 +54,9 @@ class DBUtil(object):
         if not key in dictionary:
             dictionary[key] = value
         elif isinstance(dictionary[key], list):
-            list(dictionary[key]).append(value)
+            dictionary[key].append(value)
         else:
-            dictionary[key] = [ dictionary[key], value]
+            dictionary[key] = [dictionary[key], value]
         
         return dictionary
 
@@ -134,7 +135,7 @@ class DBUtil(object):
         #TODO Do not hide errors from elasticsearch
         curr_file = self.elasticsearch.search(index='efetch-evidence_' + image_id, doc_type='event', body={"query": {"match": {"pid": evd_id}}})
         if not curr_file['hits'] or not curr_file['hits']['hits'] or not curr_file['hits']['hits'][0]['_source']:
-            logging.error("Could not find file. Image='" + image_id + "' Type='" + input_type + "' _id='" + evd_id + "'")
+            logging.error("Could not find file. Image='" + image_id + "' _id='" + evd_id + "'")
             if abort_on_error:
                 abort(404, "Could not find file in provided image.")
             else:
@@ -160,10 +161,18 @@ class DBUtil(object):
         path = '/'.join(ppid_split[1:])
         self.update(ppid, image_id, update, abort_on_error)
 
-    def update(self, ppid, image_id, update, abort_on_error=True):
+    #TODO: Determine if abort on error should apply to conflicts
+    def update(self, ppid, image_id, update, abort_on_error=True, repeat=1):
         """Updates evidence event in Elastic Search"""
-        self.elasticsearch.update(index='efetch-evidence_' + image_id, doc_type='event', id=ppid, body={'doc': update})
-    
+        try:
+            self.elasticsearch.update(index='efetch-evidence_' + image_id, doc_type='event', id=ppid, body={'doc': update})
+        except ConflictError:
+            if repeat > 0:
+                logging.info('Failed to update "' + ppid + '" attempting again in 200ms')
+                time.sleep(.200)
+                self.update(ppid, image_id, update, abort_on_error, repeat - 1)
+            logging.warn('Failed to update "' + ppid + '" due to conflict error!')
+
 def evidence_template():
     """Returns the Elastic Search mapping for Evidence"""
     return {

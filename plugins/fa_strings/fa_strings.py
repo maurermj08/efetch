@@ -6,13 +6,13 @@ from yapsy.IPlugin import IPlugin
 import string
 import re
 
-class FaStrings(IPlugin):
 
+class FaStrings(IPlugin):
     def __init__(self):
-        self._display_name = 'Strings'
-        self._popularity = 5
-        self._parent = False 
-        self._cache = True
+        self.display_name = 'Strings'
+        self.popularity = 5
+        self.parent = False
+        self.cache = True
         IPlugin.__init__(self)
 
     def activate(self):

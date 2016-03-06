@@ -6,12 +6,11 @@ from yapsy.IPlugin import IPlugin
 
 
 class FaUpload(IPlugin):
-
     def __init__(self):
-        self._display_name = 'Upload'
-        self._popularity = 0
-        self._parent = False
-        self._cache = False
+        self.display_name = 'Upload'
+        self.popularity = 0
+        self.parent = False
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -33,16 +32,16 @@ class FaUpload(IPlugin):
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         upload = False
-        
+
         try:
             if request.query['upload'] and request.query['upload'] == 'True':
                 upload = True
         except:
             pass
-    
+
         if upload:
             return self.upload(helper, request)
-        
+
         template = """
         <html>
         <head>
@@ -72,16 +71,16 @@ class FaUpload(IPlugin):
         </body>
         </html>
         """
-        
-        return template 
-    
+
+        return template
+
     def upload(self, helper, request):
         image = request.forms.name
         data = request.files.data
         if image and data and data.file:
-            #raw = data.file.read() # This is dangerous for big files
+            # raw = data.file.read() # This is dangerous for big files
             filename = data.filename
             data.save(helper.upload_dir + filename)
             return '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/plugins/fa_dfvfs/?image_id=' + image + '&path=' + helper.upload_dir + filename + '" /></head></html>'
-            #return "Hello %s! You uploaded %s" % (image, filename)
+            # return "Hello %s! You uploaded %s" % (image, filename)
         return "You missed a field."

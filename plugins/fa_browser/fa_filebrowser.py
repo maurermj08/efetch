@@ -7,13 +7,13 @@ import ast
 import os
 import time
 
-class FaFileBrowser(IPlugin):
 
+class FaFileBrowser(IPlugin):
     def __init__(self):
-        self._display_name = 'FileBrowser'
-        self._popularity = 0
-        self._parent = True
-        self._cache = False
+        self.display_name = 'FileBrowser'
+        self.popularity = 0
+        self.parent = True
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -35,4 +35,6 @@ class FaFileBrowser(IPlugin):
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns a formatted directory listing for the given path"""
         return helper.plugin_manager.getPluginByName('fa_browser').plugin_object.get(evidence,
-                helper, path_on_disk, request, children, True, False, 'fa_filebrowser')
+                                                                                     helper, path_on_disk, request,
+                                                                                     children, True, False,
+                                                                                     'fa_filebrowser')

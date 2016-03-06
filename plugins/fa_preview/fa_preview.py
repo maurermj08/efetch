@@ -6,13 +6,13 @@ from yapsy.IPlugin import IPlugin
 from bottle import static_file
 import os
 
+
 class FaPreview(IPlugin):
-    
     def __init__(self):
-        self._display_name = 'Preview'
-        self._popularity = 8
-        self._parent = False
-        self._cache = True
+        self.display_name = 'Preview'
+        self.popularity = 8
+        self.parent = False
+        self.cache = True
         IPlugin.__init__(self)
 
     def activate(self):

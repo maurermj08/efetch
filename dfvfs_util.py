@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Simple utility for getting files and information from dfvfs."""
 
-#This code is similar recursive_hasher example found on dfvfs github
+# This code is similar recursive_hasher example found on dfvfs github
 #  at https://github.com/log2timeline/dfvfs/
 #  This code is based on code by Joachim Metz
 
@@ -25,6 +25,7 @@ from dfvfs.volume import tsk_volume_system
 from dfvfs.volume import vshadow_volume_system
 from dfvfs.vfs import file_system
 from dfvfs.path import factory as path_spec_factory
+
 
 class DfvfsUtil(object):
     """Class that provides a simple interface into dfvfs."""
@@ -49,10 +50,10 @@ class DfvfsUtil(object):
         self.settings = settings
         self.base_path_specs = self.GetBasePathSpecs(source, interactive)
 
-    def Icat(self, full_path, output_path, ignore_case = False):
+    def Icat(self, full_path, output_path, ignore_case=False):
         """Gets the file at full_path and outputs it to the output path"""
         in_file = self.GetFile(full_path, ignore_case)
-        out_file = open(output_path,"wb")
+        out_file = open(output_path, "wb")
         data = in_file.read(self._READ_BUFFER_SIZE)
         while data:
             out_file.write(data)
@@ -60,29 +61,29 @@ class DfvfsUtil(object):
         in_file.close()
         out_file.close()
 
-    def GetFile(self, full_path, ignore_case = False):
+    def GetFile(self, full_path, ignore_case=False):
         """Gets file using the full path to the file"""
         if full_path.endswith('/'):
             full_path = full_path[:-1]
         paths = full_path.split('/')
         curr = 1
-        #for base_path_spec in self.base_path_specs:
+        # for base_path_spec in self.base_path_specs:
         base_path_spec = self.base_path_specs[-1]
         file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
         if file_entry is None:
             logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
         else:
-            myfile = self._GetFile(curr, paths, file_entry, ignore_case)         
+            myfile = self._GetFile(curr, paths, file_entry, ignore_case)
             if myfile is not None:
                 return myfile
-            #continue
-    
+                # continue
+
     def GetJson(self, image_id, curr_id, image_path):
         """Returns a full json version for Efetch"""
         json = []
 
-        #for base_path_spec in self.base_path_specs:
+        # for base_path_spec in self.base_path_specs:
         base_path_spec = self.base_path_specs[-1]
         file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
         file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
@@ -99,10 +100,12 @@ class DfvfsUtil(object):
         if file_entry.IsDirectory():
             json.append(self._ConvertToJson(image_id, curr_id, image_path, file_entry, curr_path, file_entry.name))
             for sub_file_entry in file_entry.sub_file_entries:
-                json.extend(self._GetJson(image_id, curr_id, image_path, sub_file_entry, curr_path + file_entry.name + "/"))
+                json.extend(
+                    self._GetJson(image_id, curr_id, image_path, sub_file_entry, curr_path + file_entry.name + "/"))
         else:
             try:
-                json.append(self._ConvertToJson(image_id, curr_id, image_path, file_entry.GetFileObject(), curr_path, file_entry.name))
+                json.append(self._ConvertToJson(image_id, curr_id, image_path, file_entry.GetFileObject(), curr_path,
+                                                file_entry.name))
             except:
                 logging.warning("Failed to add file %s in image %s, most likely not a file", file_entry.name, image_id)
         return json
@@ -153,7 +156,7 @@ class DfvfsUtil(object):
         cretime = long(cre) if cre else 0
 
         dir_ref = curr_id + curr_path + name
-        
+
         if file_type != pytsk3.TSK_FS_META_TYPE_DIR:
             file_object.close()
         if not curr_path:
@@ -161,33 +164,32 @@ class DfvfsUtil(object):
             name = 'TSK'
         else:
             curr_dir = curr_id + curr_path
-        
 
         return {
-                '_index': index_name,
-                '_type' : 'event',
-                '_id' : dir_ref,
-                '_source' : {
-                    'root' : curr_id,
-                    'pid' : dir_ref,
-                    'iid' : inode_ref,
-                    'image_id': image_id,
-                    'image_path' : image_path,
-                    'name' : name,
-                    'path' : curr_path + name,
-                    'ext' : ext,
-                    'dir' : curr_dir,
-                    'meta_type' : file_type_str,
-                    'inode' : inode,
-                    'mtime' : datetime.datetime.fromtimestamp(modtime).strftime('%Y-%m-%d %H:%M:%S.%f'),
-                    'atime' : datetime.datetime.fromtimestamp(acctime).strftime('%Y-%m-%d %H:%M:%S.%f'),
-                    'ctime' : datetime.datetime.fromtimestamp(chgtime).strftime('%Y-%m-%d %H:%M:%S.%f'),
-                    'crtime' : datetime.datetime.fromtimestamp(cretime).strftime('%Y-%m-%d %H:%M:%S.%f'),
-                    'file_size' : [size],
-                    'uid' : uid,
-                    'gid' : gid,
-                    'driver' : "fa_dfvfs"
-                }
+            '_index': index_name,
+            '_type': 'event',
+            '_id': dir_ref,
+            '_source': {
+                'root': curr_id,
+                'pid': dir_ref,
+                'iid': inode_ref,
+                'image_id': image_id,
+                'image_path': image_path,
+                'name': name,
+                'path': curr_path + name,
+                'ext': ext,
+                'dir': curr_dir,
+                'meta_type': file_type_str,
+                'inode': inode,
+                'mtime': datetime.datetime.fromtimestamp(modtime).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                'atime': datetime.datetime.fromtimestamp(acctime).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                'ctime': datetime.datetime.fromtimestamp(chgtime).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                'crtime': datetime.datetime.fromtimestamp(cretime).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                'file_size': [size],
+                'uid': uid,
+                'gid': gid,
+                'driver': "fa_dfvfs"
+            }
         }
 
     def ListDir(self, dir_path, recursive=False):
@@ -200,67 +202,67 @@ class DfvfsUtil(object):
         if dir_path == '/' and not recursive:
             return self.ListRoot()
 
-        #for base_path_spec in self.base_path_specs:
+        # for base_path_spec in self.base_path_specs:
         base_path_spec = self.base_path_specs[-1]
         file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
         if file_entry is None:
             logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
         else:
             dir_list = self._ListDir(curr, paths, file_entry, recursive)
             if dir_list is not None:
                 return dir_list
-        #    continue
+                #    continue
 
     def FileExists(self, full_path, ignore_case=False):
         """Returns true if there is a file at the given full path or false if not"""
         paths = full_path.split('/')
         curr = 1
-        #for base_path_spec in self.base_path_specs:
+        # for base_path_spec in self.base_path_specs:
         base_path_spec = self.base_path_specs[-1]
         file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
         if file_entry is None:
             logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
         else:
-            found = self._FileExists(curr, paths, file_entry, ignore_case)            
+            found = self._FileExists(curr, paths, file_entry, ignore_case)
             if found:
                 return found
-         #       continue
+                #       continue
 
     def DirExists(self, dir_path):
         """Returns true if the provided path is a directory or false if not"""
         paths = dir_path.split('/')
         curr = 1
-        #for base_path_spec in self.base_path_specs:
+        # for base_path_spec in self.base_path_specs:
         base_path_spec = self.base_path_specs[-1]
         file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
         if file_entry is None:
             logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
         else:
             found = self._DirExists(curr, paths, file_entry)
             if found:
                 return found
-            #continue
+                # continue
 
     def SearchForFiles(self, file_name, path='/'):
         """Returns the path of all files with the given name, default search starts at root"""
         paths = path.split('/')
         curr = 1
         file_list = []
-        #for base_path_spec in self.base_path_specs:
-        base_path_spec = self.base_path_specs[-1] 
+        # for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1]
         file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
         if file_entry is None:
             logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
         else:
             if path == '/' or path == '':
                 file_list.extend(self._SearchForFilesSub(file_name, file_entry, '/'))
             else:
-                file_list.extend(self._SearchForFiles(curr, paths, file_name, file_entry, '/'))           
-       
+                file_list.extend(self._SearchForFiles(curr, paths, file_name, file_entry, '/'))
+
         if file_list:
             return file_list
         else:
@@ -270,11 +272,11 @@ class DfvfsUtil(object):
         """Returns the path of all directories with the given name, default search starts at root"""
         paths = path.split('/')
         curr = 1
-        dir_list = []   
-        #for base_path_spec in self.base_path_specs:
-        base_path_spec = self.base_path_specs[-1] 
+        dir_list = []
+        # for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1]
         file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
         if file_entry is None:
             logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
         else:
@@ -288,31 +290,34 @@ class DfvfsUtil(object):
             return dir_list
         else:
             return None
-    
+
     def _GetFile(self, curr, paths, file_entry, ignore_case):
         """Gets a file_object from a file_entry"""
         for sub_file_entry in file_entry.sub_file_entries:
-            #if curr == (len(paths) - 1) and sub_file_entry.IsFile() and (sub_file_entry.name == paths[curr] 
+            # if curr == (len(paths) - 1) and sub_file_entry.IsFile() and (sub_file_entry.name == paths[curr]
             # or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
             #   file_object = sub_file_entry.GetFileObject()
             #   return    file_object
-            if curr == (len(paths) - 1) and sub_file_entry.IsFile() and (sub_file_entry.name == paths[curr] 
-             or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
+            if curr == (len(paths) - 1) and sub_file_entry.IsFile() and (sub_file_entry.name == paths[curr]
+                                                                         or (
+                    ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
                 file_object = sub_file_entry.GetFileObject()
                 return file_object
             if sub_file_entry.IsDirectory():
-                if curr == (len(paths) - 1) and (sub_file_entry.name == paths[curr] or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
+                if curr == (len(paths) - 1) and (sub_file_entry.name == paths[curr] or (
+                    ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
                     return sub_file_entry
-                elif sub_file_entry.name == paths[curr] or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower()):
+                elif sub_file_entry.name == paths[curr] or (
+                    ignore_case and sub_file_entry.name.lower() == paths[curr].lower()):
                     return self._GetFile(curr + 1, paths, sub_file_entry, ignore_case)
         return None
-   
+
     def ListRoot(self):
         dir_list = []
-        #for base_path_spec in self.base_path_specs:
-        base_path_spec = self.base_path_specs[-1] 
+        # for base_path_spec in self.base_path_specs:
+        base_path_spec = self.base_path_specs[-1]
         file_system = resolver.Resolver.OpenFileSystem(base_path_spec)
-        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)     
+        file_entry = resolver.Resolver.OpenFileEntry(base_path_spec)
         if file_entry is None:
             logging.warning(u'Unable to open base path specification:\n{0:s}'.format(base_path_spec.comparable))
         else:
@@ -320,7 +325,7 @@ class DfvfsUtil(object):
                 dir_list.append(sub_file_entry.name)
             if dir_list is not None:
                 return dir_list
-         #   continue
+                #   continue
 
     def _ListDir(self, curr, paths, file_entry, recursive):
         """List the contents of the specified directory"""
@@ -344,13 +349,15 @@ class DfvfsUtil(object):
     def _FileExists(self, curr, paths, file_entry, ignore_case):
         """Finds a file_object from a file_entry"""
         for sub_file_entry in file_entry.sub_file_entries:
-            if curr == (len(paths) - 1) and sub_file_entry.IsFile() and (sub_file_entry.name == paths[curr] 
-             or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
-                return    True
+            if curr == (len(paths) - 1) and sub_file_entry.IsFile() and (sub_file_entry.name == paths[curr]
+                                                                         or (
+                    ignore_case and sub_file_entry.name.lower() == paths[curr].lower())):
+                return True
             if sub_file_entry.IsDirectory() and curr < len(paths):
-                if sub_file_entry.name == paths[curr] or (ignore_case and sub_file_entry.name.lower() == paths[curr].lower()):
+                if sub_file_entry.name == paths[curr] or (
+                    ignore_case and sub_file_entry.name.lower() == paths[curr].lower()):
                     return self._FileExists(curr + 1, paths, sub_file_entry, ignore_case)
-        return False    
+        return False
 
     def _DirExists(self, curr, paths, file_entry):
         """Returns True if directory is found in file_entry"""
@@ -368,7 +375,8 @@ class DfvfsUtil(object):
             if curr == (len(paths) - 1) and sub_file_entry.IsDirectory() and sub_file_entry.name == paths[curr]:
                 return self._SearchForFilesSub(file_name, sub_file_entry, curr_path + sub_file_entry.name + '/')
             if sub_file_entry.IsDirectory() and sub_file_entry.name == paths[curr]:
-                return self._SearchForFiles(curr + 1, paths, file_name, sub_file_entry, curr_path + sub_file_entry.name + '/')
+                return self._SearchForFiles(curr + 1, paths, file_name, sub_file_entry,
+                                            curr_path + sub_file_entry.name + '/')
         return None
 
     def _SearchForFilesSub(self, file_name, file_entry, curr_path):
@@ -378,17 +386,19 @@ class DfvfsUtil(object):
             if sub_file_entry.IsFile() and sub_file_entry.name == file_name:
                 file_list.append(curr_path + sub_file_entry.name)
             elif sub_file_entry.IsDirectory():
-                file_list.extend(self._SearchForFilesSub(file_name, sub_file_entry, curr_path + sub_file_entry.name + '/'))
+                file_list.extend(
+                    self._SearchForFilesSub(file_name, sub_file_entry, curr_path + sub_file_entry.name + '/'))
 
-        return file_list    
-    
+        return file_list
+
     def _SearchForDirs(self, curr, paths, dir_name, file_entry, curr_path):
         """Gets the full path of the dir being searched for"""
         for sub_file_entry in file_entry.sub_file_entries:
             if curr == (len(paths) - 1) and sub_file_entry.IsDirectory() and sub_file_entry.name == paths[curr]:
                 return self._SearchForDirsSub(dir_name, sub_file_entry, curr_path + sub_file_entry.name + '/')
             if sub_file_entry.IsDirectory() and sub_file_entry.name == paths[curr]:
-                return self._SearchForDirs(curr + 1, paths, dir_name, sub_file_entry, curr_path + sub_file_entry.name + '/')
+                return self._SearchForDirs(curr + 1, paths, dir_name, sub_file_entry,
+                                           curr_path + sub_file_entry.name + '/')
         return None
 
     def _SearchForDirsSub(self, dir_name, file_entry, curr_path):
@@ -400,8 +410,8 @@ class DfvfsUtil(object):
             if sub_file_entry.IsDirectory():
                 dir_list.extend(self._SearchForDirsSub(dir_name, sub_file_entry, curr_path + sub_file_entry.name + '/'))
 
-        return dir_list    
-    
+        return dir_list
+
     def _FormatHumanReadableSize(self, size):
         """Formats the size as a human readable string.
         Args:
@@ -424,18 +434,18 @@ class DfvfsUtil(object):
         size_string_1000 = None
         if magnitude_1000 > 0 and magnitude_1000 <= 7:
             size_string_1000 = u'{0:.1f}{1:s}'.format(
-                    size_1000, self._UNITS_1000[magnitude_1000])
+                size_1000, self._UNITS_1000[magnitude_1000])
 
         size_string_1024 = None
         if magnitude_1024 > 0 and magnitude_1024 <= 7:
             size_string_1024 = u'{0:.1f}{1:s}'.format(
-                    size_1024, self._UNITS_1024[magnitude_1024])
+                size_1024, self._UNITS_1024[magnitude_1024])
 
         if not size_string_1000 or not size_string_1024:
             return u'{0:d} B'.format(size)
 
         return u'{0:s} / {1:s} ({2:d} B)'.format(
-                size_string_1024, size_string_1000, size)
+            size_string_1024, size_string_1000, size)
 
     def _GetTSKPartitionIdentifiers(self, scan_node, interactive):
         """Determines the TSK partition identifiers.
@@ -455,7 +465,7 @@ class DfvfsUtil(object):
         volume_system.Open(scan_node.path_spec)
 
         volume_identifiers = self._source_scanner.GetVolumeIdentifiers(
-                volume_system)
+            volume_system)
         if not volume_identifiers:
             print(u'[WARNING] No partitions found.')
             return
@@ -465,7 +475,7 @@ class DfvfsUtil(object):
 
         try:
             selected_volume_identifier = self._PromptUserForPartitionIdentifier(
-                    volume_system, volume_identifiers, interactive)
+                volume_system, volume_identifiers, interactive)
         except KeyboardInterrupt:
             raise RuntimeError(u'File system scan aborted.')
 
@@ -491,13 +501,13 @@ class DfvfsUtil(object):
         volume_system.Open(scan_node.path_spec)
 
         volume_identifiers = self._source_scanner.GetVolumeIdentifiers(
-                volume_system)
+            volume_system)
         if not volume_identifiers:
             return []
 
         try:
             selected_store_identifiers = self._PromptUserForVSSStoreIdentifiers(
-                    volume_system, volume_identifiers, interactive)
+                volume_system, volume_identifiers, interactive)
         except KeyboardInterrupt:
             raise errors.UserAbort(u'File system scan aborted.')
 
@@ -533,7 +543,7 @@ class DfvfsUtil(object):
                     last_store = int(last_store, 10)
                 except ValueError:
                     raise errors.BadConfigOption(
-                            u'Invalid VSS store range: {0:s}.'.format(vss_store_range))
+                        u'Invalid VSS store range: {0:s}.'.format(vss_store_range))
 
                 for store_number in range(first_store, last_store + 1):
                     if store_number not in stores:
@@ -546,7 +556,7 @@ class DfvfsUtil(object):
                     store_number = int(vss_store_range, 10)
                 except ValueError:
                     raise errors.BadConfigOption(
-                            u'Invalid VSS store range: {0:s}.'.format(vss_store_range))
+                        u'Invalid VSS store range: {0:s}.'.format(vss_store_range))
 
                 if store_number not in stores:
                     stores.append(store_number)
@@ -614,8 +624,8 @@ class DfvfsUtil(object):
                     continue
 
             result = self._source_scanner.Unlock(
-                    scan_context, locked_scan_node.path_spec, credential_type,
-                    credential_data)
+                scan_context, locked_scan_node.path_spec, credential_type,
+                credential_data)
 
             if not result:
                 print(u'Unable to unlock volume.')
@@ -644,7 +654,7 @@ class DfvfsUtil(object):
             volume = volume_system.GetVolumeByIdentifier(volume_identifier)
             if not volume:
                 raise errors.FileSystemScannerError(
-                        u'Volume missing for identifier: {0:s}.'.format(volume_identifier))
+                    u'Volume missing for identifier: {0:s}.'.format(volume_identifier))
 
             volume_extent = volume.extents[0]
             if interactive:
@@ -657,7 +667,7 @@ class DfvfsUtil(object):
                     self._FormatHumanReadableSize(volume_extent.size))
 
         while True:
-            if interactive: 
+            if interactive:
                 print(
                     u'Please specify the identifier of the partition that should be '
                     u'processed.')
@@ -684,14 +694,14 @@ class DfvfsUtil(object):
                     pass
 
             if (selected_volume_identifier == u'all' or
-                    selected_volume_identifier in volume_identifiers):
+                        selected_volume_identifier in volume_identifiers):
                 break
 
             if interactive:
                 print(u'')
                 print(
-                        u'Unsupported partition identifier, please try again or abort '
-                        u'with Ctrl^C.')
+                    u'Unsupported partition identifier, please try again or abort '
+                    u'with Ctrl^C.')
                 print(u'')
 
         return selected_volume_identifier
@@ -714,7 +724,7 @@ class DfvfsUtil(object):
             volume = volume_system.GetVolumeByIdentifier(volume_identifier)
             if not volume:
                 raise errors.SourceScannerError(
-                        u'Volume missing for identifier: {0:s}.'.format(volume_identifier))
+                    u'Volume missing for identifier: {0:s}.'.format(volume_identifier))
 
             try:
                 volume_identifier = int(volume.identifier[3:], 10)
@@ -733,29 +743,29 @@ class DfvfsUtil(object):
                         volume = volume_system.GetVolumeByIdentifier(volume_identifier)
                         if not volume:
                             raise errors.SourceScannerError(
-                                    u'Volume missing for identifier: {0:s}.'.format(
-                                            volume_identifier))
+                                u'Volume missing for identifier: {0:s}.'.format(
+                                    volume_identifier))
 
                         vss_identifier = volume.GetAttribute(u'identifier')
                         print(u'{0:s}\t\t{1:s}'.format(
-                                volume.identifier, vss_identifier.value))
+                            volume.identifier, vss_identifier.value))
 
                     print(u'')
 
                     print_header = False
 
                 print(
-                        u'Please specify the identifier(s) of the VSS that should be '
-                        u'processed:')
+                    u'Please specify the identifier(s) of the VSS that should be '
+                    u'processed:')
                 print(
-                        u'Note that a range of stores can be defined as: 3..5. Multiple '
-                        u'stores can')
+                    u'Note that a range of stores can be defined as: 3..5. Multiple '
+                    u'stores can')
                 print(
-                        u'be defined as: 1,3,5 (a list of comma separated values). Ranges '
-                        u'and lists can')
+                    u'be defined as: 1,3,5 (a list of comma separated values). Ranges '
+                    u'and lists can')
                 print(
-                        u'also be combined as: 1,3..5. The first store is 1. All stores '
-                        u'can be defined')
+                    u'also be combined as: 1,3..5. The first store is 1. All stores '
+                    u'can be defined')
                 print(u'as "all". If no stores are specified none will be processed. You')
                 print(u'can abort with Ctrl^C.')
 
@@ -769,8 +779,8 @@ class DfvfsUtil(object):
                     volume = volume_system.GetVolumeByIdentifier(volume_identifier)
                     if not volume:
                         raise errors.SourceScannerError(
-                                u'Volume missing for identifier: {0:s}.'.format(
-                                        volume_identifier))
+                            u'Volume missing for identifier: {0:s}.'.format(
+                                volume_identifier))
 
                     vss_identifier = volume.GetAttribute(u'identifier')
                     self.display += u'{0:s}\t\t{1:s}\n'.format(volume.identifier, vss_identifier.value)
@@ -782,10 +792,10 @@ class DfvfsUtil(object):
                 else:
                     self.initialized = -1
                     return
-            
+
             if not selected_vss_stores:
                 break
-            
+
             selected_vss_stores = selected_vss_stores.strip()
 
             try:
@@ -802,8 +812,8 @@ class DfvfsUtil(object):
 
             print(u'')
             print(
-                    u'Unsupported VSS identifier(s), please try again or abort with '
-                    u'Ctrl^C.')
+                u'Unsupported VSS identifier(s), please try again or abort with '
+                u'Ctrl^C.')
             print(u'')
 
         return selected_vss_stores
@@ -859,7 +869,7 @@ class DfvfsUtil(object):
         # a credential to unlock the volume.
         if scan_node.type_indicator in definitions.ENCRYPTED_VOLUME_TYPE_INDICATORS:
             self._ScanVolumeScanNodeEncrypted(
-                    scan_context, scan_node, base_path_specs, interactive)
+                scan_context, scan_node, base_path_specs, interactive)
 
         elif scan_node.type_indicator == definitions.TYPE_INDICATOR_VSHADOW:
             self._ScanVolumeScanNodeVSS(scan_context, scan_node, base_path_specs, interactive)
@@ -880,14 +890,14 @@ class DfvfsUtil(object):
         result = not scan_context.IsLockedScanNode(volume_scan_node.path_spec)
         if not result:
             credentials = credentials_manager.CredentialsManager.GetCredentials(
-                    volume_scan_node.path_spec)
+                volume_scan_node.path_spec)
 
             result = self._PromptUserForEncryptedVolumeCredential(
-                    scan_context, volume_scan_node, credentials, interactive)
+                scan_context, volume_scan_node, credentials, interactive)
 
         if result:
             self._source_scanner.Scan(
-                    scan_context, scan_path_spec=volume_scan_node.path_spec)
+                scan_context, scan_path_spec=volume_scan_node.path_spec)
             self._ScanVolume(scan_context, volume_scan_node, base_path_specs, interactive)
 
     def _ScanVolumeScanNodeVSS(
@@ -916,11 +926,11 @@ class DfvfsUtil(object):
             sub_scan_node = volume_scan_node.GetSubNodeByLocation(location)
             if not sub_scan_node:
                 raise errors.SourceScannerError(
-                        u'Scan node missing for VSS store identifier: {0:d}.'.format(
-                                vss_store_identifier))
+                    u'Scan node missing for VSS store identifier: {0:d}.'.format(
+                        vss_store_identifier))
 
             self._source_scanner.Scan(
-                    scan_context, scan_path_spec=sub_scan_node.path_spec)
+                scan_context, scan_path_spec=sub_scan_node.path_spec)
             self._ScanVolume(scan_context, sub_scan_node, base_path_specs, interactive)
 
     def GetBasePathSpecs(self, source_path, interactive):
@@ -934,12 +944,12 @@ class DfvfsUtil(object):
                                         is not a file or directory, or if the format of or within
                                         the source file is not supported.
         """
-        self.initialized = 0 
-        
+        self.initialized = 0
+
         if (not source_path.startswith(u'\\\\.\\') and
                 not os.path.exists(source_path)):
             raise RuntimeError(
-                    u'No such device, file or directory: {0:s}.'.format(source_path))
+                u'No such device, file or directory: {0:s}.'.format(source_path))
 
         scan_context = source_scanner.SourceScannerContext()
         scan_context.OpenSourcePath(source_path)
@@ -948,11 +958,11 @@ class DfvfsUtil(object):
             self._source_scanner.Scan(scan_context)
         except (errors.BackEndError, ValueError) as exception:
             raise RuntimeError(
-                    u'Unable to scan source with error: {0:s}.'.format(exception))
+                u'Unable to scan source with error: {0:s}.'.format(exception))
 
         if scan_context.source_type not in [
-                definitions.SOURCE_TYPE_STORAGE_MEDIA_DEVICE,
-                definitions.SOURCE_TYPE_STORAGE_MEDIA_IMAGE]:
+            definitions.SOURCE_TYPE_STORAGE_MEDIA_DEVICE,
+            definitions.SOURCE_TYPE_STORAGE_MEDIA_IMAGE]:
             scan_node = scan_context.GetRootScanNode()
             return [scan_node.path_spec]
 
@@ -988,24 +998,29 @@ class DfvfsUtil(object):
 
         if not base_path_specs:
             raise RuntimeError(
-                    u'No supported file system found in source.')
+                u'No supported file system found in source.')
 
         return base_path_specs
 
+
 def Main():
     logging.basicConfig(
-            level=logging.INFO, format=u'[%(levelname)s] %(message)s')
+        level=logging.INFO, format=u'[%(levelname)s] %(message)s')
 
     return_value = True
-    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/xp-tdungan-10.3.58.7/xp-tdungan-c-drive/xp-tdungan-c-drive.E01", [], False)  
+    dfvfs_util = DfvfsUtil(
+        "/media/sf_Forensics/Training/SANS508/xp-tdungan-10.3.58.7/xp-tdungan-c-drive/xp-tdungan-c-drive.E01", [],
+        False)
     print("XPTDUNGAN: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
     print(dfvfs_util.display)
-    
+
     dfvfs_util = DfvfsUtil("/media/sf_Forensics/1-extend-part/1-extend-part/ext-part-test-2.dd", [], False)
     print("EXTPARTTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
     print(dfvfs_util.display)
 
-    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/win7-32-nromanoff-10.3.58.5/win7-32-nromanoff-c-drive/win7-32-nromanoff-c-drive.E01", [], False)
+    dfvfs_util = DfvfsUtil(
+        "/media/sf_Forensics/Training/SANS508/win7-32-nromanoff-10.3.58.5/win7-32-nromanoff-c-drive/win7-32-nromanoff-c-drive.E01",
+        [], False)
     print("VSSONLYTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
     print(dfvfs_util.display)
 
@@ -1013,13 +1028,17 @@ def Main():
     print("EXTPARTTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
     print(dfvfs_util.display)
 
-    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/win7-32-nromanoff-10.3.58.5/win7-32-nromanoff-c-drive/win7-32-nromanoff-c-drive.E01", ['vss2'], False)
+    dfvfs_util = DfvfsUtil(
+        "/media/sf_Forensics/Training/SANS508/win7-32-nromanoff-10.3.58.5/win7-32-nromanoff-c-drive/win7-32-nromanoff-c-drive.E01",
+        ['vss2'], False)
     print("VSSONLYTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
     print(dfvfs_util.display)
-    
-    dfvfs_util = DfvfsUtil("/media/sf_Forensics/Training/SANS508/win7-32-nromanoff-10.3.58.5/win7-32-nromanoff-c-drive/win7-32-nromanoff-c-drive.E01")
+
+    dfvfs_util = DfvfsUtil(
+        "/media/sf_Forensics/Training/SANS508/win7-32-nromanoff-10.3.58.5/win7-32-nromanoff-c-drive/win7-32-nromanoff-c-drive.E01")
     print("VSSONLYTEST: " + str(dfvfs_util.initialized) + " | " + str(dfvfs_util.options))
     print(dfvfs_util.settings)
+
 
 if __name__ == '__main__':
     if not Main():

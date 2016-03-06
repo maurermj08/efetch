@@ -6,13 +6,13 @@ from yapsy.IPlugin import IPlugin
 import os
 from bottle import route, run, static_file, response, post, request, abort
 
-class FaExttree(IPlugin):
 
+class FaExttree(IPlugin):
     def __init__(self):
-        self._display_name = 'Case Tree View'
-        self._popularity = 0
-        self._parent = True
-        self._cache = False
+        self.display_name = 'Case Tree View'
+        self.popularity = 0
+        self.parent = True
+        self.cache = False
         self._default_child = '/fa_dirbrowser/fa_analyze/'
         IPlugin.__init__(self)
 
@@ -34,7 +34,7 @@ class FaExttree(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        
+
         tree = []
         for item in evidence_list:
             tree.append('<li>' + item)
@@ -42,7 +42,7 @@ class FaExttree(IPlugin):
         child_plugins = ''
 
         if children:
-            child_plugins = children 
+            child_plugins = children
         else:
             child_plugins = self._default_child
             children = self._default_child
@@ -52,10 +52,11 @@ class FaExttree(IPlugin):
         else:
             query_string = ""
 
-        events = helper.db_util.elasticsearch.search(index='efetch-evidence_' + evidence['image_id'], doc_type='event', body=ext_query(evidence['pid']))
+        events = helper.db_util.elasticsearch.search(index='efetch-evidence_' + evidence['image_id'], doc_type='event',
+                                                     body=ext_query(evidence['pid']))
 
-        #TODO LOOP THROUGH EVENTS
-        
+        # TODO LOOP THROUGH EVENTS
+
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/casetree_template.html', 'r')
         html = str(template.read())
@@ -68,21 +69,21 @@ class FaExttree(IPlugin):
 
         return html
 
-    #TODO ADD MUST
+    # TODO ADD MUST
     def ext_query(pid):
         return {
             "size": 0,
             "query": {
-                 "term": {
-                     'parser': 'efetch', 
-                     'dir' : 'pid' + '/'
-                 }
+                "term": {
+                    'parser': 'efetch',
+                    'dir': 'pid' + '/'
+                }
             },
             "aggregations": {
-               "event": {
-                  "terms": {
-                     "field": "ext"
+                "event": {
+                    "terms": {
+                        "field": "ext"
                     }
                 }
             }
-        } 
+        }

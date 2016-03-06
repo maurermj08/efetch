@@ -5,13 +5,13 @@ Lazy loading registry viewer
 from yapsy.IPlugin import IPlugin
 import os
 
-class FaRegview(IPlugin):
 
+class FaRegview(IPlugin):
     def __init__(self):
-        self._display_name = 'Reg. View'
-        self._popularity = 8
-        self._parent = False
-        self._cache = True
+        self.display_name = 'Reg. View'
+        self.popularity = 8
+        self.parent = False
+        self.cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -24,7 +24,7 @@ class FaRegview(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
-        allowed = [ 'application/octet-stream' ]
+        allowed = ['application/octet-stream']
         return str(evidence['mimetype']).lower() in allowed
 
     def mimetype(self, mimetype):
@@ -38,5 +38,5 @@ class FaRegview(IPlugin):
         html = str(template.read())
         html = html.replace("<!-- Path -->", evidence['pid'])
         template.close()
- 
+
         return html

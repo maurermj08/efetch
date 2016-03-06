@@ -5,13 +5,13 @@ Displays a loading gif while its child plugin loads
 from yapsy.IPlugin import IPlugin
 import os
 
-class FaLoader(IPlugin):
 
+class FaLoader(IPlugin):
     def __init__(self):
-        self._display_name = 'Loading'
-        self._popularity = 0
-        self._parent = True
-        self._cache = False
+        self.display_name = 'Loading'
+        self.popularity = 0
+        self.parent = True
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -21,7 +21,7 @@ class FaLoader(IPlugin):
     def deactivate(self):
         IPlugin.deactivate(self)
         return
-        
+
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
         return True
@@ -36,14 +36,9 @@ class FaLoader(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/loader_template.html', 'r')
         html = str(template.read())
-        
-        if request.query_string:
-            query_string = "?" + request.query_string
-        else:
-            query_string = ""
+        query_string = helper.get_query_string(request)
 
         html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
         html = html.replace('<!-- Load -->', "/resources/loader.gif")
 
         return html
- 

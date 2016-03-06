@@ -4,13 +4,13 @@ A blank parent plugin that simply returns an iframe of its child
 
 from yapsy.IPlugin import IPlugin
 
-class FaBlank(IPlugin):
 
+class FaBlank(IPlugin):
     def __init__(self):
-        self._display_name = 'Frame'
-        self._popularity = 0
-        self._parent = True
-        self._cache = False
+        self.display_name = 'Frame'
+        self.popularity = 0
+        self.parent = True
+        self.cache = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -31,9 +31,6 @@ class FaBlank(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        if request.query_string:
-            query_string = "?" + request.query_string
-        else:
-            query_string = ""
+        query_string = helper.get_query_string(request)
 
         return '<body style="margin:0px;"><iframe src="/plugins/' + children + query_string + '" style="border: 0px;height: 100%; width: 100%; position: absolute"></iframe></body>'

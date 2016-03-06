@@ -9,10 +9,10 @@ import pefile
 
 class FaPefile(IPlugin):
     def __init__(self):
-        self._display_name = 'PE File'
-        self._popularity = 5
-        self._parent = False
-        self._cache = True 
+        self.display_name = 'PE File'
+        self.popularity = 5
+        self.parent = False
+        self.cache = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -38,5 +38,5 @@ class FaPefile(IPlugin):
             pe = pefile.PE(path_on_disk)
             return '<xmp style="white-space: pre-wrap;">\n' + pe.dump_info() + "</xmp>"
         except Exception as e:
-            return '<xmp style="white-space: pre-wrap;">error parsing file: ' + str(path_on_disk) + "Got the following error: " + str(e) + "</xmp>"
-
+            return '<xmp style="white-space: pre-wrap;">error parsing file: ' + str(
+                path_on_disk) + "Got the following error: " + str(e) + "</xmp>"

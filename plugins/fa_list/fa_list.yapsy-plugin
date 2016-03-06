@@ -1,0 +1,10 @@
+[Core]
+Name = fa_list
+Module = fa_list
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Displays files and folders using a list view
+Copyright = 2016

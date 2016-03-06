@@ -22,7 +22,7 @@ class Efetch(object):
             self.usage()
             sys.exit(2)
 
-        self._address = "localhost"
+        self._address = "0.0.0.0"
         self._port = "8080"
         self._max_cache = 10000 #Megabytes
         self._max_download_size = 100 #Megabytes
@@ -58,7 +58,7 @@ class Efetch(object):
                 sys.exit(2)
 
         if not output_dir.endswith("/"):
-            output_dir = output_dir + "/"
+            output_dir += "/"
         if not os.path.isdir(output_dir):
             logging.error("Could not find output directory " + output_dir)
             sys.exit(2)
@@ -137,11 +137,11 @@ class Efetch(object):
         file_cache_path = None
         children = None
 
-        if plugin.plugin_object._parent:
+        if plugin.plugin_object.parent:
             children = '/'.join(args_list)
-            #Updates the args list so parent plugins can get imaged_id,  and path
+            #Updates the args list so parent plugins can get imaged_id, and path
             while (args_list and self._helper.plugin_manager.getPluginByName(args_list[0]) and
-                    self._helper.plugin_manager.getPluginByName(args_list[0]).plugin_object._parent):
+                    self._helper.plugin_manager.getPluginByName(args_list[0]).plugin_object.parent):
                 args_list.pop(0)
             if args_list and self._helper.plugin_manager.getPluginByName(args_list[0]):
                 args_list.pop(0)
@@ -166,7 +166,7 @@ class Efetch(object):
                 abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
 
             #Cache file
-            if plugin.plugin_object._cache:
+            if plugin.plugin_object.cache:
                 file_cache_path = self._helper.cache_file(evidence)
 
             #Get Mimetype if file is cached else guess Mimetype
