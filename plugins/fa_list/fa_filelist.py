@@ -35,4 +35,6 @@ class FaFilelist(IPlugin):
         return helper.plugin_manager.getPluginByName('fa_timeline').plugin_object.get(evidence,
                                                                                      helper, path_on_disk, request,
                                                                                      children, False, True, False,
-                                                                                      False, 'fa_filelist')
+                                                                                      False, 'fa_filelist',
+                                                                                      self.display_name,
+                                                                                      ['name', 'mtime', 'atime', 'ctime', 'crtime', 'file_size'])

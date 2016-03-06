@@ -34,22 +34,23 @@ class FaFilter(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
-    def get(self, evidence, helper, path_on_disk, request, children):
+    def get(self, evidence, helper, path_on_disk, request, children, query_type='term',
+            evidence_item_plugin='fa_filter', title='Filter'):
         """Gets the filter bar"""
-        method = helper.get_request_value(request, 'fa_filter_method', False)
+        method = helper.get_request_value(request, evidence_item_plugin + '_method', False)
 
         if method == 'get_panel_content':
-            return self.get_panel_content(helper.get_request_value(request, 'filters', {}))
+            return self.get_panel_content(helper.get_request_value(request, 'filters', {}), title, query_type)
         elif method == 'add_filter':
             return self.add_filter(helper.get_request_value(request, 'filters', {}),
                                    helper.get_request_value(request, 'value', False),
-                                   helper.get_request_value(request, 'term', False),
-                                   helper.get_request_value(request, 'type', False))
+                                   helper.get_request_value(request, query_type, False),
+                                   helper.get_request_value(request, 'type', False), query_type)
         elif method == 'remove_filter':
             return self.remove_filter(helper.get_request_value(request, 'filters', {}),
                                       helper.get_request_value(request, 'uid', False))
         elif method == 'get_filter':
-            return self.get_filter(helper, helper.get_request_value(request, 'filters', {}))
+            return self.get_filter(helper, helper.get_request_value(request, 'filters', {}), query_type)
 
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -59,22 +60,22 @@ class FaFilter(IPlugin):
 
         raw_filter = helper.get_request_value(request, 'filter', '{}')
         html = html.replace('<!-- Filters -->', raw_filter)
-        html = html.replace('<!-- Type -->', 'term')
-        html = html.replace('<!-- Plugin -->', 'fa_filter')
+        html = html.replace('<!-- Type -->', query_type)
+        html = html.replace('<!-- Plugin -->', evidence_item_plugin)
         html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
 
         return html
 
-    def add_filter(self, filters, value, term, filter_type):
+    def add_filter(self, filters, value, key, filter_type, query_type):
         """Adds a filter to the dictionary of filters"""
-        if not (value and term and filter_type):
-            logging.warn('Failed to add filter where value=%s, term=%s, and type=%s', value, term, filter_type)
-            abort(code=400, text='Add filter requires a value, term, and filter type')
+        if not (value and key and filter_type):
+            logging.warn('Failed to add filter where value=%s, %s=%s, and type=%s', value, query_type, key, filter_type)
+            abort(code=400, text='Add filter requires a value, key, and filter type')
         all_filters = json.loads(filters)
         if 'readyState' in all_filters:
             del all_filters['readyState']
 
-        all_filters[str(uuid.uuid4())] = {'value': value, 'term': term, 'type': filter_type}
+        all_filters[str(uuid.uuid4())] = {'value': value, query_type: key, 'type': filter_type}
 
         return all_filters
 
@@ -94,42 +95,42 @@ class FaFilter(IPlugin):
 
         return all_filters
 
-    def get_filter(self, helper, filters):
+    def get_filter(self, helper, filters, query_type):
         all_filters = json.loads(filters)
 
         query_filter = {}
 
         for key in all_filters:
             query_filter = helper.db_util.append_dict(query_filter, all_filters[key]['type'],
-                                                      {'term': {all_filters[key]['term']: all_filters[key]['value']}})
+                                                      {query_type: {all_filters[key][query_type]: all_filters[key]['value']}})
 
         return query_filter
 
-    def get_panel_content(self, filters):
+    def get_panel_content(self, filters, title, query_type):
         all_filters = json.loads(filters)
-        # if 'readyState' in all_filters:
-        #    del all_filters['readyState']
 
-        header = """<select class="easyui-combobox" name="filter_type" id="filter_type" style="width:100px;">
+        header = """
+            <b style="color: darkblue;padding-right: 1em;padding-left: 1em;">""" + title + """</b>
+            <select class="easyui-combobox" name="filter_type" id="filter_type" style="width:100px;">
                 <option value="must">Must</option>
                 <option value="must_not">Must Not</option>
                 <option value="should">Should</option>
             </select>
-            <input class="easyui-searchbox" data-options="prompt:'Please Input Value',menu:'#filter_term',searcher:addFilter" style="width:300px"></input>
-            <div id="filter_term">
-                <div data-options="term:'path'">path</div>
-                <div data-options="term:'name'">name</div>
-                <div data-options="term:'ext'">ext</div>
-                <div data-options="term:'dir'">dir</div>
-                <div data-options="term:'sha256_hash'">sha256_hash</div>
-                <div data-options="term:'meta_type'">meta_type</div>
-                <div data-options="term:'parser'">parser</div>
-                <div data-options="term:'source_short'">source_short</div>
+            <input class="easyui-searchbox" data-options="prompt:'Please Input Value',menu:'#filter_""" + query_type + """',searcher:addFilter" style="width:300px"></input>
+            <div id="filter_""" + query_type + """">
+                <div data-options=""" + '"' + query_type + """:'path'">path</div>
+                <div data-options=""" + '"' + query_type + """:'name'">name</div>
+                <div data-options=""" + '"' + query_type + """:'ext'">ext</div>
+                <div data-options=""" + '"' + query_type + """:'dir'">dir</div>
+                <div data-options=""" + '"' + query_type + """:'sha256_hash'">sha256_hash</div>
+                <div data-options=""" + '"' + query_type + """:'meta_type'">meta_type</div>
+                <div data-options=""" + '"' + query_type + """:'parser'">parser</div>
+                <div data-options=""" + '"' + query_type + """:'source_short'">source_short</div>
             </div>"""
         body = []
 
         for key in all_filters:
-            title = all_filters[key]['term'] + ' ' + all_filters[key]['type'].replace('_', ' ') + ' be "' + \
+            title = all_filters[key][query_type] + ' ' + all_filters[key]['type'].replace('_', ' ') + ' be "' + \
                     all_filters[key]['value'] + '"'
             body.append(
                 """<div class="easyui-menubutton" data-options="menu:'#""" + key + """',iconCls:'icon-ok'">""" + title + """</div>""")

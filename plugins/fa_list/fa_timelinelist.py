@@ -36,4 +36,5 @@ class FaTimelinelist(IPlugin):
         return helper.plugin_manager.getPluginByName('fa_timeline').plugin_object.get(evidence,
                                                                                      helper, path_on_disk, request,
                                                                                      children, True, True, True,
-                                                                                      True, 'fa_timelinelist')
+                                                                                      True, 'fa_timelinelist',
+                                                                                      self.display_name)

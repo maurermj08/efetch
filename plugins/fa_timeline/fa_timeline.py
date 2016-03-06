@@ -34,7 +34,8 @@ class FaTimeline(IPlugin):
         return "text/plain"
 
     def get(self, evidence, helper, path_on_disk, request, children, logs=True, files=False, directories=False,
-            sub_directories=True, evidence_item_plugin='fa_timeline'):
+            sub_directories=True, evidence_item_plugin='fa_timeline', title='Log2timeline',
+            prefix = ['datetime', 'parser', 'message']):
         """Returns the result of this plugin to be displayed in a browser"""
         raw_filter = helper.get_request_value(request, 'filter', '{}')
         filter_query = helper.get_filter(request)
@@ -93,16 +94,15 @@ class FaTimeline(IPlugin):
         columns = set()
         table += '    <th formatter="formatThumbnail" field="Thumbnail" sortable="false">Thumbnail</th>\n'
         table += '    <th formatter="formatLinkUrl" field="Link" sortable="false">Analyze</th>\n'
-        order = ['datetime', 'parser', 'message']
 
         for item in events['hits']['hits']:
             source = item['_source']
             for key in source:
                 columns.add(key)
-        for key in order:
+        for key in prefix:
             table += '    <th field="' + key + '" sortable="true">' + key + '</th>\n'
         for key in columns:
-            if key not in order:
+            if key not in prefix:
                 table += '    <th field="' + key + '" sortable="true">' + key + '</th>\n'
         table += '</tr>\n</thead>\n'
 
@@ -142,14 +142,16 @@ class FaTimeline(IPlugin):
         html = html.replace('<!-- Table -->', table)
         html = html.replace('<!-- PID -->', evidence['pid'])
         html = html.replace('<!-- Plugin -->', evidence_item_plugin)
+        html = html.replace('<!-- Title -->', title)
+        html = html.replace('<!-- Query -->', query_string)
         if raw_filter:
             html = html.replace('<!-- Filter -->', '&' + urlencode({'filter': raw_filter}))
         else:
             html = html.replace('<!-- Filter -->', '')
         if child_plugins:
             html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
-            html = html.replace('<!-- Plugin -->', child_plugins)
             html = html.replace('<!-- Child -->', helper.plugin_manager.getPluginByName(
                 str(children.split('/', 1)[0]).lower()).plugin_object.display_name)
+            html = html.replace('<!-- Children -->', helper.get_children(evidence['image_id'], children))
 
         return html

@@ -24,14 +24,20 @@
         <div class="easyui-layout" style="width:100%;height:100%;">
             <table id="tl01" class="easyui-datagrid" style="width:100%;height:100%;" 
                 url="/plugins/<!-- Plugin -->/<!-- PID -->?mode=events<!-- Filter -->"
-                title="<!-- Plugin -->" sortName="datetime" sortOrder="desc" rownumbers="false" pagination="true" singleSelect="true">
+                title="<!-- Title -->" sortName="datetime" sortOrder="desc" rownumbers="false" pagination="true" singleSelect="true">
                 <!-- Table -->
             </table>
         </div>
     <script type="text/javascript">
         function formatLinkUrl(val,row){
-            var url = '/plugins/fa_analyze/'+row.image_id+'/'+row.display_name.replace("TSK:", "TSK");
-            return '<a href="'+url+'" target="_blank">Analyze</a>';
+            if (row.meta_type == 'Directory') {
+                var url = '/plugins/<!-- Plugin -->/'+ row.pid + '<!-- Query -->';
+                return '<a href="'+url+'" target="_self"><!-- Title --></a>';
+            }
+            else {
+                var url = '/plugins/fa_analyze/' + row.pid;
+                return '<a href="'+url+'" target="_blank">Analyze</a>';
+            }
         }
         function formatThumbnail(val,row){
             var url = '/plugins/fa_thumbnail/'+row.image_id+'/'+row.display_name.replace("TSK:", "TSK");

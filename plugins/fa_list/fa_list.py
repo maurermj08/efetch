@@ -35,4 +35,6 @@ class FaList(IPlugin):
         return helper.plugin_manager.getPluginByName('fa_timeline').plugin_object.get(evidence,
                                                                                      helper, path_on_disk, request,
                                                                                      children, False, True, True,
-                                                                                      False, 'fa_list')
+                                                                                      False, 'fa_list',
+                                                                                      self.display_name,
+                                                                                      ['name', 'mtime', 'atime', 'ctime', 'crtime', 'file_size'])

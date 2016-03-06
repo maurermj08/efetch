@@ -63,15 +63,15 @@
                 },
                 activate: function(event, data) {
                     node = data.node;
-                    var url = '<!-- Child -->' + node.key + '<!-- Query -->'
-                    document.getElementById('tree_frame').src = url 
+                    var url = '<!-- Child -->' + node.key + '<!-- Query -->';
+                    document.getElementById('tree_frame').src = url;
                 },
                 lazyLoad: function(event, data) {
                     var node = data.node;
                     console.log(node);
                     // Issue an ajax request to load child nodes
                     data.result = {
-                        url: "/plugins/<!-- Plugin -->/<!-- Path -->/",
+                        url: "/plugins/<!-- Plugin -->/<!-- Path --><!-- Query -->",
                         data: {mode: "children", files: "<!-- Files -->", directories: "<!-- Directories -->", parent: node.key},
                     };
                 }
