@@ -2,12 +2,9 @@ import os
 import logging
 import sys
 import getopt
-import pytsk3
+from bottle import abort
 from utils.efetch_helper import EfetchHelper
 from dfvfs_util import DfvfsUtil
-
-global options
-global all_settings
 
 def main(argv):
     global all_settings

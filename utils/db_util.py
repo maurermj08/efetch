@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import logging
-import sys
 import time
 from bottle import abort
 from elasticsearch import Elasticsearch, helpers
@@ -173,6 +172,36 @@ class DBUtil(object):
                 self.update(ppid, image_id, update, abort_on_error, repeat - 1)
             logging.warn('Failed to update "' + ppid + '" due to conflict error!')
 
+
+def efetch_root_node():
+    """Returns the Elastic Search root node"""
+    return {
+                '_index': 'efetch-evidence',
+                '_type' : 'event',
+                '_id' : '/',
+                '_source' : {
+                    'pid' : '/',
+                    'iid' : '/',
+                    'image_id': '',
+                    'image_path' : '',
+                    'name' : 'Evidence',
+                    'path' : '',
+                    'ext' : '',
+                    'dir' : '',
+                    'meta_type' : 'Root',
+                    'inode' : '',
+                    'mtime' : '',
+                    'atime' : '',
+                    'ctime' : '',
+                    'crtime' : '',
+                    'file_size' : [0],
+                    'uid' : '',
+                    'gid' : '',
+                    'driver' : "fa_dfvfs"
+                }
+        }
+
+
 def evidence_template():
     """Returns the Elastic Search mapping for Evidence"""
     return {
@@ -209,6 +238,7 @@ def evidence_template():
             }
         }
     }
+
 
 def case_template():
     """Returns the Elastic Search mapping for Efetch Cases"""

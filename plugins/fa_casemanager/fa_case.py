@@ -13,6 +13,8 @@ class FaCase(IPlugin):
         self.popularity = 0
         self.parent = False
         self.cache = False
+        self._default_child = 'fa_header'
+        self._default_children = '/fa_menu/fa_casetree/fa_dirtree/fa_filebrowser/fa_analyze/'
         IPlugin.__init__(self)
 
     def activate(self):
@@ -33,32 +35,18 @@ class FaCase(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        if "method" not in request.query and not request.forms.get('method'):
+        method = helper.get_request_value(request, 'method', False)
+
+        if not 'method':
             abort(400, 'No method specified')
 
-        if "method" in request.query:
-            method = request.query['method']
-        else:
-            method = request.forms.get('method')
-        if "name" in request.query:
-            name = request.query['name']
-        else:
-            name = request.forms.get('name')
-        if "description" in request.query:
-            description = request.query['description']
-        else:
-            description = request.forms.get('description')
-        if "new_name" in request.query:
-            new_name = request.query['new_name']
-        else:
-            new_name = request.forms.get('new_name')
-        # TODO: Determine if this is the best way to get a list
-        if "evidence" in request.query:
-            evidence_list = request.query['evidence'].split(',')
-        elif request.forms.get('evidence'):
-            evidence_list = request.forms.get('evidence').split(',')
-        else:
-            evidence_list = []
+        name = helper.get_request_value(request, 'name', False)
+        description = helper.get_request_value(request, 'description', False)
+        new_name = helper.get_request_value(request, 'new_name', False)
+        evidence_list = helper.get_request_value(request, 'evidence', [])
+
+        if evidence_list:
+            evidence_list = evidence_list.split()
 
         if method == "read":
             return helper.db_util.read_case(name)
@@ -82,6 +70,16 @@ class FaCase(IPlugin):
             return helper.db_util.update_case(name, new_name, description, evidence_list)
         elif method == "delete":
             return helper.db_util.delete_case(name)
+        #TODO
+        elif method == 'open':
+            result = helper.db_util.get_evidence(name)
+            result_table = []
+            for item in result:
+                result_table.append({'term': {'image_id': item}})
+            new_request = {'bool' : {'should': result_table}}
+            return helper.plugin_manager.getPluginByName(self._default_child).plugin_object.get(evidence, helper,
+                                                                                                path_on_disk, new_request,
+                                                                                                self._default_child)
 
         return abort(400, 'Unknown method')
 
