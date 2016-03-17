@@ -18,5 +18,6 @@ python-registry>=1.0.4
 simplejson>=3.8.0
 elasticsearch>=2.1.0
 cherrypy>=5.0.0
+pyelasticsearch>=1.4
 pefile
 exifread
