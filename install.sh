@@ -8,7 +8,7 @@ fi
 
 #Install Repo Dependencies
 echo 'Installing Efetch dependencies...'
-sudo add-apt-repository ppa:gift/stable
+sudo add-apt-repository -y ppa:gift/stable
 sudo apt-get update
 sudo apt-get -y install python-plaso python-dev python-pip default-jre elasticsearch unoconv
 sudo update-rc.d elasticsearch defaults
@@ -29,8 +29,13 @@ echo "from plaso.output import efetch" | sudo tee --append /usr/lib/python2.7/di
 echo "from plaso.cli.helpers import efetch_output" | sudo tee --append /usr/lib/python2.7/dist-packages/plaso/cli/helpers/__init__.py
 
 #Installing external dependencies
-wget https://github.com/williballenthin/python-registry/archive/master.zip
-unzip master.zip
-sudo python-registry-*/setup.py install
+wget https://github.com/williballenthin/python-registry/archive/master.zip -O /tmp/reglib.zip
+mkdir /tmp/reglib
+unzip /tmp/reglib.zip -d /tmp/reglib
+cd /tmp/reglib/python-registry-master/
+python setup.py install
+cd $DIR
+rm /tmp/reglib.zip
+rm -rf /tmp/reglib
 
 echo 'Done!'
