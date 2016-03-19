@@ -3,8 +3,7 @@ Parses evidence into database using dfVFS
 """
 
 from yapsy.IPlugin import IPlugin
-from dfvfs_util import DfvfsUtil
-import pytsk3
+from efetch import DfvfsUtil
 import os
 import logging
 from bottle import abort

@@ -343,7 +343,7 @@ class DfvfsUtil(object):
         for sub_file_entry in file_entry.sub_file_entries:
             dir_list.append(sub_file_entry.name)
             if recursive and sub_file_entry.IsDirectory():
-                dir_list.extend(_ListDirSub(file_entry, recursive, level + 1))
+                dir_list.extend(self._ListDirSub(file_entry, recursive, level + 1))
         return dir_list
 
     def _FileExists(self, curr, paths, file_entry, ignore_case):
