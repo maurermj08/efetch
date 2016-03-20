@@ -43,7 +43,7 @@ class FaTree(IPlugin):
             parent = helper.get_request_value(request, 'parent', '')
             if not parent:
                 abort(200, 'Bad request, mode children requires a parent in the form of a Path ID')
-            request_file = helper.db_util.get_file_from_ppid(parent)
+            request_file = helper.db_util.get_file_from_pid(parent)
 
             return self.get_child(request_file, helper, files, directories, filter_query)
         elif mode == 'root' and not directories:

@@ -64,9 +64,10 @@ class EfetchOutputModule(interface.OutputModule):
 
     root, path = ret_dict['display_name'].split(':/',1)   
     path = '/' + path
+    root = self._image_id + '/' + root.replace(':', '/')
     pid = root + path
     name = os.path.basename(path)
-    directory = self._image_id + '/' + os.path.dirname(pid) + '/'
+    directory = os.path.dirname(pid) + '/'
     ext = os.path.splitext(name)[1][1:] or ""
 
     ret_dict['pid'] = pid
@@ -157,30 +158,6 @@ class EfetchOutputModule(interface.OutputModule):
     name = os.path.basename(path)
     directory = os.path.dirname(pid) + '/'
     ext = os.path.splitext(name)[1][1:] or ""
-
-    #file_entry = resolver.Resolver.OpenFileEntry(ret_dict['pathspec'])
-    #stat_object = file_entry.GetStat()
-    #if stat_object:
-    #  for time_attribute in [u'atime', u'bkup_time', u'ctime', u'crtime', u'dtime', u'mtime']:
-    #    posix_time = getattr(stat_object, time_attribute, None)
-    #    if posix_time is None:
-    #      continue
-    #
-    #    nano_time_attribute = u'{0:s}_nano'.format(time_attribute)
-    #    nano_time_attribute = getattr(stat_object, nano_time_attribute, None)
-    #
-    #    timestamp = timelib.Timestamp.FromPosixTime(posix_time)
-    #    if nano_time_attribute is not None:
-    #      # Note that the _nano values are in intervals of 100th nano seconds.
-    #      micro_time_attribute, _ = divmod(nano_time_attribute, 10)
-    #      timestamp += micro_time_attribute
-    #
-    #    # TSK will return 0 if the timestamp is not set.
-    #    if (file_entry.type_indicator == dfvfs_definitions.TYPE_INDICATOR_TSK and
-    #        not timestamp):
-    #      continue
-    #
-    #    ret_dict[time_attribute] = timestamp
 
     if root not in self._roots:
       self._roots.append(root)

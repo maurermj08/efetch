@@ -55,7 +55,7 @@ class FaBrowser(IPlugin):
         listing = []
         evidence_items = helper.db_util.bool_query_evidence(curr_folder, filter_query)
         if directories and evidence['dir'] != '/':
-            parent_dir = helper.db_util.get_file_from_ppid(evidence['dir'][:-1])
+            parent_dir = helper.db_util.get_file_from_pid(evidence['dir'][:-1])
             parent_dir['name'] = '..'
             evidence_items.append(parent_dir)
 

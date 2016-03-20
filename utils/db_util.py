@@ -24,9 +24,9 @@ class DBUtil(object):
         self.elasticsearch.indices.put_template(name="efetch-case", body=case_template())
         self.elasticsearch.indices.put_template(name="efetch-evidence", body=evidence_template())
 
-    def get_file_from_ppid(self, ppid, abort_on_error=True):
+    def get_file_from_pid(self, pid, abort_on_error=True):
         """Returns the file object for the given file in the database"""
-        return self.get_file(ppid.split('/')[0], ppid, abort_on_error)
+        return self.get_file(pid.split('/')[0], pid, abort_on_error)
    
     def query(self, query, image_id):
         """Returns the results of an Elastic Search query without error checking"""
@@ -132,7 +132,9 @@ class DBUtil(object):
 
         #TODO CHECK IF IMAGE EXISTS
         #TODO Do not hide errors from elasticsearch
-        curr_file = self.elasticsearch.search(index='efetch-evidence_' + image_id, doc_type='event', body={"query": {"match": {"pid": evd_id}}})
+        curr_file = self.elasticsearch.search(index='efetch-evidence_' + image_id, doc_type='event',
+                                              body={ 'query': {'bool': {'must': [{'term': {'pid': evd_id}},
+                                                                       {'term': {'parser': 'efetch'}}]}}})
         if not curr_file['hits'] or not curr_file['hits']['hits'] or not curr_file['hits']['hits'][0]['_source']:
             logging.error("Could not find file. Image='" + image_id + "' _id='" + evd_id + "'")
             if abort_on_error:
