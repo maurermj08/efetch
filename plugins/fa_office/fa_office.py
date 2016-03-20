@@ -40,7 +40,11 @@ class FaOffice(IPlugin):
                    'application/vnd.oasis.opendocument.presentation',
                    'application/vnd.oasis.opendocument.presentation-template', 'application/vnd.sun.xml.impress',
                    'application/vnd.ms-excel', 'text/rtf']
-        return evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed
+        extensions = ['docx', 'docm', 'dotx', 'dotm', 'xlsx', 'xlsm', 'xltx', 'xltm', 'pptx', 'pptm', 'potx', 'potm',
+                      'ppsx', 'ppsm', 'sldx', 'sldm']
+
+        return (evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed) or \
+               (evidence['meta_type'] == 'File' and str(evidence['ext']).lower() in extensions)
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

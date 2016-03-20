@@ -25,8 +25,9 @@ class FaPreview(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatable with this plugin"""
-        allowed = ['image/jpeg', 'image/png', 'image/gif', 'text/plain', 'text/html', 'application/pdf']
-        return str(evidence['mimetype']).lower() in allowed and evidence['meta_type'] != 'Directory'
+        #allowed = ['image/jpeg', 'image/png', 'image/gif', 'text/plain', 'text/html', 'application/pdf']
+        allowed = ['image', 'text', 'video', 'audio']
+        return str(evidence['mimetype'].split('/')[0]).lower() in allowed and evidence['meta_type'] != 'Directory'
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

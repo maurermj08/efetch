@@ -13,6 +13,7 @@ class FaAnalyze(IPlugin):
         self.popularity = 0
         self.parent = False
         self.cache = True
+        self.ignore_loader = ['fa_preview']
         IPlugin.__init__(self)
 
     def activate(self):
@@ -54,8 +55,12 @@ class FaAnalyze(IPlugin):
                     if plugin.plugin_object.display_name != 'Overview' and plugin.plugin_object.check(evidence,
                                                                                                        path_on_disk):
                         logging.debug("Check matched, adding plugin " + plugin.plugin_object.display_name)
-                        plugins.append('<a href="/plugins/fa_loader/' + plugin.name + '/' + evidence[
-                            'pid'] + '" target="frame">' + plugin.plugin_object.display_name + '</a><br>')
+                        if plugin.name not in self.ignore_loader:
+                            plugins.append('<a href="/plugins/fa_loader/' + plugin.name + '/' + evidence[
+                                'pid'] + '" target="frame">' + plugin.plugin_object.display_name + '</a><br>')
+                        else:
+                            plugins.append('<a href="/plugins/' + plugin.name + '/' + evidence[
+                                'pid'] + '" target="frame">' + plugin.plugin_object.display_name + '</a><br>')
                     else:
                         logging.debug("Check did not match, NOT adding plugin " + plugin.plugin_object.display_name)
 
