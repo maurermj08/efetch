@@ -64,6 +64,7 @@ class EfetchOutputModule(interface.OutputModule):
 
     root, path = ret_dict['display_name'].split(':/',1)   
     path = '/' + path
+    root = self._image_id + '/' + root.replace(':', '/')
     pid = root + path
     name = os.path.basename(path)
     directory = self._image_id + '/' + os.path.dirname(pid) + '/'

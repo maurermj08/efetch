@@ -37,6 +37,8 @@ class FaThumbnail(IPlugin):
         if evidence['meta_type'] == 'Directory' or str(evidence['name']).strip() == "." or str(
                 evidence['name']).strip() == "..":
             return static_file("_folder.png", root=helper.icon_dir, mimetype='image/png')
+        if evidence['meta_type'] != 'File':
+            return static_file("_blank.png", root=helper.icon_dir, mimetype='image/png')
 
         # Uses extension to determine if it should create a thumbnail
         # assumed_mimetype = helper.guess_mimetype(str(evidence['ext']).lower())

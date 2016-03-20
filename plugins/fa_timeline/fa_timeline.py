@@ -35,7 +35,7 @@ class FaTimeline(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children, logs=True, files=False, directories=False,
             sub_directories=True, evidence_item_plugin='fa_timeline', title='Log2timeline',
-            prefix = ['datetime', 'parser', 'message']):
+            prefix = ['datetime', 'parser', 'message', 'filename', 'source_short', 'source_long', 'data_type', 'pid']):
         """Returns the result of this plugin to be displayed in a browser"""
         raw_filter = helper.get_request_value(request, 'filter', '{}')
         filter_query = helper.get_filter(request)
@@ -101,9 +101,10 @@ class FaTimeline(IPlugin):
                 columns.add(key)
         for key in prefix:
             table += '    <th field="' + key + '" sortable="true">' + key + '</th>\n'
-        for key in columns:
-            if key not in prefix:
-                table += '    <th field="' + key + '" sortable="true">' + key + '</th>\n'
+        #Slows down loading too much
+        #for key in columns:
+        #    if key not in prefix:
+        #        table += '    <th field="' + key + '" sortable="true">' + key + '</th>\n'
         table += '</tr>\n</thead>\n'
 
         if mode == 'events':
@@ -144,6 +145,8 @@ class FaTimeline(IPlugin):
         html = html.replace('<!-- Plugin -->', evidence_item_plugin)
         html = html.replace('<!-- Title -->', title)
         html = html.replace('<!-- Query -->', query_string)
+        html = html.replace('<!-- Sort -->', prefix[0])
+
         if raw_filter:
             html = html.replace('<!-- Filter -->', '&' + urlencode({'filter': raw_filter}))
         else:

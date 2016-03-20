@@ -33,7 +33,9 @@ class FaMedia(IPlugin):
                    'video/x-mpeg', 'video/mpeg', 'video/mpeg', 'video/x-sgi-movie', 'video/x-qtc', 'video/x-scm',
                    'video/vnd.rn-realvideo', 'video/vdo', 'video/vivo', 'video/vnd.vivo', 'video/vosaic',
                    'video/x-amt-demorun', 'video/x-amt-showrun', 'audio/x-ms-wmv']
-        return evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed
+        #return evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed
+        #Needs work, so being disabled
+        return False
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

@@ -100,8 +100,8 @@ class EfetchHelper(object):
                 return self._my_magic.id_filename(file_path)
         except:
             if repeat > 0:
-                logging.warn('Failed to get the mimetype for "%s" attempting again in 500ms', file_path)
-                time.sleep(0.500)
+                logging.warn('Failed to get the mimetype for "%s" attempting again in 100ms', file_path)
+                time.sleep(0.100)
                 self.get_mimetype(file_path, repeat - 1)
             logging.warn('Failed to get the mimetype for "%s"', file_path)
     

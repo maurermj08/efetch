@@ -13,7 +13,7 @@ class FaAnalyze(IPlugin):
         self.popularity = 0
         self.parent = False
         self.cache = True
-        self.ignore_loader = ['fa_preview']
+        self.ignore_loader = ['fa_preview', 'fa_timeline']
         IPlugin.__init__(self)
 
     def activate(self):

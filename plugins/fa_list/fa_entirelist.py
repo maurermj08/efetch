@@ -37,4 +37,5 @@ class FaEntirelist(IPlugin):
                                                                                      helper, path_on_disk, request,
                                                                                      children, False, True, True,
                                                                                       True, 'fa_entirelist',
-                                                                                      self.display_name)
+                                                                                      self.display_name,
+                                                                                      ['name', 'mtime', 'atime', 'ctime', 'crtime', 'file_size'])
