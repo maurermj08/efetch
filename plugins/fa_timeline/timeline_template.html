@@ -40,7 +40,7 @@
             }
         }
         function formatThumbnail(val,row){
-            var url = '/plugins/fa_thumbnail/'+row.image_id+'/'+row.display_name.replace("TSK:", "TSK");
+            var url = '/plugins/fa_thumbnail/'+row.pid;
             return '<img style="height:32px;width:32px;" src="'+url+'" alt="Na" onError="this.onerror=null;this.src=\'/resources/icons/_missing.png\';" title="Na">';
         }
     </script>

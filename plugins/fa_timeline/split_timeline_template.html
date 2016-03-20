@@ -46,12 +46,12 @@
                     return '<a href="'+url+'" target="_self"><!-- Title --></a>';
                 }
                 else {
-                    var url = '/plugins/<!-- Children -->'+row.image_id+'/'+row.display_name.replace("TSK:", "TSK");
+                    var url = '/plugins/<!-- Children -->'+row.pid;
                     return '<a href="'+url+'" target="timeline_frame"><!-- Child --></a>';
                 }
             }
             function formatThumbnail(val,row){
-                var url = '/plugins/fa_thumbnail/'+row.image_id+'/'+row.display_name.replace("TSK:", "TSK");
+                var url = '/plugins/fa_thumbnail/'+row.pid;
                 return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';
             }
             /* $(function(){
@@ -67,7 +67,7 @@
                             width:800,
                             border:false,
                             cache:false,
-                            href:'/plugins/fa_blank/fa_analyze/'+row.image_id+'/'+row.display_name.replace("TSK:", "TSK"),
+                            href:'/plugins/fa_blank/fa_analyze/'+row.pid,
                             onLoad:function(){
                                 $('#dg').datagrid('fixDetailRowHeight',index);
                             }
