@@ -1,10 +1,10 @@
+from bottle import abort
+from efetch import EfetchHelper
+from efetch import DfvfsUtil
 import os
 import logging
 import sys
 import getopt
-from bottle import abort
-from utils.efetch_helper import EfetchHelper
-from dfvfs_util import DfvfsUtil
 
 def main(argv):
     global all_settings
@@ -110,6 +110,7 @@ def add_image(image_id, image_path, db_util, settings):
                 '_type' : 'event',
                 '_id' : image_id,
                 '_source' : {
+                    'parser': 'efetch',
                     'pid' : image_id,
                     'iid' : image_id + '/',
                     'image_id': image_id,
@@ -147,6 +148,7 @@ def add_image(image_id, image_path, db_util, settings):
                     '_type' : 'event',
                     '_id' : curr_id,
                     '_source' : {
+                        'parser': 'efetch',
                         'pid' : curr_id,
                         'iid' : curr_id + '/',
                         'image_id': image_id,

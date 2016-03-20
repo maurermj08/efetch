@@ -113,26 +113,5 @@ class FaTree(IPlugin):
                         'icon': '/plugins/fa_thumbnail/' + evidence_item['pid']
                     })
 
-        # for evidence_item in helper.db_util.bool_query_evidence(evidence, filter_query):
-        #     append = False
-        #     folder = False
-        #
-        #     # TODO: Need to find out why there are weird ';' entries in the root of log2timeline
-        #     if ';' not in evidence_item['iid']:
-        #         if files and evidence_item['meta_type'] == 'File':
-        #             append = True
-        #         elif directories and evidence_item['meta_type'] == 'Directory':
-        #             append = True
-        #             folder = True
-        #
-        #     if append:
-        #         children.append({
-        #             'title': evidence_item['name'],
-        #             'key': evidence_item['pid'],
-        #             'lazy': folder,
-        #             'folder': folder,
-        #             'icon': '/plugins/fa_thumbnail/' + evidence_item['pid']
-        #         })
-
         children.sort()
         return json.dumps(children)

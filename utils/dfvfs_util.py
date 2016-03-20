@@ -171,6 +171,7 @@ class DfvfsUtil(object):
             '_id': dir_ref,
             '_source': {
                 'root': curr_id,
+                'parser': 'efetch',
                 'pid': dir_ref,
                 'iid': inode_ref,
                 'image_id': image_id,
