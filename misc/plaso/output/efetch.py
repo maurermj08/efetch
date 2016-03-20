@@ -64,7 +64,6 @@ class EfetchOutputModule(interface.OutputModule):
 
     root, path = ret_dict['display_name'].split(':/',1)   
     path = '/' + path
-    root = self._image_id + '/' + root.replace(':', '/')
     pid = root + path
     name = os.path.basename(path)
     directory = self._image_id + '/' + os.path.dirname(pid) + '/'
@@ -269,7 +268,7 @@ class EfetchOutputModule(interface.OutputModule):
     dictionary['image_id'] = sections[0]
     dictionary['pid'] = root
     if root in self._ids:
-      logging.warn('_ID %s already exists', pid)
+      logging.warn('_ID %s already exists', dictionary['pid'])
       return
     else:
       self._ids.append(root)
