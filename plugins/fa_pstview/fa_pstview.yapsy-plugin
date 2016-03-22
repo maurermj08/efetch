@@ -1,0 +1,10 @@
+[Core]
+Name = fa_pstview
+Module = fa_pstview
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Lazy loading PST viewer
+Copyright = 2016
