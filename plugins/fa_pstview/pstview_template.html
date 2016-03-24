@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+    <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=us-ascii" />
+    <style>
+    html{
+        height: 100%;
+    }
+
+    body {
+        min-height: 100%;
+        margin: 0px;
+    }
+
+    ul.fancytree-container {
+        width: 395px;
+        height: 95vh;
+        float: left;
+        overflow: auto !important;
+        position: fixed;
+        border: none !important;
+        outline: none;
+    }
+
+    #tree_frame {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        border: none;
+    }
+
+    table {
+        overflow-y: scroll;
+        width: 100%;
+    }
+    table, th, td {
+        border: 0px;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 5px;
+        text-align: left;
+    }
+    table#pstt01 tr:nth-child(even) {
+        background-color: #fff;
+    }
+    table#pstt01 tr:nth-child(odd) {
+       background-color:#eee;
+    }
+    table#pstt01 th {
+        background-color: #E9F1FF;
+    }
+    #pstvalues{
+        padding: 10px;
+        font-size: large;
+    }
+    h1 {
+        color: darkblue;
+    }
+
+    </style>
+
+        <script src="/resources/jquery-1.11.3.min.js"></script>
+        <script src="/resources/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
+        <!-- Include Fancytree skin and library -->
+        <link href="/resources/fancytree/skin-lion/ui.fancytree.css" rel="stylesheet" type="text/css">
+        <!--<link href="/resources/fa_pstview.css" rel="stylesheet" type="text/css">-->
+        <script src="/resources/fancytree/jquery.fancytree-all.js" type="text/javascript"></script>
+        <link rel="stylesheet" type="text/css" href="/resources/themes/default/easyui.css">
+        <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
+        <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
+        <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
+        <script type="text/javascript" src="/resources/jquery.dataTables.min.js"></script>
+        <script type="text/javascript" src="/resources/dataTables.title-string.js"></script>
+ 
+        <script>
+              $(function() {
+              $('#psttree').fancytree({
+                source: { url: '/plugins/fa_pstview_ajax/<!-- Path -->/?method=base' },
+                autoScroll: true,
+                init: function(event, data) {
+                    data.tree.getFirstChild().setFocus();
+                },
+                focus: function(event, data){
+                    data.node.scrollIntoView(true);
+                },
+                activate: function(event, data) {
+                    node = data.node;
+                    $.ajax(
+                          { url: '/plugins/fa_pstview_ajax/<!-- Path -->/?method=values',
+                            data: {key: node.key},
+                            success: function(data) {
+                                console.log(data);
+                                var values_content = '<h1>' + data.subject + '</h1><hr><p>' + data.message + '</p>';
+                                $('#pstvalues').html(values_content);
+                            }
+                          }
+                    );
+                },
+                lazyLoad: function(event, data) {
+                    var node = data.node;
+                    console.log(node);
+                    // Issue an ajax request to load child nodes
+                    data.result = {
+                        url: "/plugins/fa_pstview_ajax/<!-- Path -->/?method=children",
+                        data: {key: node.key}
+                    }
+                }
+            });
+        });
+        </script>
+        <script type="text/javascript" class="init">
+                
+        $(document).ready(function() {
+                    $('#pstt01').DataTable({
+                            "paging": false,
+                            "info": false
+                            }
+                    );
+            } );
+        </script>
+    </head>
+    <body>
+        <div id="pst_layout" class="easyui-layout" data-options="fit:true" style="position:inherit;height:100%;width:100%">
+            <div data-options="region:'west',split:true,hideCollapsedContent:false" title="PST" style="width:200px;">
+                <div id="psttree" class="pst-tree"></div>
+            </div>
+            <div data-options="region:'center',title:''">
+                <div id="pstvalues" class="pst-values"></div>
+            </div>
+        </div>
+
+    </body>
+</html>

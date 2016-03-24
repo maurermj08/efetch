@@ -1,0 +1,10 @@
+[Core]
+Name = fa_sqlite_ajax
+Module = fa_sqlite_ajax
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = AJAX for SQLite Viewer plugin
+Copyright = 2016

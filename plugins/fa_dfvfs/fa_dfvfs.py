@@ -6,6 +6,8 @@ from yapsy.IPlugin import IPlugin
 from efetch import DfvfsUtil
 import os
 import logging
+import threading
+import time
 from bottle import abort
 
 
@@ -17,6 +19,8 @@ class FaDfvfs(IPlugin):
         self.popularity = 0
         self.parent = False
         self.cache = False
+        self.lock = threading.RLock()
+
         IPlugin.__init__(self)
 
     def activate(self):
@@ -131,17 +135,25 @@ class FaDfvfs(IPlugin):
 
     def icat(self, evidence, output_file_path):
         """Returns the specified file using image file, meta or inode address, and outputfile"""
+
         if not evidence['root'] in self.utils:
-            settings = []
-            curr_id = evidence['root'].split('/')[1:]
-            while curr_id[0] != 'TSK':
-                settings.append(curr_id.pop(0).lower())
-            settings.append('none')
-            self.utils[evidence['root']] = DfvfsUtil(evidence['image_path'], settings, False)
+            print('WAITING: ' + evidence['pid'])
+            with self.lock:
+                if not evidence['root'] in self.utils:
+                    print('ACCESS: ' + evidence['pid'])
+                    settings = []
+                    curr_id = evidence['root'].split('/')[1:]
+                    while curr_id[0] != 'TSK':
+                        settings.append(curr_id.pop(0).lower())
+                    settings.append('none')
+                    self.utils[evidence['root']] = DfvfsUtil(evidence['image_path'], settings, False)
+                    print('LEAVING: ' + evidence['pid'])
+                time.sleep(0.100)
 
         dfvfs_util = self.utils[evidence['root']]
 
-        if dfvfs_util.initialized > 0:
-            dfvfs_util.Icat(evidence['path'], output_file_path)
-        else:
-            logging.warn("Unable to icat file %s because no proper dfVFS settings", evidence['pid'])
+        with self.lock:
+            if dfvfs_util.initialized > 0:
+                dfvfs_util.Icat(evidence['path'], output_file_path)
+            else:
+                logging.warn("Unable to icat file %s because no proper dfVFS settings", evidence['pid'])
