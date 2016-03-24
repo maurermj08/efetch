@@ -4,10 +4,8 @@ AJAX for PST Viewer plugin
 
 from yapsy.IPlugin import IPlugin
 from bottle import route, run, static_file, response, post, abort
-import binascii
 import json
 import logging
-import os
 import pypff
 import sys
 
@@ -57,6 +55,8 @@ class FaPstviewAjax(IPlugin):
 
     def get_children(self, request, path_on_disk):
         path = unicode(request.query['key'])
+        if path.endswith('/'):
+            path = path[:-1]
         response.content_type = 'application/json'
         data = self.get_sub_messages(path, path_on_disk)
         return json.dumps(data)
@@ -64,11 +64,10 @@ class FaPstviewAjax(IPlugin):
     def values(self, request, path_on_disk):
         path,key = unicode(request.query['key']).rsplit('/',1)
         response.content_type = 'application/json'
-        try:
-            key = int(key)
-        except:
-            #Eventually might add support to displaying folders and not just messages
+        if not key:
+            #No key means it is a folder and currently no support for displaying folder information
             return
+        key = int(key)
 
         pst = get_pst(path_on_disk)
         msg = self.get_directory(path, pst).get_sub_message(key)
@@ -118,7 +117,7 @@ class FaPstviewAjax(IPlugin):
         #Append Folders
         for i in range(0, directory.get_number_of_sub_folders()):
             pst_nodes.append({'title': unicode(directory.get_sub_folder(i).get_display_name()),
-                          'key': path + u"/" + unicode(directory.get_sub_folder(i).get_display_name()),
+                          'key': path + u"/" + unicode(directory.get_sub_folder(i).get_display_name()) + u"/",
                           'folder': True,
                           'lazy': directory.get_sub_folder(i).get_number_of_sub_folders() > 0 or
                                   directory.get_sub_folder(i).get_number_of_sub_messages() > 0
