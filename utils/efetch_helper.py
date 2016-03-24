@@ -30,7 +30,6 @@ class EfetchHelper(object):
         self.icon_dir = self.resource_dir + 'icons/'
         if not os.path.isdir(self.icon_dir):
             logging.error('Could not find icon directory ' + self.icon_dir)
-            sys.exit(2)
 
         #Elastic Search DB setup
         if es_url:

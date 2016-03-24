@@ -89,7 +89,7 @@ class Efetch(object):
             resource_path (str): Path to the resource starting at the resource directory.
         
         """
-        #TODO: Need better security
+        # TODO: Need better security
         if '..' in str(resource_path):
             return
         else:
@@ -139,45 +139,51 @@ class Efetch(object):
 
         if plugin.plugin_object.parent:
             children = '/'.join(args_list)
-            #Updates the args list so parent plugins can get imaged_id, and path
+            # Updates the args list so parent plugins can get imaged_id, and path
             while (args_list and self._helper.plugin_manager.getPluginByName(args_list[0]) and
                     self._helper.plugin_manager.getPluginByName(args_list[0]).plugin_object.parent):
                 args_list.pop(0)
             if args_list and self._helper.plugin_manager.getPluginByName(args_list[0]):
                 args_list.pop(0)
 
-        #Image ID
+        # Image ID
         if args_list:
             image_id = args_list.pop(0)
         else:
             image_id = None
 
-        #Path
+        # Path
         if args_list:
             path = '/'.join(args_list)
         else:
             path = ''
 
         if image_id:
-            #Get file from database
+            # Get file from database
             try:
                 evidence = self._helper.db_util.get_file(image_id, image_id + '/' + str(path))
             except:
                 abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
 
-            #Cache file
+            # Cache file
             if plugin.plugin_object.cache:
                 file_cache_path = self._helper.cache_file(evidence)
 
-            #Get Mimetype if file is cached else guess Mimetype
+            # Get Mimetype if file is cached else guess Mimetype
             if file_cache_path and 'mimetype' not in evidence:
                 evidence['mimetype'] = self._helper.get_mimetype(file_cache_path)
-                update = { 'mimetype' : evidence['mimetype'] }
+                update = {'mimetype': evidence['mimetype']}
                 self._helper.db_util.update_by_ppid(evidence['pid'], update)
             elif 'mimetype' not in evidence:
                 evidence['mimetype'] = self._helper.guess_mimetype(evidence['ext'])
+            # Remove Failed Cache
+            elif file_cache_path and not evidence['mimetype']:
+                os.remove(file_cache_path)
+                evidence['mimetype'] = self._helper.get_mimetype(file_cache_path)
+                update = {'mimetype': evidence['mimetype']}
+                self._helper.db_util.update_by_ppid(evidence['pid'], update)
         
-        #Return plugins frame
+        # Return plugins frame
         return plugin.plugin_object.get(evidence, self._helper,
                 file_cache_path, request, children)
 
