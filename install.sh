@@ -9,8 +9,9 @@ fi
 #Install Repo Dependencies
 echo 'Installing Efetch dependencies...'
 sudo add-apt-repository -y ppa:gift/stable
+sudo add-apt-repository -y ppa:sift/stable
 sudo apt-get update
-sudo apt-get -y install python-plaso python-dev python-pip default-jre elasticsearch unoconv
+sudo apt-get -y install python-plaso python-dev python-pip default-jre elasticsearch unoconv libpff libpff-python
 sudo update-rc.d elasticsearch defaults
 sudo service elasticsearch start
 
