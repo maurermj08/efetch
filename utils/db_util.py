@@ -10,7 +10,7 @@ class DBUtil(object):
     elasticsearch = None
 
     def __init__(self, es_url=None):
-        """Creates the Efetch indices in Eleasticsearch if they do not exist"""
+        """Creates the Efetch indices in Elasticsearch if they do not exist"""
         if es_url:
             self.elasticsearch = Elasticsearch([es_url])
         else:
@@ -20,9 +20,11 @@ class DBUtil(object):
         self.elasticsearch.indices.create(index='efetch-config',ignore=400)
         self.elasticsearch.indices.create(index='efetch-log',ignore=400)
         self.elasticsearch.indices.create(index='efetch-cases',ignore=400)
-        self.elasticsearch.indices.create(index='efetch-evidence',ignore=400)
+        self.elasticsearch.indices.create(index='efetch_image_ids',ignore=400)
+        self.elasticsearch.indices.create(index='efetch_evidence',ignore=400)
         self.elasticsearch.indices.put_template(name="efetch-case", body=case_template())
-        self.elasticsearch.indices.put_template(name="efetch-evidence", body=evidence_template())
+        self.elasticsearch.indices.put_template(name="efetch_evidence", body=evidence_template())
+        self.elasticsearch.indices.put_template(name="efetch-image_ids", body=image_id_template())
 
     def get_file_from_pid(self, pid, abort_on_error=True):
         """Returns the file object for the given file in the database"""
@@ -30,7 +32,7 @@ class DBUtil(object):
    
     def query(self, query, image_id):
         """Returns the results of an Elastic Search query without error checking"""
-        return self.elasticsearch.search(index='efetch-evidence_' + image_id, body=query)
+        return self.elasticsearch.search(index='efetch_evidence_' + image_id, body=query)
 
     def bool_query(self, directory, bool_query = {}, size=10000, use_directory=True):
         """Returns the results of an Elastic Search boolean query within a given directory"""
@@ -38,7 +40,7 @@ class DBUtil(object):
         #TODO: Loop through if size > 10000
         bool_query = self.append_dict(bool_query, 'must', { 'term': { 'dir': directory['pid'] + '/' } })
         query = { 'query': { 'bool': bool_query, }, 'size': size} 
-        return self.elasticsearch.search(index='efetch-evidence_' + directory['image_id'], body=query)
+        return self.elasticsearch.search(index='efetch_evidence_' + directory['image_id'], body=query)
 
     def bool_query_evidence(self, directory, bool_query = {}, size=10000):
         """Returns a list of evidence for an Elastic Search boolean query within a directory"""
@@ -104,7 +106,7 @@ class DBUtil(object):
             indices = self.elasticsearch.indices.get_aliases().keys()
             evidence = []
             for index in sorted(indices):
-                if str(index).startswith('efetch-evidence_'):
+                if str(index).startswith('efetch_evidence_'):
                     evidence.append(index[16:])
             return evidence
         else:
@@ -132,7 +134,7 @@ class DBUtil(object):
 
         #TODO CHECK IF IMAGE EXISTS
         #TODO Do not hide errors from elasticsearch
-        curr_file = self.elasticsearch.search(index='efetch-evidence_' + image_id, doc_type='event',
+        curr_file = self.elasticsearch.search(index='efetch_evidence_' + image_id, doc_type='event',
                                               body={ 'query': {'bool': {'must': [{'term': {'pid': evd_id}},
                                                                        {'term': {'parser': 'efetch'}}]}}})
         if not curr_file['hits'] or not curr_file['hits']['hits'] or not curr_file['hits']['hits'][0]['_source']:
@@ -166,7 +168,7 @@ class DBUtil(object):
     def update(self, ppid, image_id, update, abort_on_error=True, repeat=1):
         """Updates evidence event in Elastic Search"""
         try:
-            self.elasticsearch.update(index='efetch-evidence_' + image_id, doc_type='event', id=ppid, body={'doc': update})
+            self.elasticsearch.update(index='efetch_evidence_' + image_id, doc_type='event', id=ppid, body={'doc': update})
         except ConflictError:
             if repeat > 0:
                 logging.info('Failed to update "' + ppid + '" attempting again in 200ms')
@@ -207,7 +209,7 @@ def efetch_root_node():
 def evidence_template():
     """Returns the Elastic Search mapping for Evidence"""
     return {
-        "template" : "efetch-evidence*",
+        "template" : "efetch_evidence*",
         "settings" : {
             "number_of_shards" : 1
             },
@@ -240,6 +242,25 @@ def evidence_template():
             }
         }
     }
+
+
+def image_id_template():
+    """Returns the Elastic Search mapping for Efetch Image IDs"""
+    return {
+        "template" : "efetch_image_ids",
+        "settings" : {
+            "number_of_shards" : 1
+            },
+        "mapping" : {
+            "_default_" : {
+                "_source" : { "enabled" : True },
+                "properties" : {
+                    "key" : {"type": "string", "index" : "not_analyzed"},
+                    "value" : {"type": "string", "index" : "not_analyzed"},
+                    }
+                }
+            }
+        }
 
 
 def case_template():

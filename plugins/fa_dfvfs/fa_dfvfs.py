@@ -9,7 +9,8 @@ import logging
 import threading
 import time
 from bottle import abort
-
+from dfvfs.resolver import resolver
+from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 
 class FaDfvfs(IPlugin):
     utils = {}
@@ -62,7 +63,7 @@ class FaDfvfs(IPlugin):
         if dfvfs_util.initialized < 1:
             return dfvfs_util.display
 
-        index_name = 'efetch-evidence_' + image_id
+        index_name = 'efetch_evidence_' + image_id
         db_util.create_index(index_name)
         root = {
             '_index': index_name,
@@ -133,27 +134,23 @@ class FaDfvfs(IPlugin):
         json += dfvfs_util.GetJson(image_id, curr_id, image_path)
         db_util.bulk(json)
 
+    def open(self, evidence):
+        """Returns the specified file using image file, meta or inode address, and outputfile"""
+        decoded_path_spec = JsonPathSpecSerializer.ReadSerialized(unicode(evidence['pathspec']))
+        file_entry = resolver.Resolver.OpenFileEntry(decoded_path_spec)
+        return file_entry.GetFileObject()
+
     def icat(self, evidence, output_file_path):
         """Returns the specified file using image file, meta or inode address, and outputfile"""
-
-        if not evidence['root'] in self.utils:
-            print('WAITING: ' + evidence['pid'])
-            with self.lock:
-                if not evidence['root'] in self.utils:
-                    print('ACCESS: ' + evidence['pid'])
-                    settings = []
-                    curr_id = evidence['root'].split('/')[1:]
-                    while curr_id[0] != 'TSK':
-                        settings.append(curr_id.pop(0).lower())
-                    settings.append('none')
-                    self.utils[evidence['root']] = DfvfsUtil(evidence['image_path'], settings, False)
-                    print('LEAVING: ' + evidence['pid'])
-                time.sleep(0.100)
-
-        dfvfs_util = self.utils[evidence['root']]
+        decoded_path_spec = JsonPathSpecSerializer.ReadSerialized(unicode(evidence['pathspec']))
 
         with self.lock:
-            if dfvfs_util.initialized > 0:
-                dfvfs_util.Icat(evidence['path'], output_file_path)
-            else:
-                logging.warn("Unable to icat file %s because no proper dfVFS settings", evidence['pid'])
+            file_entry = resolver.Resolver.OpenFileEntry(decoded_path_spec)
+            in_file = file_entry.GetFileObject()
+            out_file = open(output_file_path, "wb")
+            data = in_file.read(32768)
+            while data:
+                out_file.write(data)
+                data = in_file.read(32768)
+            in_file.close()
+            out_file.close()

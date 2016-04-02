@@ -39,6 +39,8 @@ class EfetchOutputModule(interface.OutputModule):
     self._elastic_db = None
     self._index_name = None
     self._image_id = None
+    self._image_id_value = None
+    self._uuid = None
     self._roots = []
     self._efetch_event_queue = {}
     self._image_path = None
@@ -239,7 +241,7 @@ class EfetchOutputModule(interface.OutputModule):
 
     return ret_dict
 
-  def RootToDict(self, root):
+  def _RootToDict(self, root):
     sections = root.split('/')
     dictionary = {}
     dictionary['image_id'] = sections[0]
@@ -265,7 +267,7 @@ class EfetchOutputModule(interface.OutputModule):
   def Close(self):
     """Disconnects from the elastic search server."""
     for root in self._roots:
-        self._data.append(self.RootToDict(root))
+        self._data.append(self._RootToDict(root))
     logging.info('What is left in the QUEUE: %s', str(self._efetch_event_queue))
     self._elastic_db.bulk_index(self._index_name, self._doc_type, self._data)
     self._data = []
@@ -274,22 +276,16 @@ class EfetchOutputModule(interface.OutputModule):
         self._index_name))
     sys.stdout.flush()
 
-  #CONVERT TO IMAGE_NAME
   def SetCaseName(self, case_name):
     """Set the case name for the ElasticSearch database connection.
 
     Args:
       case_name: the case name, used for the name of the index in the database.
     """
-    #TODO: That index should be named nicely, like Efetch_ImageName
-    #      Maybe just prompt for it! O_O BOOM! There it is!
     self._image_id = raw_input('Please specify an image name: ').lower()
     self._roots.append(self._image_id)
-    self._index_name = 'efetch-evidence_' + self._image_id
-    #if case_name:
-    #  self._index_name = case_name.lower()
-    #else:
-    #  self._index_name = uuid.uuid4().hex
+    self._uuid = uuid.uuid4().hex
+    self._index_name = u'efetch_evidence_' + self._uuid
 
   def SetDocumentType(self, document_type):
     """Set the document type for the ElasticSearch database connection.
@@ -366,7 +362,8 @@ class EfetchOutputModule(interface.OutputModule):
             u'properties': {
                 u'date': {
                     u'type': 'date',
-                    u'format': 'epoch_second'}
+                    u'format': 'epoch_second'
+                }
              }
         }
     }

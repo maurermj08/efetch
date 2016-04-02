@@ -52,7 +52,7 @@ class FaExttree(IPlugin):
         else:
             query_string = ""
 
-        events = helper.db_util.elasticsearch.search(index='efetch-evidence_' + evidence['image_id'], doc_type='event',
+        events = helper.db_util.elasticsearch.search(index='efetch_evidence_' + evidence['image_id'], doc_type='event',
                                                      body=ext_query(evidence['pid']))
 
         # TODO LOOP THROUGH EVENTS

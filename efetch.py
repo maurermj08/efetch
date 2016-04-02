@@ -1,5 +1,4 @@
-import cherrypy
-import getopt
+import argparse
 import json
 import logging
 import os
@@ -8,69 +7,46 @@ from bottle import Bottle, request, static_file, abort
 from utils.dfvfs_util import DfvfsUtil
 from utils.efetch_helper import EfetchHelper
 
+
 class Efetch(object):
-    def __init__(self, argv):
+    def __init__(self, argv, address, port, debug, cache_dir, max_file_size):
         """Initializes Efetch variables and utils.
         
         Args:
             argv ([str]): A list of system arguments
+            address: The hostname or IP address to listen on
+            port: The port number the server is running on
+            debug: The boolean that enables debug logging
+            cache_dir: The directory to cache temporary files
+            max_file_size: The max file size in Megabytes to cache
         """
-        try:
-            opts, args = getopt.getopt(argv, "ha:p:o:s:dD:m:",
-                    ["help", "address=", "port=", "output=", "size=", "debug", "maxfilesize="])
-        except getopt.GetoptError:
-            self.usage()
-            sys.exit(2)
 
-        self._address = "0.0.0.0"
-        self._port = "8080"
-        self._max_cache = 10000 #Megabytes
-        self._max_download_size = 100 #Megabytes
+        self._address = address
+        self._port = port
         self._helper = None
         self._app = Bottle()
 
         curr_dir = os.path.dirname(os.path.realpath(__file__))
-        output_dir = curr_dir + "/cache/"
-        upload_dir = curr_dir + "/uploads/"
-        logging.basicConfig(level=logging.INFO)
-        if not os.path.isdir(output_dir):
-            os.mkdir(output_dir)
+        output_dir = cache_dir
+        upload_dir = curr_dir + os.path.sep + u'uploads' + os.path.sep
 
-        for opt, arg in opts:
-            if opt in ("-h", "--help"):
-                self.usage()
-                sys.exit()
-            elif opt in ("-a", "--address"):
-                self._address = arg
-            elif opt in ("-p", "--port"):
-                self._port = str(arg)
-            elif opt in ("-o", "--output"):
-                self._output_dir = arg
-            elif opt in ("-s", "--size"):
-                self._max_cache = arg
-            elif opt in ('-d', "--debug"):
-                logging.basicConfig(level=logging.DEBUG)
-            elif opt in ('-m', "--maxfilesize"):
-                self._max_download_size = arg
-            else:
-                logging.error("Unknown argument " + opt)
-                self.usage()
-                sys.exit(2)
+        if debug:
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.INFO)
 
-        if not output_dir.endswith("/"):
-            output_dir += "/"
+        if not output_dir.endswith(os.path.sep):
+            output_dir += os.path.sep
         if not os.path.isdir(output_dir):
-            logging.error("Could not find output directory " + output_dir)
+            logging.error(u'Could not find output directory ' + output_dir)
             sys.exit(2)
 
-        self._helper = EfetchHelper(curr_dir, output_dir, upload_dir, self._max_download_size * 1000000)
+        self._helper = EfetchHelper(curr_dir, output_dir, upload_dir, max_file_size * 1000000)
 
         self._route()
 
     def start(self):
         """Starts the Bottle server."""
-        #self._app.run(host=self._address, port=self._port, server='gevent')
-        #self._app.run(host=self._address, port=self._port)
         self._app.run(host=self._address, port=self._port, server='cherrypy')
 
     def _route(self):
@@ -89,14 +65,10 @@ class Efetch(object):
             resource_path (str): Path to the resource starting at the resource directory.
         
         """
-        # TODO: Need better security
-        if '..' in str(resource_path):
-            return
-        else:
-            full_path = self._helper.resource_dir + resource_path
-            res_dir = os.path.dirname(full_path)
-            res_name = os.path.basename(full_path)
-            return static_file(res_name, root=res_dir)
+        full_path = self._helper.resource_dir + resource_path
+        res_dir = os.path.dirname(full_path)
+        res_name = os.path.basename(full_path)
+        return static_file(res_name, root=res_dir)
 
     def _index(self):
         """Returns the home page for Efetch."""
@@ -160,10 +132,10 @@ class Efetch(object):
 
         if image_id:
             # Get file from database
-            try:
-                evidence = self._helper.db_util.get_file(image_id, image_id + '/' + str(path))
-            except:
-                abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
+            # TODO ADD BACK # try:
+            evidence = self._helper.db_util.get_file(image_id, image_id + '/' + str(path))
+            # TODO ADD BACK # except:
+            #    abort(404, 'File "' + str(path) + '" not found for image "' + image_id + '"')
 
             # Cache file
             if plugin.plugin_object.cache:
@@ -187,24 +159,27 @@ class Efetch(object):
         return plugin.plugin_object.get(evidence, self._helper,
                 file_cache_path, request, children)
 
-    def usage(self):
-        """Usage string for Efetch command line"""
-        print("usage: efetch.py [-h] [-a ADDRESS] [-p PORT] [-o DIR ] [-s SIZE] [-d] [-D DATABASE] [-m maxfilesize]")
-        print("")
-        print("efetch is a simple webserver that can return files and thumbnails from an image.")
-        print("!!!WARNING!!! there are major known security issues if this is run as root and externally facing!")
-        print("")
-        print("optional arguments:")
-        print("  -h, --help         shows this help message and exits")
-        print("  -a, --address      sets the IP address or hostname this server runs on, defaults to localhost")
-        print("  -p, --port         sets the port this server runs on, defaults to 8080")
-        print("  -o, --output       directory to store output files")
-        print("  -s, --size         the max size of cache storage, defaults to 1GB [NOT IMPLEMENTED]")
-        print("  -d, --debug        displays debug output")
-        print("  -D, --database     use an existing database file")
-        print("  -m, --maxfilesize  max file size to download when caching files")
-        print("")
-
-if __name__=="__main__":
-    efetch = Efetch(sys.argv[1:])
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(u'-a', u'--address',
+                        help=u'the IP address or hostname this server runs on',
+                        action=u'store',
+                        default=u'0.0.0.0')
+    parser.add_argument(u'-p', u'--port', type=str,
+                        help=u'the port this servers runs on',
+                        action=u'store',
+                        default=8080)
+    parser.add_argument(u'-d', u'--debug',
+                        help=u'displays debug output',
+                        action=u'store_true')
+    parser.add_argument(u'-c', u'--cache', type=str,
+                        help=u'the directory to stored cached files',
+                        action=u'store',
+                        default=os.path.dirname(os.path.realpath(__file__)) + os.path.sep + u'cache' + os.path.sep)
+    parser.add_argument(u'-m', u'--maxfilesize', type=int,
+                        help=u'the max file size allowed to be cached in Megabytes',
+                        action=u'store',
+                        default=10000)
+    args = parser.parse_args()
+    efetch = Efetch(sys.argv[1:], args.address, args.port, args.debug, args.cache, args.maxfilesize)
     efetch.start()

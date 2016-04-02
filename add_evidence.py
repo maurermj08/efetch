@@ -103,7 +103,7 @@ def add_image(image_id, image_path, db_util, settings):
         options = dfvfs_util.options
         return False
 
-    index_name = 'efetch-evidence_' + image_id
+    index_name = 'efetch_evidence_' + image_id
     db_util.create_index(index_name)
     root = {
                 '_index': index_name,

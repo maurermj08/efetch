@@ -87,7 +87,7 @@ class FaTimeline(IPlugin):
         else:
             query_body['query'] = {'bool': query_bool}
 
-        events = helper.db_util.elasticsearch.search(index='efetch-evidence_' + evidence['image_id'], doc_type='event',
+        events = helper.db_util.elasticsearch.search(index='efetch_evidence_' + evidence['image_id'], doc_type='event',
                                                      body=query_body)
         # Create Table
         table = '<thead>\n<tr>\n'

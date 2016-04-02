@@ -5,16 +5,15 @@ import magic
 import os
 import time
 import threading
-from bottle import abort
 from db_util import DBUtil
 from PIL import Image
 from yapsy.PluginManager import PluginManager
 
+
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
 
-    def __init__(self, curr_directory, output_directory, upload_directory,
-            max_file_size, es_url=None):
+    def __init__(self, curr_directory, output_directory, upload_directory, max_file_size, es_url=None):
         """Initializes the Efetch Helper"""
         _pymagic = None
         _my_magic = None
@@ -22,27 +21,27 @@ class EfetchHelper(object):
         self._write_dict = {}
         self.max_file_size = max_file_size
 
-        #Setup directory references
+        # Setup directory references
         self.curr_dir = curr_directory
         self.output_dir = output_directory
         self.upload_dir = upload_directory
-        self.resource_dir = self.curr_dir + '/resources/'
-        self.icon_dir = self.resource_dir + 'icons/'
+        self.resource_dir = self.curr_dir + os.path.sep + u'resources' + os.path.sep
+        self.icon_dir = self.resource_dir + u'icons' + os.path.sep
         if not os.path.isdir(self.icon_dir):
-            logging.error('Could not find icon directory ' + self.icon_dir)
+            logging.error(u'Could not find icon directory ' + self.icon_dir)
 
-        #Elastic Search DB setup
+        # Elastic Search DB setup
         if es_url:
             self.db_util = DBUtil()
         else:
             self.db_util = DBUtil(es_url)
         
-        #Plugin Manager Setup
+        # Plugin Manager Setup
         self.plugin_manager = PluginManager()
-        self.plugin_manager.setPluginPlaces([self.curr_dir + '/plugins/'])
+        self.plugin_manager.setPluginPlaces([self.curr_dir + u'/plugins/'])
         self.reload_plugins()
 
-        #Determine which magic lib to use
+        # Determine which magic lib to use
         try:
             self._my_magic = magic.Magic(mime=True)
             self._pymagic = True
@@ -116,14 +115,13 @@ class EfetchHelper(object):
         if int(curr_file['file_size'][0]) > self.max_file_size:
             return None
 
-        #TODO: Not everything will have an iid... so need to figure that out
         file_cache_path = self.output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
         file_cache_dir = self.output_dir + 'files/' + curr_file['iid'] + '/'
         thumbnail_cache_path = self.output_dir + 'thumbnails/' + curr_file['iid'] + '/' + \
                 curr_file['name']
         thumbnail_cache_dir = self.output_dir + 'thumbnails/' + curr_file['iid'] + '/'
 
-        #Makesure cache directories exist 
+        # Makesure cache directories exist
         if not os.path.isdir(thumbnail_cache_dir):
             os.makedirs(thumbnail_cache_dir)
         if not os.path.isdir(file_cache_dir):
@@ -133,7 +131,7 @@ class EfetchHelper(object):
         
         write = False
 
-        #If file does not exist cat it to directory
+        # If file does not exist cat it to directory
         if not os.path.isfile(file_cache_path):
             with self._edit_lock:
                 if file_cache_path in self._write_dict or os.path.isfile(file_cache_path):
@@ -148,10 +146,10 @@ class EfetchHelper(object):
                 self.plugin_manager.getPluginByName(curr_file['driver']).plugin_object.icat(curr_file, 
                         file_cache_path)
 
-                #Uses extension to determine if it should create a thumbnail
+                # Uses extension to determine if it should create a thumbnail
                 assumed_mimetype = self.guess_mimetype(str(curr_file['ext']).lower())
 
-                #If the file is an image create a thumbnail
+                # If the file is an image create a thumbnail
                 if assumed_mimetype.startswith('image') and create_thumbnail and \
                         not os.path.isfile(thumbnail_cache_path):
                     try:

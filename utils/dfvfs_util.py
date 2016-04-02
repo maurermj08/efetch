@@ -112,7 +112,7 @@ class DfvfsUtil(object):
 
     def _ConvertToJson(self, image_id, curr_id, image_path, file_object, curr_path, name):
         """Converts a dfVFS file_entry to an Efetch evidence json"""
-        index_name = 'efetch-evidence_' + image_id
+        index_name = 'efetch_evidence_' + image_id
         tsk_object = file_object._tsk_file
 
         if tsk_object.info.meta == None:

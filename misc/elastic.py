@@ -316,7 +316,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
     #      Maybe just prompt for it! O_O BOOM! There it is!
     self._image_id = raw_input('Please specify an image name: ').lower()
     self._roots.append(self._image_id)
-    self._index_name = 'efetch-evidence_' + self._image_id
+    self._index_name = 'efetch_evidence_' + self._image_id
     #if case_name:
     #  self._index_name = case_name.lower()
     #else:
