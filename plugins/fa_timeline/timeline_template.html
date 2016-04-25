@@ -8,6 +8,7 @@
         <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
         <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
         <script type="text/javascript" src="/resources/datagrid-detailview.js"></script>
+        <script type="text/javascript" src="/resources/datagrid-scrollview.js"></script>
 <style>
     html{
         height: 100%;
@@ -22,9 +23,8 @@
 </head>
     <body>
         <div class="easyui-layout" style="width:100%;height:100%;">
-            <table id="tl01" class="easyui-datagrid" style="width:100%;height:100%;" 
-                url="/plugins/<!-- Plugin -->/<!-- PID -->?mode=events<!-- Filter -->"
-                title="<!-- Title -->" sortName="<!-- Sort -->" sortOrder="desc" rownumbers="false" pagination="true" singleSelect="true">
+            <table id="tl01"  class="easyui-datagrid"  style="width:100%;height:100%;"
+        data-options="url:'/plugins/<!-- Plugin -->/<!-- PID -->?mode=events<!-- Filter -->',view:scrollview,singleSelect:true,pageSize:50,fitColumns:true">
                 <!-- Table -->
             </table>
         </div>

@@ -8,6 +8,7 @@
         <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
         <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
         <script type="text/javascript" src="/resources/datagrid-detailview.js"></script>
+        <script type="text/javascript" src="/resources/datagrid-scrollview.js"></script>
 <style>
     html{
         height: 100%;
@@ -29,11 +30,9 @@
     <body>
         <div class="easyui-layout" style="width:100%;height:100%;">
             <div data-options="region:'north',split:true" style="height:300px">
-                <table id="tl01" class="easyui-datagrid" style="width:100%;height:100%;" 
-                    url="/plugins/<!-- Plugin -->/<!-- PID -->?mode=events<!-- Filter -->"
-                    title="<!-- Title -->" sortName="<!-- Sort -->" sortOrder="desc" rownumbers="false" pagination="true" singleSelect="true">
-                    <!-- Table -->
-                </table>
+            <table id="tl01"  class="easyui-datagrid"  style="width:100%;height:100%;" data-options="url:'/plugins/<!-- Plugin -->/<!-- PID -->?mode=events<!-- Filter -->',view:scrollview,singleSelect:true,pageSize:50,fitColumns:true">
+                <!-- Table -->
+            </table>
             </div>
             <div data-options="region:'center'">
                 <iframe name="timeline_frame" id="timeline_frame" target="self" src="<!-- Home -->"></iframe>
@@ -43,39 +42,17 @@
             function formatLinkUrl(val,row){
                 if (row.meta_type == 'Directory') {
                     var url = '/plugins/<!-- Plugin -->/'+ row.pid + '<!-- Query -->';
-                    return '<a href="'+url+'" target="_self"><!-- Title --></a>';
+                    return '<a href="'+url+'" target="_self">Navigate</a>';
                 }
                 else {
                     var url = '/plugins/<!-- Children -->'+row.pid;
-                    return '<a href="'+url+'" target="timeline_frame"><!-- Child --></a>';
+                    return '<a href="'+url+'" target="timeline_frame">Open</a>';
                 }
             }
             function formatThumbnail(val,row){
                 var url = '/plugins/fa_thumbnail/'+row.pid;
                 return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';
             }
-            /* $(function(){
-                $('#tl01').datagrid({
-                    view: detailview,
-                    detailFormatter:function(index,row){
-                        return '<div class="ddv" style="padding:2px 0"></div>';
-                    },
-                    onExpandRow: function(index,row){
-                        var ddv = $(this).datagrid('getRowDetail',index).find('div.ddv');
-                        ddv.panel({
-                            height:600,
-                            width:800,
-                            border:false,
-                            cache:false,
-                            href:'/plugins/fa_blank/fa_analyze/'+row.pid,
-                            onLoad:function(){
-                                $('#dg').datagrid('fixDetailRowHeight',index);
-                            }
-                        });
-                        $('#dg').datagrid('fixDetailRowHeight',index);
-                    }
-                });
-            }); */
         </script>
     </body>
 </html>

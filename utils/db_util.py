@@ -237,7 +237,8 @@ def evidence_template():
                     "uid" : {"type": "string", "index" : "not_analyzed"},
                     "gid" : {"type": "string", "index" : "not_analyzed"},
                     "driver" : {"type": "string", "index" : "not_analyzed"},
-                    "source_short" : {"type": "string", "index" : "not_analyzed"}
+                    "source_short" : {"type": "string", "index" : "not_analyzed"},
+                    "datetime" : {"type": "string", "index" : "not_analyzed"}
                     }
             }
         }

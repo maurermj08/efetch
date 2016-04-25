@@ -92,15 +92,18 @@ class FaTimeline(IPlugin):
         # Create Table
         table = '<thead>\n<tr>\n'
         columns = set()
+        #table += '    <th formatter="formatThumbnail" field="Thumbnail">Thumbnail</th>\n'
+        #table += '    <th formatter="formatLinkUrl" field="Link">Analyze</th>\n'
         table += '    <th formatter="formatThumbnail" field="Thumbnail" sortable="false">Thumbnail</th>\n'
-        table += '    <th formatter="formatLinkUrl" field="Link" sortable="false">Analyze</th>\n'
+        table += '    <th formatter="formatLinkUrl" field="Link" sortable="false" width="30">Analyze</th>\n'
 
         for item in events['hits']['hits']:
             source = item['_source']
             for key in source:
                 columns.add(key)
         for key in prefix:
-            table += '    <th field="' + key + '" sortable="true">' + key + '</th>\n'
+            #table += '    <th field="' + key + '">' + key + '</th>\n'
+            table += '    <th field="' + key + '" sortable="true"  width="50">' + key + '</th>\n'
         #Slows down loading too much
         #for key in columns:
         #    if key not in prefix:
