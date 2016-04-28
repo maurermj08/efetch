@@ -1,0 +1,10 @@
+[Core]
+Name = fa_torrent
+Module = fa_torrent
+
+[Documentation]
+Author = Michael Maurer Credit Mohan Raj
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = A simple torrent plugin based on torrentparse by Mohan Raj
+Copyright = 2016
