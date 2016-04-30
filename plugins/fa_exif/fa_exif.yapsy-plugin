@@ -1,0 +1,10 @@
+[Core]
+Name = fa_exif
+Module = fa_exif
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Prints ExifTags from an image using PIL
+Copyright = 2016

@@ -44,16 +44,22 @@ class FaHash(IPlugin):
             hash_type = 'md5'
         hasher = hashers[hash_type]
 
-        with open(path_on_disk, 'rb') as fh:
-            data = fh.read(block_size)
-            while data:
-                hasher.update(data)
-                data = fh.read(block_size)
-            fh.close()
-            hash_time = datetime.datetime.now()
-            hash_result = hasher.hexdigest()
-            update = {hash_type: hash_time, hash_type + "_digest": hash_result}
-            file_id = evidence['pid']
-            helper.db_util.update_by_ppid(file_id, update)
-            return '<xmp style="white-space: pre-wrap;">Done</xmp>'
-        return '<xmp style="white-space: pre-wrap;">Error</xmp>'
+        if hash_type + '_digest' not in evidence:
+            try:
+                with open(path_on_disk, 'rb') as fh:
+                    data = fh.read(block_size)
+                    while data:
+                        hasher.update(data)
+                        data = fh.read(block_size)
+                    fh.close()
+                    hash_time = datetime.datetime.now()
+                    hash_result = hasher.hexdigest()
+                    update = {hash_type + '_time': hash_time, hash_type + "_digest": hash_result}
+                    helper.db_util.update_by_ppid(evidence['pid'], update)
+            except:
+                return '<xmp style="white-space: pre-wrap;">Error</xmp>'
+        else:
+            hash_result = evidence[hash_type + '_digest']
+
+        return '<xmp style="white-space: pre-wrap;">' + hash_type + ': ' + hash_result + '</xmp>'
+

@@ -12,6 +12,8 @@ class FaOverview(IPlugin):
         self.popularity = 10
         self.parent = False
         self.cache = False
+        self._order = [ 'thumbnail', 'path', 'mtime', 'atime', 'ctime', 'crtime', 'file_size', 'pid', 'mimetype', 'dir',
+                        'name', 'ext', 'root', 'iid']
         IPlugin.__init__(self)
 
     def activate(self):
@@ -35,8 +37,17 @@ class FaOverview(IPlugin):
 
         listing = []
 
-        for item in evidence:
-            listing.append('<tr><td>' + str(item) + '</td><td>' + str(evidence[item]) + '</td></tr>')
+        for item in self._order:
+            if item == 'thumbnail':
+                listing.append('<tr><td>' + str(item) + '</td><td><img src="/plugins/fa_thumbnail/' + evidence['pid'] +
+                        '" alt="' + evidence['meta_type'] + '-' + evidence['ext'] + '" title="' + evidence['meta_type']
+                        + '-' + evidence['ext'] + '" style="width:64px;height:64px;"></td></tr>')
+            elif item in evidence:
+                listing.append('<tr><td>' + str(item) + '</td><td>' + str(evidence[item]) + '</td></tr>')
+
+        for item in sorted(evidence):
+            if item not in self._order:
+                listing.append('<tr><td>' + str(item) + '</td><td>' + str(evidence[item]) + '</td></tr>')
 
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
