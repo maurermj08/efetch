@@ -26,7 +26,7 @@ class FaExif(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         allowed = [ 'image/jpeg', 'image/tiff', 'image/x-tiff' ]
         return evidence['mimetype'].lower() in allowed
 

@@ -23,7 +23,7 @@ class FaPstview(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         allowed_mimetype = ['application/octet-stream']
         allowed_extensions = ['pst', 'pab', 'pff', 'ost', 'off']
         return str(evidence['mimetype']).lower() in allowed_mimetype and evidence['ext'].lower() in allowed_extensions

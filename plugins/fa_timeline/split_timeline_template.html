@@ -39,6 +39,7 @@
             </div>
         </div>
         <script type="text/javascript">
+            $('#tl01').datagrid({loadMsg:''});
             function formatLinkUrl(val,row){
                 if (row.meta_type == 'Directory') {
                     var url = '/plugins/<!-- Plugin -->/'+ row.pid + '<!-- Query -->';
@@ -53,6 +54,50 @@
                 var url = '/plugins/fa_thumbnail/'+row.pid;
                 return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';
             }
+
+            bookmark_version = 0
+            if (typeof(Storage) !== "undefined") {
+                if (localStorage.getItem("fa_star_version") === null) {
+                    localStorage.setItem("fa_star_version", 0);
+                }
+
+                // Store
+                bookmark_version = localStorage.getItem("fa_star_version");
+            }
+
+            $(window).bind('storage', function (e) {
+                // Retrieve
+                new_bookmark_version = localStorage.getItem("fa_star_version");
+
+                if (new_bookmark_version != bookmark_version)
+                {
+                    bookmark_version = new_bookmark_version;
+                    setTimeout(function() {
+                        $('#tl01').datagrid("load");
+                    }, 2000);
+                }
+            });
+
+            function toggleStar(pid, img_id) {
+                console.log('toggle started');
+                $.get('/plugins/fa_togglestar/' + pid + '/?image_id=' + img_id, function(data) {
+                    var json_data = JSON.parse(data)
+                    $('#' + json_data.img_id).attr('src', json_data.img);
+                    console.log('Found: ' + json_data);
+                    if (typeof(Storage) !== "undefined") {
+                        if (localStorage.getItem("fa_star_version") === null) {
+                            localStorage.setItem("fa_star_version", 0);
+                        }
+                        else {
+                            // Store
+                            localStorage.setItem('fa_star_version', (Number(localStorage.getItem('fa_star_version')) + 1) % 10000);
+                        }
+                    }
+                    console.log('version: ' + (localStorage.getItem('fa_star_version') + 1));
+                })
+                return false;
+            }
         </script>
+        <iframe name="hidden" id="hidden" target="self" width="0" height="0" border="0"></iframe>
     </body>
 </html>

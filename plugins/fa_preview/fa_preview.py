@@ -24,7 +24,7 @@ class FaPreview(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         allowed_mimetype = ['application/xml', 'application/pdf']
         allowed_prefix = ['image', 'text', 'video', 'audio']
         return (str(evidence['mimetype'].split('/')[0]).lower() in allowed_prefix

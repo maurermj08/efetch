@@ -26,7 +26,7 @@ class FaPstviewAjax(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         return True
 
     def mimetype(self, mimetype):

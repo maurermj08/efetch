@@ -24,7 +24,7 @@ class FaBrowser(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         return True
 
     def mimetype(self, mimetype):
@@ -66,7 +66,7 @@ class FaBrowser(IPlugin):
                 listing.append(
                     '        <td><img src="/plugins/fa_thumbnail/' + evidence_item['pid'] + '" alt="' + evidence_item[
                         'meta_type'] + '-' + evidence_item['ext'] + '" title="' + evidence_item['meta_type'] + '-' +
-                    evidence_item['ext'] + '" style="width:32px;height:32px;"></td>')
+                    evidence_item['ext'] + '" style="width:48px;height:48px;"></td>')
                 if evidence_item['meta_type'] == 'Directory':
                     listing.append(
                         '        <td><a href="/plugins/' + evidence_item_plugin + '/' + child_plugins + evidence_item[
@@ -97,10 +97,22 @@ class FaBrowser(IPlugin):
                 else:
                     listing.append("        <td>" + str(evidence_item['file_size']) + "</td>")
 
-                # if 'bookmark' not in evidence_item or evidence_item['bookmark'] == 'false':
-                #    listing.append("        <td><img src='/reevidence_items/images/notbookmarked.png'></td>")
-                # else:
-                #    listing.append("        <td><img src='/reevidence_items/images/bookmarked.png'></td>")
+                if 'star' not in evidence_item or not evidence_item['star']:
+                    listing.append("""
+                            <td>
+                                <form  id='""" + evidence_item['pid'] + """' target='hidden' action='/plugins/fa_star/""" + evidence_item['pid'] + """'>
+                                    <input type='image' src='/resources/images/notbookmarked.png'>
+                                </form>
+                            </td>
+                            """)
+                else:
+                    listing.append("""
+                            <td>
+                                <form id='""" + evidence_item['pid'] + """' target='hidden' action='/plugins/fa_unstar/""" + evidence_item['pid'] + """'>
+                                    <input type='image' src='/resources/images/bookmarked.png'>
+                                </form>
+                            </td>
+                            """)
                 listing.append("    </tr>")
 
         # Creates HTML page

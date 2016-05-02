@@ -5,6 +5,7 @@ Gets all Log2Timeline entries for the current file
 from yapsy.IPlugin import IPlugin
 from urllib import urlencode
 import os
+import uuid
 import logging
 
 
@@ -26,7 +27,7 @@ class FaTimeline(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         return 'parser' in evidence
 
     def mimetype(self, mimetype):
@@ -35,7 +36,8 @@ class FaTimeline(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children, logs=True, files=False, directories=False,
             sub_directories=True, evidence_item_plugin='fa_timeline', title='Log2timeline',
-            prefix = ['datetime', 'parser', 'message', 'filename', 'source_short', 'source_long', 'data_type', 'pid']):
+            prefix = ['datetime', 'parser', 'message', 'filename', 'source_short', 'source_long',
+                      'data_type', 'pid', 'star']):
         """Returns the result of this plugin to be displayed in a browser"""
         raw_filter = helper.get_request_value(request, 'filter', '{}')
         filter_query = helper.get_filter(request)
@@ -97,18 +99,20 @@ class FaTimeline(IPlugin):
         table += '    <th formatter="formatThumbnail" field="Thumbnail" sortable="false">Thumbnail</th>\n'
         table += '    <th formatter="formatLinkUrl" field="Link" sortable="false" width="30">Analyze</th>\n'
 
-        for item in events['hits']['hits']:
-            source = item['_source']
-            for key in source:
-                columns.add(key)
+        #for item in events['hits']['hits']:
+        #    source = item['_source']
+        #    for key in source:
+        #        columns.add(key)
         for key in prefix:
-            #table += '    <th field="' + key + '">' + key + '</th>\n'
             table += '    <th field="' + key + '" sortable="true"  width="50">' + key + '</th>\n'
         #Slows down loading too much
         #for key in columns:
         #    if key not in prefix:
         #        table += '    <th field="' + key + '" sortable="true">' + key + '</th>\n'
         table += '</tr>\n</thead>\n'
+
+        if 'pid' not in prefix:
+            prefix.append('pid')
 
         if mode == 'events':
             event_dict = {}
@@ -117,8 +121,23 @@ class FaTimeline(IPlugin):
             for item in events['hits']['hits']:
                 event_row = {}
                 source = item['_source']
-                for key in columns:
-                    if key in source:
+                for key in prefix:
+                    if key == 'star':
+                        if 'star' not in source or not source['star']:
+                            # row_id = str(uuid.uuid4())
+                            event_row[key] = """
+                                        <form target='hidden' onsubmit='return toggleStar("""  + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
+                                            <input id='""" + source['uuid'] + """' type='image' src='/resources/images/notbookmarked.png'>
+                                        </form>
+                                    """
+                        else:
+                            # row_id = str(uuid.uuid4())
+                            event_row[key] = """
+                                        <form target='hidden' onsubmit='return toggleStar(""" + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
+                                            <input id='""" + source['uuid'] + """' type='image' src='/resources/images/bookmarked.png'>
+                                        </form>
+                                    """
+                    elif key in source:
                         try:
                             event_row[key] = str(source[key])
                         except:

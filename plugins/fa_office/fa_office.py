@@ -24,7 +24,7 @@ class FaOffice(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         allowed = ['application/mspowerpoint', 'application/vnd.ms-powerpoint', 'application/msword',
                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/x-latex',
                    'application/application/vnd.oasis.opendocument.text',

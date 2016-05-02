@@ -35,8 +35,8 @@ class FaTorrent(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         allowed_mimetype = ['application/x-bittorrent']
         return str(evidence['mimetype']).lower() in allowed_mimetype
 

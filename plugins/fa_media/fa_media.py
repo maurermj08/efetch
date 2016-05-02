@@ -1,5 +1,5 @@
 """
-Converts a multimedia file to a HTML5 compatable file and displays it
+Converts a multimedia file to a HTML5 compatible file and displays it
 """
 
 from yapsy.IPlugin import IPlugin
@@ -24,7 +24,7 @@ class FaMedia(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         allowed = ['video/x-ms-asf', 'video/x-ms-asf', 'video/x-ms-asf-plugin', 'video/x-ms-asf', 'video/avi',
                    'video/msvideo', 'video/x-msvideo', 'video/avs-video', 'video/x-dv', 'video/dl', 'video/x-dl',
                    'video/x-dv', 'video/fli', 'video/x-fli', 'video/x-atomic3d-feature', 'video/gl', 'video/x-gl',

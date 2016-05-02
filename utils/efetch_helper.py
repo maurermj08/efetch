@@ -154,7 +154,7 @@ class EfetchHelper(object):
                         not os.path.isfile(thumbnail_cache_path):
                     try:
                         image = Image.open(file_cache_path)
-                        image.thumbnail('42x42')
+                        image.thumbnail('64x64')
                         image.save(thumbnail_cache_path)
                     except IOError:
                         logging.warn('IOError when trying to create thumbnail for ' + curr_file['name'] + \

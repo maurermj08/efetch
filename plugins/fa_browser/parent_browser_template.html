@@ -10,7 +10,7 @@
         <script type="text/javascript" src="/resources/jquery.dataTables.min.js"></script>
         <script type="text/javascript" src="/resources/dataTables.title-string.js"></script>
         <script type="text/javascript" class="init">
-                
+        bookmark_version = 0
         $(document).ready(function() {
                     $('#t01').DataTable({
                             "paging": false,
@@ -24,7 +24,27 @@
                             }
                     );
             } );
-        </script>
+
+        if (typeof(Storage) !== "undefined") {
+            if (localStorage.getItem("fa_star_version") === null) {
+                localStorage.setItem("fa_star_version", 0);
+            }
+
+            // Store
+            bookmark_version = localStorage.getItem("fa_star_version");
+        }
+
+        $(window).bind('storage', function (e) {
+            // Retrieve
+            new_bookmark_version = localStorage.getItem("fa_star_version");
+
+            if (new_bookmark_version != bookmark_version)
+            {
+                bookmark_version = new_bookmark_version;
+                alert("Todo Change");
+            }
+        });
+    </script>
 
 <style>
     table {
@@ -78,7 +98,7 @@
                     <th>Changed</th>
                     <th>Created</th>
                     <th>Size (Bytes)</th>
-                    <!-- <th>Bookmarked</th> -->
+                    <th>Star</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -89,6 +109,7 @@
         <div data-options="region:'center'">
             <iframe name="file_dir_frame" id="file_dir_frame" target="self" src="<!-- Home -->"></iframe>
         </div>
+        <iframe name="hidden" id="hidden" target="self" width="0" height="0" border="0"></iframe>
     </div>
  
     </body>

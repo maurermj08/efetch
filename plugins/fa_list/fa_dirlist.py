@@ -24,7 +24,7 @@ class FaDirlist(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         return True
 
     def mimetype(self, mimetype):
@@ -38,4 +38,6 @@ class FaDirlist(IPlugin):
                                                                                      children, False, False, True,
                                                                                       False, 'fa_dirlist',
                                                                                       self.display_name,
-                                                                                      ['name', 'mtime', 'atime', 'ctime', 'crtime', 'file_size'])
+                                                                                      ['name', 'mtime', 'atime',
+                                                                                       'ctime', 'crtime', 'file_size',
+                                                                                       'star'])

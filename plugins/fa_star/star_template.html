@@ -1,0 +1,20 @@
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head runat="server">
+    <title></title>
+    <script src="/resources/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript">
+        if (typeof(Storage) !== "undefined") {
+            if (localStorage.getItem("fa_star_version") === null) {
+                localStorage.setItem("fa_star_version", 0);
+            }
+            else {
+                // Store
+                localStorage.setItem('fa_star_version', (Number(localStorage.getItem('fa_star_version')) + 1) % 10000);
+            }
+        }
+        console.log('version: ' + (localStorage.getItem('fa_star_version') + 1));
+    </script>
+</head>
+<body>
+</body>
+</html>

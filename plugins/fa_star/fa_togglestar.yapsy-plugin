@@ -1,0 +1,10 @@
+[Core]
+Name = fa_togglestar
+Module = fa_togglestar
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Toggles the bookmark of a single evidence item
+Copyright = 2016

@@ -23,7 +23,7 @@ class FaRegview(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         allowed = ['application/octet-stream']
         return str(evidence['mimetype']).lower() in allowed
 

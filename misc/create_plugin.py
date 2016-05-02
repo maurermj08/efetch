@@ -124,7 +124,7 @@ def get_popularity():
 
 def get_parent():
     global parent
-    parent = str(not raw_input("Is parent [Y/n]: ").lower().startswith('n'))
+    parent = str(not raw_input("Is parent [Y/n]: ").strip().lower().startswith('n'))
     
 def get_imports():
     global imports

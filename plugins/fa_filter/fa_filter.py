@@ -27,7 +27,7 @@ class FaFilter(IPlugin):
         return
 
     def check(self, evidence, path_on_disk):
-        """Checks if the file is compatable with this plugin"""
+        """Checks if the file is compatible with this plugin"""
         return True
 
     def mimetype(self, mimetype):
@@ -74,6 +74,12 @@ class FaFilter(IPlugin):
         all_filters = json.loads(filters)
         if 'readyState' in all_filters:
             del all_filters['readyState']
+
+        #if key == 'star':
+        #    if value.lower() == 'true':
+        #        value = True
+        #    else:
+        #        value = False
 
         all_filters[str(uuid.uuid4())] = {'value': value, query_type: key, 'type': filter_type}
 
@@ -126,12 +132,13 @@ class FaFilter(IPlugin):
                 <div data-options=""" + '"' + query_type + """:'meta_type'">meta_type</div>
                 <div data-options=""" + '"' + query_type + """:'parser'">parser</div>
                 <div data-options=""" + '"' + query_type + """:'source_short'">source_short</div>
+                <div data-options=""" + '"' + query_type + """:'source_short'">star</div>
             </div>"""
         body = []
 
         for key in all_filters:
             title = all_filters[key][query_type] + ' ' + all_filters[key]['type'].replace('_', ' ') + ' be "' + \
-                    all_filters[key]['value'] + '"'
+                    str(all_filters[key]['value']) + '"'
             body.append(
                 """<div class="easyui-menubutton" data-options="menu:'#""" + key + """',iconCls:'icon-ok'">""" + title + """</div>""")
             body.append("""<div id=""" + '"' + key + '"' + """ style="width:100px;">""")
