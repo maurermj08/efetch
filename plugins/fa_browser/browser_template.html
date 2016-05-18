@@ -11,6 +11,7 @@
         <script type="text/javascript" src="/resources/dataTables.title-string.js"></script>
         <script type="text/javascript" class="init">
                 
+        bookmark_version = 0
         $(document).ready(function() {
                     $('#t01').DataTable({
                             "paging": false,
@@ -24,6 +25,47 @@
                             }
                     );
             } );
+
+        if (typeof(Storage) !== "undefined") {
+            if (localStorage.getItem("fa_star_version") === null) {
+                localStorage.setItem("fa_star_version", 0);
+            }
+
+            // Store
+            bookmark_version = localStorage.getItem("fa_star_version");
+        }
+
+        $(window).bind('storage', function (e) {
+            // Retrieve
+            new_bookmark_version = localStorage.getItem("fa_star_version");
+
+            if (new_bookmark_version != bookmark_version)
+            {
+                bookmark_version = new_bookmark_version;
+                // setTimeout(function() { location.reload(); }, 1000);
+                // TODO Make this table use ajax and just make the ajax call
+            }
+        });
+
+        function toggleStar(pid, img_id) {
+                console.log('toggle started');
+                $.get('/plugins/fa_togglestar/' + pid + '/?image_id=' + img_id, function(data) {
+                    var json_data = JSON.parse(data)
+                    $('#' + json_data.img_id).attr('src', json_data.img);
+                    console.log('Found: ' + json_data);
+                    if (typeof(Storage) !== "undefined") {
+                        if (localStorage.getItem("fa_star_version") === null) {
+                            localStorage.setItem("fa_star_version", 0);
+                        }
+                        else {
+                            // Store
+                            localStorage.setItem('fa_star_version', (Number(localStorage.getItem('fa_star_version')) + 1) % 10000);
+                        }
+                    }
+                    console.log('version: ' + (localStorage.getItem('fa_star_version') + 1));
+                })
+                return false;
+        }
         </script>
 
 <style>

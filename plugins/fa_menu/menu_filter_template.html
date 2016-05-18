@@ -1,0 +1,119 @@
+<html xmlns="http://www.w3.org/1999/xhtml" > 
+<head > 
+        <script src="/resources/jquery-1.11.3.min.js"></script>
+        <script src="/resources/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
+        <link rel="stylesheet" type="text/css" href="/resources/themes/default/easyui.css">
+        <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
+        <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
+        <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
+        <script type="text/javascript" src="/resources/datagrid-detailview.js"></script>
+    <style> 
+        #<!-- Plugin -->_iframe {
+            height: calc(100% - 28px);
+            width: 100%;
+            top:0; 
+            bottom:0; 
+            right:0;    
+            left:0;
+            border: 0px;
+        }
+        html{
+            height: 100%;
+        }
+
+        body {
+            min-height: 100%;
+            margin: 0px;
+        }
+        .combo-panel {
+            height: inherit !important;
+        }
+        #header {
+            background-color:#EDF7FF;
+            text-align:left;
+            height: 28px;
+            width: 100%;
+        }
+        #bottom {
+            width: 100%;
+        }
+    </style>
+</head> 
+<body> 
+    <div id="header">
+        <div class="easyui-panel" id='filter_panel' style="width:100%;">
+        </div>
+        <script>
+            var filters = <!-- Filters -->;
+
+            reloadPanel();
+
+            function addFilter(value,<!-- Type -->){
+                console.log('Adding filter with value='+value+' and <!-- Type -->='+<!-- Type -->);
+                console.log('OLD: Filters='+JSON.stringify(filters));
+                $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=add_filter&value='+value+'&<!-- Type -->='+<!-- Type -->+
+                    '&type='+$('#filter_type').combobox('getValue')+'&filters='+encodeURI(JSON.stringify(filters)),
+                    function(data) { 
+                        filters = data; 
+                        console.log('NEW: Filters='+JSON.stringify(filters));
+                        reloadPanel();
+                        updateFilter();
+                        });
+            };
+            function removeFilter(uid){
+                console.log('Removing filter '+uid);
+                console.log('OLD: Filters='+JSON.stringify(filters));
+                filters = $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=remove_filter&uid='+uid+
+                    '&filters='+encodeURI(JSON.stringify(filters)),
+                    function(data) {
+                        filters = data;
+                        console.log('NEW: Filters='+JSON.stringify(filters));
+                        reloadPanel();
+                        updateFilter();
+                    });
+            };
+            function updateFilter(){
+                console.log('Updating filter');
+                var filter = $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=get_filter&filters='+encodeURI(JSON.stringify(filters)),
+                        function(data) {
+                            filter = data;
+                            var new_encoded_filter = encodeURI(JSON.stringify(filter));
+                            var url = document.getElementById("<!-- Plugin -->_iframe").contentWindow.location.href;
+                            
+                            //Replaces existing filters or adds a new filter variable to child's url
+                            if (url.indexOf('filter=') >= 0) {
+                                var new_url = (url + '&').replace(/(filter=).*?(&)/,'$1' + new_encoded_filter + '$2');
+                            }
+                            else if (url.indexOf('?') >= 0) {
+                                var new_url = url + '&filter=' + new_encoded_filter;
+                            }
+                            else {
+                                var new_url = url + '?filter=' + new_encoded_filter;
+                            }
+
+                            document.getElementById("<!-- Plugin -->_iframe").src=new_url;            
+                        }); 
+            };
+            function reloadPanel() {
+                console.log('Reloading panel');
+                console.log('CURR: Filters='+JSON.stringify(filters))
+                $('#filter_panel').panel({ href:'/plugins/<!-- Plugin -->?<!-- Plugin -->_method=get_panel_content&filters='+encodeURI(JSON.stringify(filters))});
+            };
+            function filter_type_combobox_change(rec) {
+                console.log('Change: ' + rec.value);
+                $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=get_type_html&type='+rec.value,
+                    function(data) {
+                        console.log(data);
+                        $('#value_fields').children().hide();
+                        $('#' + data['field']).show();
+                    });
+            };
+
+        </script>
+    </div> 
+    <div id="bottom"> 
+        <iframe id="<!-- Plugin -->_iframe" src="<!-- Home -->"> 
+        </iframe> 
+    </div> 
+</body> 
+</html> 

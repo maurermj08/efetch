@@ -124,14 +124,12 @@ class FaTimeline(IPlugin):
                 for key in prefix:
                     if key == 'star':
                         if 'star' not in source or not source['star']:
-                            # row_id = str(uuid.uuid4())
                             event_row[key] = """
                                         <form target='hidden' onsubmit='return toggleStar("""  + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
                                             <input id='""" + source['uuid'] + """' type='image' src='/resources/images/notbookmarked.png'>
                                         </form>
                                     """
                         else:
-                            # row_id = str(uuid.uuid4())
                             event_row[key] = """
                                         <form target='hidden' onsubmit='return toggleStar(""" + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
                                             <input id='""" + source['uuid'] + """' type='image' src='/resources/images/bookmarked.png'>

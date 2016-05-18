@@ -29,20 +29,64 @@
             </table>
         </div>
     <script type="text/javascript">
-        function formatLinkUrl(val,row){
-            if (row.meta_type == 'Directory') {
-                var url = '/plugins/<!-- Plugin -->/'+ row.pid + '<!-- Query -->';
-                return '<a href="'+url+'" target="_self"><!-- Title --></a>';
+            $('#tl01').datagrid({loadMsg:''});
+            function formatLinkUrl(val,row){
+                if (row.meta_type == 'Directory') {
+                    var url = '/plugins/<!-- Plugin -->/'+ row.pid + '<!-- Query -->';
+                    return '<a href="'+url+'" target="_self">Navigate</a>';
+                }
+                else {
+                    var url = '/plugins/<!-- Children -->'+row.pid;
+                    return '<a href="'+url+'" target="timeline_frame">Open</a>';
+                }
             }
-            else {
-                var url = '/plugins/fa_analyze/' + row.pid;
-                return '<a href="'+url+'" target="_blank">Analyze</a>';
+            function formatThumbnail(val,row){
+                var url = '/plugins/fa_thumbnail/'+row.pid;
+                return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';
             }
-        }
-        function formatThumbnail(val,row){
-            var url = '/plugins/fa_thumbnail/'+row.pid;
-            return '<img style="height:32px;width:32px;" src="'+url+'" alt="Na" onError="this.onerror=null;this.src=\'/resources/icons/_missing.png\';" title="Na">';
-        }
+
+            bookmark_version = 0
+            if (typeof(Storage) !== "undefined") {
+                if (localStorage.getItem("fa_star_version") === null) {
+                    localStorage.setItem("fa_star_version", 0);
+                }
+
+                // Store
+                bookmark_version = localStorage.getItem("fa_star_version");
+            }
+
+            $(window).bind('storage', function (e) {
+                // Retrieve
+                new_bookmark_version = localStorage.getItem("fa_star_version");
+
+                if (new_bookmark_version != bookmark_version)
+                {
+                    bookmark_version = new_bookmark_version;
+                    setTimeout(function() {
+                        $('#tl01').datagrid("load");
+                    }, 2000);
+                }
+            });
+
+            function toggleStar(pid, img_id) {
+                console.log('toggle started');
+                $.get('/plugins/fa_togglestar/' + pid + '/?image_id=' + img_id, function(data) {
+                    var json_data = JSON.parse(data)
+                    $('#' + json_data.img_id).attr('src', json_data.img);
+                    console.log('Found: ' + json_data);
+                    if (typeof(Storage) !== "undefined") {
+                        if (localStorage.getItem("fa_star_version") === null) {
+                            localStorage.setItem("fa_star_version", 0);
+                        }
+                        else {
+                            // Store
+                            localStorage.setItem('fa_star_version', (Number(localStorage.getItem('fa_star_version')) + 1) % 10000);
+                        }
+                    }
+                    console.log('version: ' + (localStorage.getItem('fa_star_version') + 1));
+                })
+                return false;
+            }
     </script>
     </body>
 </html>

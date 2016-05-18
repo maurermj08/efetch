@@ -145,7 +145,7 @@ class Efetch(object):
             if file_cache_path and 'mimetype' not in evidence:
                 evidence['mimetype'] = self._helper.get_mimetype(file_cache_path)
                 update = {'mimetype': evidence['mimetype']}
-                self._helper.db_util.update_by_ppid(evidence['pid'], update)
+                self._helper.db_util.update(evidence['uuid'], evidence['image_id'], update)
             elif 'mimetype' not in evidence:
                 evidence['mimetype'] = self._helper.guess_mimetype(evidence['ext'])
             # Remove Failed Cache
@@ -153,7 +153,7 @@ class Efetch(object):
                 os.remove(file_cache_path)
                 evidence['mimetype'] = self._helper.get_mimetype(file_cache_path)
                 update = {'mimetype': evidence['mimetype']}
-                self._helper.db_util.update_by_ppid(evidence['pid'], update)
+                self._helper.db_util.update(evidence['uuid'], evidence['image_id'], update)
         
         # Return plugins frame
         return plugin.plugin_object.get(evidence, self._helper,

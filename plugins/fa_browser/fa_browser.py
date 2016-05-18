@@ -100,17 +100,17 @@ class FaBrowser(IPlugin):
                 if 'star' not in evidence_item or not evidence_item['star']:
                     listing.append("""
                             <td>
-                                <form  id='""" + evidence_item['pid'] + """' target='hidden' action='/plugins/fa_star/""" + evidence_item['pid'] + """'>
-                                    <input type='image' src='/resources/images/notbookmarked.png'>
-                                </form>
+                                        <form target='hidden' onsubmit='return toggleStar("""  + '"' + evidence_item['pid'] + '", "' + evidence_item['uuid'] + '"' + """)'>
+                                            <input id='""" + evidence_item['uuid'] + """' type='image' src='/resources/images/notbookmarked.png'>
+                                        </form>
                             </td>
                             """)
                 else:
                     listing.append("""
                             <td>
-                                <form id='""" + evidence_item['pid'] + """' target='hidden' action='/plugins/fa_unstar/""" + evidence_item['pid'] + """'>
-                                    <input type='image' src='/resources/images/bookmarked.png'>
-                                </form>
+                                        <form target='hidden' onsubmit='return toggleStar(""" + '"' + evidence_item['pid'] + '", "' + evidence_item['uuid'] + '"' + """)'>
+                                            <input id='""" + evidence_item['uuid'] + """' type='image' src='/resources/images/bookmarked.png'>
+                                        </form>
                             </td>
                             """)
                 listing.append("    </tr>")

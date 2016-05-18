@@ -1,5 +1,5 @@
 """
-A parent plugin that adds a filter to its child plugins
+A menu panel with filtering options
 """
 
 import json
@@ -10,9 +10,10 @@ from bottle import abort
 from yapsy.IPlugin import IPlugin
 
 
-class FaFilter(IPlugin):
+class FaMenuFilter(IPlugin):
+
     def __init__(self):
-        self.display_name = 'Filter Bar'
+        self.display_name = 'Menu Filter'
         self.popularity = 0
         self.parent = True
         self.cache = False
@@ -35,7 +36,7 @@ class FaFilter(IPlugin):
         return "text/plain"
 
     def get(self, evidence, helper, path_on_disk, request, children, query_type='term',
-            evidence_item_plugin='fa_filter', title='Filter'):
+            evidence_item_plugin='fa_menufilter', title='Filter'):
         """Gets the filter bar"""
         method = helper.get_request_value(request, evidence_item_plugin + '_method', False)
 
@@ -51,10 +52,12 @@ class FaFilter(IPlugin):
                                       helper.get_request_value(request, 'uid', False))
         elif method == 'get_filter':
             return self.get_filter(helper, helper.get_request_value(request, 'filters', {}), query_type)
+        elif method == 'get_type_html':
+            return self.get_type_html(helper, helper.get_request_value(request, 'type', {}))
 
         html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
-        template = open(curr_dir + '/filter_template.html', 'r')
+        template = open(curr_dir + '/menu_filter_template.html', 'r')
         html = str(template.read())
         query_string = helper.get_query_string(request)
 
@@ -104,29 +107,62 @@ class FaFilter(IPlugin):
 
         return query_filter
 
+    def get_type_html(self, helper, type):
+        if type == 'star':
+            return { 'field' : 'star_field' }
+        if type in [ 'mtime', 'atime', 'ctime', 'crtime' ]:
+            return { 'field' : 'date_field' }
+        else:
+            return { 'field' : 'searchbox_field' }
+
     def get_panel_content(self, filters, title, query_type):
         all_filters = json.loads(filters)
 
         header = """
-            <b style="color: darkblue;padding-right: 1em;padding-left: 1em;">""" + title + """</b>
-            <select class="easyui-combobox" name="filter_type" id="filter_type" style="width:100px;">
-                <option value="must">Must</option>
-                <option value="must_not">Must Not</option>
-                <option value="should">Should</option>
-            </select>
-            <input class="easyui-searchbox" data-options="prompt:'Please Input Value',menu:'#filter_combo',searcher:addFilter" style="width:300px"></input>
-            <div id="filter_combo">
-                <div data-options=""" + '"' + query_type + """:'ext'">ext</div>
-                <div data-options=""" + '"' + query_type + """:'path'">path</div>
-                <div data-options=""" + '"' + query_type + """:'name'">name</div>
-                <div data-options=""" + '"' + query_type + """:'dir'">dir</div>
-                <div data-options=""" + '"' + query_type + """:'sha256_hash'">sha256_hash</div>
-                <div data-options=""" + '"' + query_type + """:'meta_type'">meta_type</div>
-                <div data-options=""" + '"' + query_type + """:'parser'">parser</div>
-                <div data-options=""" + '"' + query_type + """:'source_short'">source_short</div>
-                <div data-options=""" + '"' + query_type + """:'source_short'">star</div>
-            </div>
-            """
+                <a href="javascript:void(0)" class="easyui-linkbutton" onclick="$('#dg').datagrid('reload');$('#add_evidence_window').window('open')" data-options="plain:true,iconCls:'icon-add'">Evidence</a>
+                <a href="javascript:void(0)" class="easyui-linkbutton" onclick="$('#dg_remove').datagrid('reload');$('#remove_evidence_window').window('open')" data-options="plain:true,iconCls:'icon-remove'">Evidence</a>
+                <b style="color: darkblue;padding-right: 1em;padding-left: 1em;">|</b>
+                <select class="easyui-combobox" name="search_type" id="search_type" style="width:75px;">
+                    <option value="filter">Filter</option>
+                    <option value="wildcard">Search</option>
+                    <option value="regexp">Regex</option>
+                </select>
+                <select class="easyui-combobox" name="filter_type" id="filter_type" style="width:120px;" data-options="onSelect: function(rec){ filter_type_combobox_change(rec); }">
+                    <option value="ext">ext</option>
+                    <option value="path">path</option>
+                    <option value="name">name</option>
+                    <option value="dir">dir</option>
+                    <option value="mtime">mtime</option>
+                    <option value="atime">atime</option>
+                    <option value="ctime">ctime</option>
+                    <option value="crtime">crtime</option>
+                    <option value="sha256_hash">sha256_hash</option>
+                    <option value="meta_type">meta_type</option>
+                    <option value="parser">parser</option>
+                    <option value="source_short">source_short</option>
+                    <option value="star">star</option>
+                </select>
+                <select class="easyui-combobox" name="filter_type" id="filter_type" style="width:90px;">
+                    <option value="must">Must</option>
+                    <option value="must_not">Must Not</option>
+                    <option value="should">Should</option>
+                </select>
+                <span id="value_fields">
+                    <span id="searchbox_field">
+                        <input name="value" class="easyui-textbox" required="true">
+                    </span>
+                    <span id="star_field" hidden>
+                        <input class="easyui-switchbutton" style="width:150px;" data-options="checked:true,onText:'Bookmarked',offText:'Not Bookmarked'">
+                    </span>
+                    <span id="date_field" hidden>
+                        Start:
+                        <input class="easyui-datetimebox" style="width:150px;height:24px">
+                        End:
+                        <input class="easyui-datetimebox" style="width:150px;height:24px">
+                    </span>
+                </span>
+                <a href="javascript:void(0)" class="easyui-linkbutton" onclick="$('#dg_remove').datagrid('reload');$('#remove_evidence_window').window('open')" data-options="plain:true,iconCls:'icon-search'">Apply</a>
+                """
         body = []
 
         for key in all_filters:

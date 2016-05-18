@@ -40,9 +40,8 @@
 
     
 </head> 
-<body> 
-        <div style="margin:0px 0;"></div>
-        <div class="easyui-panel" style="padding:5px;width:100%;border-left-style: none;border-right-style: none;">
+<body>
+        <div class="easyui-panel" style="padding: 5px;" data-options="border:false">
             <!-- <a href="javascript:void(0)" class="easyui-linkbutton" onclick="$('#w').window('open')" data-options="plain:true,iconCls:'icon-add'">New Evidence</a> -->
             <a href="javascript:void(0)" class="easyui-linkbutton" onclick="$('#dg').datagrid('reload');$('#add_evidence_window').window('open')" data-options="plain:true,iconCls:'icon-add'">Add Evidence</a>
             <a href="javascript:void(0)" class="easyui-linkbutton" onclick="$('#dg_remove').datagrid('reload');$('#remove_evidence_window').window('open')" data-options="plain:true,iconCls:'icon-remove'">Remove Evidence</a>

@@ -33,6 +33,6 @@ class FaStar(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        helper.db_util.update_by_ppid(evidence['pid'], {'star': True})
+        helper.db_util.update(evidence['pid'], evidence['image_id'], {'star': True})
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         return open(curr_dir + '/star_template.html', 'r')

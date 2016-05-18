@@ -3,9 +3,9 @@ Toggles the bookmark of a single evidence item
 """
 
 from yapsy.IPlugin import IPlugin
+from bottle import abort
 import logging
 import json
-
 
 class FaTogglestar(IPlugin):
 
@@ -36,16 +36,28 @@ class FaTogglestar(IPlugin):
         """Returns the result of this plugin to be displayed in a browser"""
         data = {}
 
+        # This value is the UUID which is returned so that the site knows what image to update
         data['img_id'] = helper.get_request_value(request, 'image_id', False)
+        starred = False
 
-        if not data['img_id']:
-            logging.warn('No "image_id" found for toggle star')
+        if not data['img_id'] or data['img_id'] == evidence['uuid']:
+            data['img_id'] = evidence['uuid']
+            starred = 'star' not in evidence or not evidence['star']
+        else:
+            event = helper.db_util.elasticsearch.get(index='efetch_evidence_' + evidence['image_id'], doc_type='event',
+                                                     id=data['img_id'])
+            try:
+                starred = 'star' not in event['_source'] or not event['_source']['star']
+            except:
+                print('HERE: ' + str(event))
+                logging.warn('Failed to star event, uuid "' + data['img_id'] + '" not found')
+                abort(404, 'Could not find event')
 
-        if 'star' not in evidence or not evidence['star']:
-            helper.db_util.update_by_ppid(evidence['pid'], {'star': True})
+        if starred:
+            helper.db_util.update(data['img_id'], evidence['image_id'], {'star': True})
             data['img'] = '/resources/images/bookmarked.png'
         else:
-            helper.db_util.update_by_ppid(evidence['pid'], {'star': False})
+            helper.db_util.update(data['img_id'], evidence['image_id'], {'star': False})
             data['img'] = '/resources/images/notbookmarked.png'
 
         return json.dumps(data)

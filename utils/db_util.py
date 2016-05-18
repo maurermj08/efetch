@@ -123,29 +123,29 @@ class DBUtil(object):
         self.elasticsearch.delete(index='efetch-cases', doc_type='case', id=name)
         return
 
-    def get_file(self, image_id, evd_id, abort_on_error=True):
+    def get_file(self, image_id, pid, abort_on_error=True):
         """Returns the file object for the given file in the database"""
         
         #Remove leading and trailing slashes
-        if evd_id.endswith('/'):
-            evd_id = evd_id[:-1]
-        if str(evd_id).startswith('/'):
-            evd_id = str(evd_id)[1:]
+        if pid.endswith('/'):
+            pid = pid[:-1]
+        if str(pid).startswith('/'):
+            pid = str(pid)[1:]
 
         #TODO CHECK IF IMAGE EXISTS
         #TODO Do not hide errors from elasticsearch
         curr_file = self.elasticsearch.search(index='efetch_evidence_' + image_id, doc_type='event',
-                                              body={ 'query': {'bool': {'must': [{'term': {'pid': evd_id}},
+                                              body={ 'query': {'bool': {'must': [{'term': {'pid': pid}},
                                                                        {'term': {'parser': 'efetch'}}]}}})
         if not curr_file['hits'] or not curr_file['hits']['hits'] or not curr_file['hits']['hits'][0]['_source']:
-            logging.error("Could not find file. Image='" + image_id + "' _id='" + evd_id + "'")
+            logging.error("Could not find file. Image='" + image_id + "' pid='" + pid + "'")
             if abort_on_error:
                 abort(404, "Could not find file in provided image.")
             else:
                 return
     
         if len(curr_file['hits']['hits']) > 1:
-            logging.warn("Found more than one file with pid " + evd_id)
+            logging.warn("Found more than one file with pid " + pid)
 
         return curr_file['hits']['hits'][0]['_source']
 
@@ -157,24 +157,17 @@ class DBUtil(object):
         """Bulk adds json to Elastic Search"""
         helpers.bulk(self.elasticsearch, json)
 
-    def update_by_ppid(self, ppid, update, abort_on_error=True):
-        """Returns the file object for the given file in the database"""
-        ppid_split = str(ppid).split('/')
-        image_id = ppid_split[0]
-        path = '/'.join(ppid_split[1:])
-        self.update(ppid, image_id, update, abort_on_error)
-
     #TODO: Determine if abort on error should apply to conflicts
-    def update(self, ppid, image_id, update, abort_on_error=True, repeat=1):
+    def update(self, uuid, image_id, update, abort_on_error=True, repeat=1):
         """Updates evidence event in Elastic Search"""
         try:
-            self.elasticsearch.update(index='efetch_evidence_' + image_id, doc_type='event', id=ppid, body={'doc': update})
+            self.elasticsearch.update(index='efetch_evidence_' + image_id, doc_type='event', id=uuid, body={'doc': update})
         except ConflictError:
             if repeat > 0:
-                logging.info('Failed to update "' + ppid + '" attempting again in 200ms')
+                logging.info('Failed to update "' + uuid + '" attempting again in 200ms')
                 time.sleep(.200)
-                self.update(ppid, image_id, update, abort_on_error, repeat - 1)
-            logging.warn('Failed to update "' + ppid + '" due to conflict error!')
+                self.update(uuid, image_id, update, abort_on_error, repeat - 1)
+            logging.warn('Failed to update "' + uuid + '" due to conflict error!')
 
 
 def efetch_root_node():

@@ -55,7 +55,7 @@ class FaHash(IPlugin):
                     hash_time = datetime.datetime.now()
                     hash_result = hasher.hexdigest()
                     update = {hash_type + '_time': hash_time, hash_type + "_digest": hash_result}
-                    helper.db_util.update_by_ppid(evidence['pid'], update)
+                    helper.db_util.update(evidence['uuid'], evidence['image_id'], update)
             except:
                 return '<xmp style="white-space: pre-wrap;">Error</xmp>'
         else:

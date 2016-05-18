@@ -81,6 +81,7 @@ def _EventToDict(event_object, image_id, image_path, output_mediator):
   directory = os.path.dirname(pid) + '/'
   ext = os.path.splitext(name)[1][1:] or ""
 
+  ret_dict['id'] = ret_dict['uuid']
   ret_dict['pid'] = pid
   ret_dict['name'] = name
   ret_dict['dir'] = directory
@@ -176,7 +177,9 @@ def _EventToEfetch(event_object, event_times, image_id, image_path, output_media
   #  ids.append(pid)
 
   ret_dict['root'] = root
-  ret_dict['id'] = pid
+  #ret_dict['id'] = pid
+  ret_dict['id'] = uuid.uuid4().hex
+  ret_dict['uuid'] = ret_dict['id']
   ret_dict['pid'] = pid
   ret_dict['name'] = name
   ret_dict['dir'] = directory
@@ -290,10 +293,12 @@ class EfetchOutputModule(interface.OutputModule):
       return
     else:
       self._ids.append(root)
-    dictionary['id'] = root
+    #dictionary['id'] = root
     dictionary['dir'] = '/'.join(sections[:-1]) + '/'
     dictionary['path'] = root
     dictionary['iid'] = root + '/'
+    dictionary['id'] = uuid.uuid4().hex
+    dictionary['uuid'] = dictionary['id']
     dictionary['name'] = sections[-1]
     dictionary['image_path'] = self._image_path
     dictionary['size'] = 0

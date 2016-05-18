@@ -37,6 +37,8 @@ class FaExif(IPlugin):
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
         image = PIL.Image.open(path_on_disk)
+        if not image._getexif():
+            return '<xmp>No Exif data found</xmp>'
         exif_data = {
             PIL.ExifTags.TAGS[k]: v
             for k, v in image._getexif().items()
