@@ -38,8 +38,11 @@ class Efetch(object):
         if not output_dir.endswith(os.path.sep):
             output_dir += os.path.sep
         if not os.path.isdir(output_dir):
-            logging.error(u'Could not find output directory ' + output_dir)
-            sys.exit(2)
+            try:
+                os.mkdir(output_dir)
+            except:
+                logging.error(u'Could not find nor create output directory ' + output_dir)
+                sys.exit(2)
 
         self._helper = EfetchHelper(curr_dir, output_dir, upload_dir, max_file_size * 1000000)
 
