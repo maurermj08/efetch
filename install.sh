@@ -11,7 +11,7 @@ echo 'Installing Efetch dependencies...'
 sudo add-apt-repository -y ppa:gift/stable
 sudo add-apt-repository -y ppa:sift/stable
 sudo apt-get update
-sudo apt-get -y install python-plaso python-dev python-pip default-jre elasticsearch unoconv libpff libpff-python
+sudo apt-get -y install python-plaso python-dev python-pip default-jre unoconv libpff libpff-python
 sudo update-rc.d elasticsearch defaults
 sudo service elasticsearch start
 
@@ -30,6 +30,9 @@ echo "from plaso.output import efetch" | sudo tee --append /usr/lib/python2.7/di
 echo "from plaso.cli.helpers import efetch_output" | sudo tee --append /usr/lib/python2.7/dist-packages/plaso/cli/helpers/__init__.py
 
 #Installing external dependencies
+wget https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/2.3.3/elasticsearch-2.3.3.deb -O /tmp/elasticsearch-2.3.3.deb
+dpkg -i /tmp/elasticsearch-2.3.3.deb
+rm /tmp/elasticsearch-2.3.3.deb
 wget https://github.com/williballenthin/python-registry/archive/master.zip -O /tmp/reglib.zip
 mkdir /tmp/reglib
 unzip /tmp/reglib.zip -d /tmp/reglib
