@@ -43,10 +43,90 @@
     <div id="header">
         <div class="easyui-panel" id='filter_panel' style="width:100%;">
         </div>
+        <!-- ADD EVIDENCE FORM -->
+        <div id="add_evidence_window" class="easyui-window" title="Add Existing Evidence" data-options="closed:true,iconCls:'icon-add'" style="width:440px;height:400px;padding:10px;">
+            <div style="padding:10px 10px 20px 10px">
+                <form id="ff" action="/plugins/fa_case/?method=add_evidence&name=<!-- Case -->" method="post">
+                    <table id="dg" title="" class="easyui-datagrid" style="width:100%;height:260px"
+                            url="/plugins/fa_case/?method=get_evidence"
+                            toolbar="#toolbar"
+                            fitColumns="true" singleSelect="true">
+                        <thead>
+                            <tr>
+                                <th field="evidence" width="100">Evidence</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </form>
+
+                <div style="text-align:center;padding:5px">
+                    <a href="javascript:void(0)" class="easyui-linkbutton" onclick="submitForm()">Submit</a>
+                    <a href="javascript:void(0)" class="easyui-linkbutton" onclick="cancelForm()">Cancel</a>
+                </div>
+            </div>
+         <!-- REMOVE EVIDENCE FORM -->
+        <div id="remove_evidence_window" class="easyui-window" title="Remove Evidence" data-options="closed:true,iconCls:'icon-remove'" style="width:440px;height:400px;padding:10px;">
+            <div style="padding:10px 10px 20px 10px">
+                <form id="ff_remove" action="/plugins/fa_case/?method=remove_evidence&name=<!-- Case -->" method="post">
+                    <table id="dg_remove" title="" class="easyui-datagrid" style="width:100%;height:260px"
+                        url="/plugins/fa_case/?method=get_evidence&name=<!-- Case -->"
+                            toolbar="#toolbar"
+                            fitColumns="true" singleSelect="true">
+                        <thead>
+                            <tr>
+                                <th field="evidence" width="100">Evidence</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </form>
+
+                <div style="text-align:center;padding:5px">
+                    <a href="javascript:void(0)" class="easyui-linkbutton" onclick="submitRemoveForm()">Remove</a>
+                    <a href="javascript:void(0)" class="easyui-linkbutton" onclick="cancelRemoveForm()">Cancel</a>
+                </div>
+            </div>
+        </div>
+        </div>
         <script>
             var filters = <!-- Filters -->;
-
             reloadPanel();
+
+            function submitForm(){
+                var row = $('#dg').datagrid('getSelected');
+                if (row){
+                    var input = $("<input>")
+                       .attr("type", "hidden")
+                       .attr("name", "evidence").val(row.evidence);
+                    $('#ff').append($(input));
+                    $('#ff').form('submit');
+                    $('#add_evidence_window').window('close');
+                    setTimeout(function(){document.getElementById("<!-- Plugin -->_iframe").contentWindow.location.reload();}, 1000);
+                }
+            }
+
+            function cancelForm(){
+                $('#ff').form('clear');
+                $('#add_evidence_window').window('close');
+            }
+
+            function submitRemoveForm(){
+                var row = $('#dg_remove').datagrid('getSelected');
+                if (row){
+                    var input = $("<input>")
+                       .attr("type", "hidden")
+                       .attr("name", "evidence").val(row.evidence);
+                    $('#ff_remove').append($(input));
+                    $('#ff_remove').form('submit');
+                    $('#remove_evidence_window').window('close');
+                    setTimeout(function(){document.getElementById("<!-- Plugin -->_iframe").contentWindow.location.reload();}, 1000);
+                }
+            }
+
+            function cancelRemoveForm(){
+                $('#ff_remove').form('clear');
+                $('#remove_evidence_window').window('close');
+            }
+
 
             function addFilter(){
                 console.log('HERE');

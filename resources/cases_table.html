@@ -96,7 +96,7 @@
             function openCase(){
                 var row = $('#dg').datagrid('getSelected');
                 if (row){
-                    var win = window.open('/plugins/fa_header/fa_menu/fa_filter/fa_casetree/fa_tree/fa_filebrowser/fa_analyze/?case=' + row.name, '_blank');
+                    var win = window.open('/plugins/fa_header/fa_menufilter/fa_casetree/fa_tree/fa_listener/fa_timeline/fa_analyze/?case=' + row.name, '_blank');
                     //var win = window.open('/plugins/fa_case/?method=open&name=' + row.name, '_blank');
                     win.focus();
                 }

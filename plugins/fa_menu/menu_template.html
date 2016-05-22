@@ -13,13 +13,11 @@
         html{
             height: 100%;
         }
-
         body {
             min-height: 100%;
             margin: 0px;
             padding: 0px !important;
         }
-
         #header {
             background-color:#EDF7FF;
             text-align:left;
@@ -38,8 +36,8 @@
     <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
     <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
 
-    
-</head> 
+
+</head>
 <body>
         <div class="easyui-panel" style="padding: 5px;" data-options="border:false">
             <!-- <a href="javascript:void(0)" class="easyui-linkbutton" onclick="$('#w').window('open')" data-options="plain:true,iconCls:'icon-add'">New Evidence</a> -->
@@ -52,7 +50,7 @@
                 <form id="ff" action="/plugins/fa_case/?method=add_evidence&name=<!-- Case -->" method="post">
                     <table id="dg" title="" class="easyui-datagrid" style="width:100%;height:260px"
                             url="/plugins/fa_case/?method=get_evidence"
-                            toolbar="#toolbar" 
+                            toolbar="#toolbar"
                             fitColumns="true" singleSelect="true">
                         <thead>
                             <tr>
@@ -73,7 +71,7 @@
                 <form id="ff_remove" action="/plugins/fa_case/?method=remove_evidence&name=<!-- Case -->" method="post">
                     <table id="dg_remove" title="" class="easyui-datagrid" style="width:100%;height:260px"
                         url="/plugins/fa_case/?method=get_evidence&name=<!-- Case -->"
-                            toolbar="#toolbar" 
+                            toolbar="#toolbar"
                             fitColumns="true" singleSelect="true">
                         <thead>
                             <tr>
@@ -127,9 +125,9 @@
         <div id="w" class="easyui-window" title="Add Evidence" data-options="closed:true,iconCls:'icon-save'" style="width:340px;height:280px;padding:10px;">
             <iframe src="<!-- Upload -->" style="width:100%;height:100%"></iframe>
         </div>
-    <div id="bottom"> 
-        <iframe id="fa_menu_iframe" src="<!-- Home -->"> 
-        </iframe> 
-    </div> 
-</body> 
-</html> 
+    <div id="bottom">
+        <iframe id="fa_menu_iframe" src="<!-- Home -->">
+        </iframe>
+    </div>
+</body>
+</html>
