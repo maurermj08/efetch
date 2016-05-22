@@ -7,7 +7,8 @@ from bottle import route, run, static_file, response, post, request, abort
 from Registry import Registry
 import binascii
 import json
-import os
+import logging
+
 
 class FaRegviewAjax(IPlugin):
     def __init__(self):
@@ -111,7 +112,7 @@ def get_values(key_name, pod):
                 results.append({ 'name': value.name(), 'type': value.value_type_str(), 'value': value.value() })
         return results
     except Registry.RegistryKeyNotFoundException:
-        print("Error: couldn't find the key: " + key_name)
+        logging.warn("Registry plugin could not find the key: " + key_name)
         return None
 
 
@@ -123,5 +124,5 @@ def get_subkeys(key_name, reg):
             subkeys.append(subkey.name())
         return subkeys
     except Registry.RegistryKeyNotFoundException:
-        print("Error: couldn't find the key: " + key_name)
+        logging.warn("Registry plugin could not find the key: " + key_name)
         return None

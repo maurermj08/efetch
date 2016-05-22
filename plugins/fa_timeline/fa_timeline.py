@@ -36,8 +36,7 @@ class FaTimeline(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children, logs=True, files=False, directories=False,
             sub_directories=True, evidence_item_plugin='fa_timeline', title='Log2timeline',
-            prefix = ['datetime', 'parser', 'message', 'filename', 'source_short', 'source_long',
-                      'data_type', 'pid', 'star']):
+            prefix = ['name', 'datetime', 'source_short', 'message', 'pid', 'star']):
         """Returns the result of this plugin to be displayed in a browser"""
         raw_filter = helper.get_request_value(request, 'filter', '{}')
         filter_query = helper.get_filter(request)
@@ -176,5 +175,9 @@ class FaTimeline(IPlugin):
             html = html.replace('<!-- Child -->', helper.plugin_manager.getPluginByName(
                 str(children.split('/', 1)[0]).lower()).plugin_object.display_name)
             html = html.replace('<!-- Children -->', helper.get_children(evidence['image_id'], children))
+        else:
+            html = html.replace('<!-- Children -->', self._default_plugin)
+
+
 
         return html

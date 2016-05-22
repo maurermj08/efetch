@@ -48,11 +48,20 @@
 
             reloadPanel();
 
-            function addFilter(value,<!-- Type -->){
-                console.log('Adding filter with value='+value+' and <!-- Type -->='+<!-- Type -->);
-                console.log('OLD: Filters='+JSON.stringify(filters));
-                $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=add_filter&value='+value+'&<!-- Type -->='+<!-- Type -->+
-                    '&type='+$('#filter_type').combobox('getValue')+'&filters='+encodeURI(JSON.stringify(filters)),
+            function addFilter(){
+                console.log('HERE');
+                var search = $('#search').combobox('getValue');
+                var key = $('#key').combobox('getValue');
+                var operation = $('#operation').combobox('getValue');
+                var searchbox = $('#searchbox').val();
+                var star = $('#star').switchbutton('options').checked;
+                var start_datetime = $('#start_datetime').datetimebox('getValue');
+                var end_datetime = $('#end_datetime').datetimebox('getValue');
+                console.log('Data: Filters='+search);
+                $.getJSON('/plugins/<!-- Plugin -->?method=add_filter&search='+search+
+                    '&key='+key+'&operation='+operation+'&searchbox='+searchbox+
+                    '&star='+star+'&start_datetime='+start_datetime+'&end_datetime='+end_datetime+
+                    '&filters='+encodeURI(JSON.stringify(filters)),
                     function(data) { 
                         filters = data; 
                         console.log('NEW: Filters='+JSON.stringify(filters));
@@ -63,7 +72,7 @@
             function removeFilter(uid){
                 console.log('Removing filter '+uid);
                 console.log('OLD: Filters='+JSON.stringify(filters));
-                filters = $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=remove_filter&uid='+uid+
+                filters = $.getJSON('/plugins/<!-- Plugin -->?method=remove_filter&uid='+uid+
                     '&filters='+encodeURI(JSON.stringify(filters)),
                     function(data) {
                         filters = data;
@@ -74,7 +83,7 @@
             };
             function updateFilter(){
                 console.log('Updating filter');
-                var filter = $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=get_filter&filters='+encodeURI(JSON.stringify(filters)),
+                var filter = $.getJSON('/plugins/<!-- Plugin -->?method=get_filter&filters='+encodeURI(JSON.stringify(filters)),
                         function(data) {
                             filter = data;
                             var new_encoded_filter = encodeURI(JSON.stringify(filter));
@@ -97,11 +106,11 @@
             function reloadPanel() {
                 console.log('Reloading panel');
                 console.log('CURR: Filters='+JSON.stringify(filters))
-                $('#filter_panel').panel({ href:'/plugins/<!-- Plugin -->?<!-- Plugin -->_method=get_panel_content&filters='+encodeURI(JSON.stringify(filters))});
+                $('#filter_panel').panel({ href:'/plugins/<!-- Plugin -->?method=get_panel_content&filters='+encodeURI(JSON.stringify(filters))});
             };
-            function filter_type_combobox_change(rec) {
+            function key_combobox_change(rec) {
                 console.log('Change: ' + rec.value);
-                $.getJSON('/plugins/<!-- Plugin -->?<!-- Plugin -->_method=get_type_html&type='+rec.value,
+                $.getJSON('/plugins/<!-- Plugin -->?method=get_type_html&type='+rec.value,
                     function(data) {
                         console.log(data);
                         $('#value_fields').children().hide();

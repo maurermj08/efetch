@@ -49,7 +49,6 @@ class FaTogglestar(IPlugin):
             try:
                 starred = 'star' not in event['_source'] or not event['_source']['star']
             except:
-                print('HERE: ' + str(event))
                 logging.warn('Failed to star event, uuid "' + data['img_id'] + '" not found')
                 abort(404, 'Could not find event')
 

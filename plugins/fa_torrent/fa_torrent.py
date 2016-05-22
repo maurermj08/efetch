@@ -46,7 +46,6 @@ class FaTorrent(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        print("HERE " + str(path_on_disk))
         tp = TorrentParser(str(path_on_disk))
 
         return '''

@@ -46,7 +46,7 @@ class FaExif(IPlugin):
         }
 
         table = []
-        print(str(exif_data))
+
         for key, value in exif_data.iteritems():
             table.append('<tr><td>' + str(key) + '</td><td>' + str(value)  + '</td></tr>')
 
