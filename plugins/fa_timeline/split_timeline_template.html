@@ -25,12 +25,16 @@
         width: 100%;
         border: none;
     }
+    .datagrid-row{
+        height:39px;
+    }
+
 </style>
 </head>
     <body>
         <div class="easyui-layout" style="width:100%;height:100%;">
             <div data-options="region:'north',split:true" style="height:300px">
-            <table id="tl01"  class="easyui-datagrid"  style="width:100%;height:100%;" data-options="url:'/plugins/<!-- Plugin -->/<!-- PID -->?mode=events<!-- Filter -->',view:scrollview,singleSelect:true,pageSize:50,fitColumns:true">
+            <table id="tl01"  class="easyui-datagrid"  style="width:100%;height:100%;" data-options="url:'/plugins/<!-- Plugin -->/<!-- PID -->?mode=events<!-- Filter -->',view:scrollview,singleSelect:true,pageSize:30,fitColumns:true">
                 <!-- Table -->
             </table>
             </div>
@@ -40,6 +44,7 @@
         </div>
         <script type="text/javascript">
             $('#tl01').datagrid({loadMsg:''});
+
             function formatLinkUrl(val,row){
                 if (row.meta_type == 'Directory') {
                     var url = '/plugins/<!-- Plugin -->/'+ row.pid + '<!-- Query -->';
@@ -50,6 +55,19 @@
                     return '<a href="'+url+'" target="timeline_frame">Open</a>';
                 }
             }
+
+            $(function(){
+                $('#tl01').datagrid({
+                    detailFormatter: function(rowIndex, rowData){
+                        return "<div id='details_" + rowIndex +
+                            "'>Loading...<\/div><script type=\"text/javascript\">$.get('/plugins/fa_timeline/" +
+                            rowData.pid + "/?method=details&uuid=" + rowData.uuid +
+                            "', function(data) { $('#details_" + rowIndex +
+                            "').html(data); })<\/script>"
+                    }
+                });
+            });
+
             function formatThumbnail(val,row){
                 var url = '/plugins/fa_thumbnail/'+row.pid;
                 return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';

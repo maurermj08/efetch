@@ -171,6 +171,7 @@ class FaMenuFilter(IPlugin):
                     <option value="name">name</option>
                     <option value="dir">dir</option>
                     <option value="datetime">datetime</option>
+                    <option value="message">message</option>
                     <option value="mtime">mtime</option>
                     <option value="atime">atime</option>
                     <option value="ctime">ctime</option>

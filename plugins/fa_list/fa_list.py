@@ -39,4 +39,5 @@ class FaList(IPlugin):
                                                                                       self.display_name,
                                                                                       ['name', 'mtime', 'atime',
                                                                                        'ctime', 'crtime',
-                                                                                       'file_size', 'star'])
+                                                                                       'file_size', 'star'],
+                                                                                      [40, 40, 45, 45, 45, 20, 20])
