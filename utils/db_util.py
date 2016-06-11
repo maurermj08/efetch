@@ -231,7 +231,7 @@ def evidence_template():
                     "gid" : {"type": "string", "index" : "not_analyzed"},
                     "driver" : {"type": "string", "index" : "not_analyzed"},
                     "source_short" : {"type": "string", "index" : "not_analyzed"},
-                    "datetime" : {"type": "string", "index" : "not_analyzed"}
+                    "datetime" : {"type": "date", "format": "date_optional_time","index" : "not_analyzed"}
                     }
             }
         }
