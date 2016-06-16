@@ -5,10 +5,12 @@ import magic
 import os
 import time
 import threading
+import rison
 from db_util import DBUtil
 from PIL import Image
+import traceback
 from yapsy.PluginManager import PluginManager
-
+import pprint
 
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
@@ -77,6 +79,68 @@ class EfetchHelper(object):
         else:
             return default_query
 
+    # TODO KIBANA
+    def get_query(self, request):
+        """Returns the query from _a RISON"""
+        a_parameter = self.get_request_value(request, '_a', '()')
+        try:
+            a_parsed = rison.loads(a_parameter)
+        except Exception, err:
+            logging.error('Failed to parse rison: ' + a_parameter)
+            traceback.print_exc()
+            return {'query_string': {'analyze_wildcard': True, 'query': '*'}}
+        if 'query' in a_parsed:
+            return a_parsed['query']
+        else:
+            return  {'query_string': {'analyze_wildcard': True, 'query': '*'}}
+
+    # NEW KIBANA FILTER
+    def get_filters(self, request, must = [], must_not = []):
+        """Returns the query from _a RISON"""
+        a_parameter = self.get_request_value(request, '_a', '()')
+        a_parsed = rison.loads(a_parameter)
+        pprint.PrettyPrinter(indent=4).pprint(a_parsed)
+        if 'filters' in a_parsed:
+            for filter in a_parsed['filters']:
+                if not filter['meta']['negate']:
+                    must.append({ 'query': filter['query']}) #, '$state': filter['$state']})
+                else:
+                    must_not.append({'query': filter['query']}) #, '$state': filter['$state']})
+
+        query = {
+            'query': {
+                    'filtered': {
+                        'query': {
+                            'query_string': {
+                                'query': '*',
+                                'analyze_wildcard': True
+                            }
+                        }
+                }
+            }
+        }
+
+        if 'query' in a_parsed:
+            must.append({'query': a_parsed['query']})
+
+        if not must and not must_not:
+            return query
+
+        query['query']['filtered']['filter'] = { 'bool': {} }
+
+        if must:
+            #if len(must) == 1:
+            #    must = must[0]
+            query['query']['filtered']['filter']['bool']['must'] = must
+        if must_not:
+            #if len(must_not) == 1:
+            #    must_not = must_not[0]
+            query['query']['filtered']['filter']['bool']['must_not'] = must_not
+
+        return query
+
+
+    # OLD FILTER
     def get_filter(self, request):
         """Returns the filter dictionary from a request"""
         raw_filter = self.get_request_value(request, 'filter', '{}')

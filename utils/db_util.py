@@ -34,6 +34,23 @@ class DBUtil(object):
         """Returns the results of an Elastic Search query without error checking"""
         return self.elasticsearch.search(index='efetch_evidence_' + image_id, body=query)
 
+    def query_index(self, query, index, size=None):
+        """Returns the results of an Elastic Search query without error checking"""
+        if size:
+            query['size'] = size
+        return self.elasticsearch.search(index=index, body=query)
+
+    def get_sources(self, query_result, abort_on_error=False):
+        if not query_result['hits'] or not query_result['hits']['hits'] \
+                or not query_result['hits']['hits'][0]['_source']:
+            logging.error("Could not find any results from query.")
+            if abort_on_error:
+                abort(404, "Could not find any results in query.")
+            else:
+                return
+
+        return query_result['hits']['hits'][0]['_source']
+
     def bool_query(self, directory, bool_query = {}, size=10000, use_directory=True):
         """Returns the results of an Elastic Search boolean query within a given directory"""
         #REF: https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html

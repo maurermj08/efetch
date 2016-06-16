@@ -6,7 +6,7 @@ from yapsy.IPlugin import IPlugin
 from urllib import urlencode
 import os
 import logging
-
+import pprint
 
 class FaTimeline(IPlugin):
     def __init__(self):
@@ -54,54 +54,36 @@ class FaTimeline(IPlugin):
         order = helper.get_request_value(request, 'order', 'asc')
         query_string = helper.get_query_string(request)
 
-        query_body = {}
-        query_body['from'] = rows * (page - 1)
-        query_body['size'] = rows
-
         query_bool = {}
 
-        #Only show evidence with the same image_id
-        query_bool = helper.db_util.append_dict(query_bool, 'must', {'term': {'image_id': evidence['image_id']}})
+        must = []
+        must_not = []
 
         #Only show specified evidence logs, directories, files
         if not files and not directories:
-            query_bool = helper.db_util.append_dict(query_bool, 'must_not', {'term': {'parser': 'efetch'}})
+            must_not.append({'term': {'parser': 'efetch'}})
         elif not logs:
-            query_bool = helper.db_util.append_dict(query_bool, 'must', {'term': {'parser': 'efetch'}})
+            must.append({'term': {'parser': 'efetch'}})
             if not files:
-                query_bool = helper.db_util.append_dict(query_bool, 'must', {'term': {'meta_type':'Directory'}})
+                must.append({'term': {'meta_type':'Directory'}})
             if not directories:
-                query_bool = helper.db_util.append_dict(query_bool, 'must', {'term': {'meta_type':'File'}})
+                must.append({'term': {'meta_type':'File'}})
 
-        #If sort, sort the evidence using the given order
+        query_filters = helper.get_filters(request, must, must_not)
+        print('FILTERS: ' + str(query_filters))
+
+        query_body = query_filters
+
+        query_body['from'] = rows * (page - 1)
+        query_body['size'] = rows
         if sort:
             query_body['sort'] = {sort: order}
-
-        #If evidencei is a directory show evidence in that directory
-        if evidence['meta_type'] == 'Directory' and not sub_directories:
-            query_bool = helper.db_util.append_dict(query_bool, 'must', {"term": {"dir": evidence['pid'] + '/'}})
-        elif evidence['meta_type'] == 'Directory':
-            query_bool = helper.db_util.append_dict(query_bool, 'must', {"prefix": {"dir": evidence['pid'] + '/'}})
-        else:
-            query_bool = helper.db_util.append_dict(query_bool, 'must', {"term": {"inode": evidence['inode']}})
-
-        if filter_query:
-            #TODO create a helper with a proper join
-            if 'must' in query_bool:
-                filter_query = helper.db_util.append_dict(filter_query, 'must', query_bool['must'])
-            if 'must_not' in query_bool:
-                filter_query = helper.db_util.append_dict(filter_query, 'must_not', query_bool['must_not'])
-            query_body['query'] = {'bool': filter_query}
-        else:
-            query_body['query'] = {'bool': query_bool}
-
+        print('HERETIMELINE: ' + str(query_body))
+        pprint.PrettyPrinter(indent=4).pprint(query_body)
         events = helper.db_util.elasticsearch.search(index='efetch_evidence_' + evidence['image_id'], doc_type='event',
                                                      body=query_body)
         # Create Table
         table = '<thead>\n<tr>\n'
-        columns = set()
-        #table += '    <th formatter="formatThumbnail" field="Thumbnail">Thumbnail</th>\n'
-        #table += '    <th formatter="formatLinkUrl" field="Link">Analyze</th>\n'
         table += '    <th formatter="formatThumbnail" field="Thumbnail" sortable="false" width="12">Thumbnail</th>\n'
         table += '    <th formatter="formatLinkUrl" field="Link" sortable="false" width="10">Analyze</th>\n'
 
@@ -172,6 +154,8 @@ class FaTimeline(IPlugin):
 
         if evidence['image_id'] in children:
             child_plugins = str(children).split(evidence['image_id'])[0]
+        else:
+            child_plugins = None
 
         if child_plugins:
             template = open(curr_dir + '/split_timeline_template.html', 'r')
@@ -187,6 +171,18 @@ class FaTimeline(IPlugin):
         html = html.replace('<!-- Title -->', title)
         html = html.replace('<!-- Query -->', query_string)
         html = html.replace('<!-- Sort -->', prefix[0])
+
+        a_parameter = helper.get_request_value(request, '_a', False)
+        if a_parameter:
+            html = html.replace('<!-- _a -->', '&' + urlencode({'_a': a_parameter}))
+        else:
+            html = html.replace('<!-- _a -->', '')
+
+        index_pattern = helper.get_request_value(request, 'index', False)
+        if index_pattern:
+            html = html.replace('<!-- indexPattern -->', '&' + urlencode({'index': index_pattern}))
+        else:
+            html = html.replace('<!-- indexPattern -->', '')
 
         if raw_filter:
             html = html.replace('<!-- Filter -->', '&' + urlencode({'filter': raw_filter}))
