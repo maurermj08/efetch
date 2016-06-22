@@ -43,20 +43,22 @@ class FaTogglestar(IPlugin):
         if not data['img_id'] or data['img_id'] == evidence['uuid']:
             data['img_id'] = evidence['uuid']
             starred = 'star' not in evidence or not evidence['star']
+            doc_type = 'efetch_event'
         else:
-            event = helper.db_util.elasticsearch.get(index='efetch_evidence_' + evidence['image_id'], doc_type='event',
-                                                     id=data['img_id'])
+            event = helper.db_util.elasticsearch.get(index='efetch_evidence_' + evidence['image_id'],
+                                                     doc_type='plaso_event', id=data['img_id'])
             try:
                 starred = 'star' not in event['_source'] or not event['_source']['star']
             except:
                 logging.warn('Failed to star event, uuid "' + data['img_id'] + '" not found')
                 abort(404, 'Could not find event')
+            doc_type = 'plaso_event'
 
         if starred:
-            helper.db_util.update(data['img_id'], evidence['image_id'], {'star': True})
+            helper.db_util.update(data['img_id'], evidence['image_id'], {'star': True}, doc_type=doc_type)
             data['img'] = '/resources/images/bookmarked.png'
         else:
-            helper.db_util.update(data['img_id'], evidence['image_id'], {'star': False})
+            helper.db_util.update(data['img_id'], evidence['image_id'], {'star': False}, doc_type=doc_type)
             data['img'] = '/resources/images/notbookmarked.png'
 
         return json.dumps(data)

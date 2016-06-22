@@ -19,8 +19,6 @@ try:
 except ImportError:
   pyelasticsearch = None
 
-
-
 def _ProcessEvents(queue, index_name, doc_type, elastic_host, elastic_port, image_id, image_path, output_mediator):
   """Formats all Plaso Events and loads them into Elastic Search"""
   data = []
@@ -188,10 +186,10 @@ def _EventToEfetch(event_object, event_times, image_id, image_path, output_media
 
   return ret_dict
 
-class EfetchOutputModule(interface.OutputModule):
+class ElasticSearchOutputModule(interface.OutputModule):
   """Saves the events into an ElasticSearch database to be used for Efetch."""
-  NAME = u'efetch'
-  DESCRIPTION = u'Saves the events into an ElasticSearch database to be used for Efetch.'
+  NAME = u'elastic'
+  DESCRIPTION = u'Saves the events into an ElasticSearch database.'
 
   def __init__(self, output_mediator):
     """Initializes the output module object.
@@ -199,7 +197,7 @@ class EfetchOutputModule(interface.OutputModule):
     Args:
       output_mediator: The output mediator object (instance of OutputMediator).
     """
-    super(EfetchOutputModule, self).__init__(output_mediator)
+    super(ElasticSearchOutputModule, self).__init__(output_mediator)
     self._counter = 0
     self._max_queue_size = 32000
     self._max_efetch_queue_size = 500

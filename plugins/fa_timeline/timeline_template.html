@@ -22,14 +22,12 @@
     .datagrid-row{
         height:39px;
     }
-
-
 </style>
 </head>
     <body>
         <div class="easyui-layout" style="width:100%;height:100%;">
             <table id="tl01"  class="easyui-datagrid"  style="width:100%;height:100%;"
-        data-options="url:'/plugins/<!-- Plugin -->/<!-- PID -->?mode=events<!-- _a --><!-- indexPattern --><!-- Filter -->',view:scrollview,
+        data-options="url:'/plugins/fa_timeline/<!-- Query -->&mode=events',view:scrollview,
         singleSelect:true,pageSize:45,fitColumns:true">
                 <!-- Table -->
             </table>
@@ -39,11 +37,11 @@
 
             function formatLinkUrl(val,row){
                 if (row.meta_type == 'Directory') {
-                    var url = '/plugins/<!-- Plugin -->/'+ row.pid + '<!-- Query -->';
+                    var url = '/plugins/fa_browser/<!-- Query -->&selected='+row.pid;
                     return '<a href="'+url+'" target="_self">Navigate</a>';
                 }
                 else {
-                    var url = '/plugins/<!-- Children -->'+row.pid;
+                    var url = '/plugins/fa_analyze/?selected='+row.pid;
                     return '<a href="'+url+'" target="timeline_frame">Open</a>';
                 }
             }

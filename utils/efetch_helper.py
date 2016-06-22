@@ -98,7 +98,17 @@ class EfetchHelper(object):
     def get_filters(self, request, must = [], must_not = []):
         """Returns the query from _a RISON"""
         a_parameter = self.get_request_value(request, '_a', '()')
+        g_parameter = self.get_request_value(request, '_g', '()')
         a_parsed = rison.loads(a_parameter)
+        g_parsed = rison.loads(g_parameter)
+
+        if 'time' in g_parsed:
+            pprint.pprint(g_parsed)
+            must.append({ 'range': { 'datetime': {
+                'gte': g_parsed['time']['from'],
+                'lte': g_parsed['time']['to']
+                }}})
+
         pprint.PrettyPrinter(indent=4).pprint(a_parsed)
         if 'filters' in a_parsed:
             for filter in a_parsed['filters']:

@@ -20,7 +20,7 @@ class EfetchOutputHelper(interface.ArgumentsHelper):
 
   NAME = u'efetch'
   CATEGORY = u'output'
-  DESCRIPTION = u'Argument helper for the Elastic Search output module.'
+  DESCRIPTION = u'Argument helper for the Efetch output module.'
 
   _DEFAULT_CASE = u''
   _DEFAULT_DOCUMENT_TYPE = u''
@@ -67,7 +67,7 @@ class EfetchOutputHelper(interface.ArgumentsHelper):
 
     output_format = getattr(options, u'output_format', None)
     if output_format != u'efetch':
-      raise errors.BadConfigOption(u'Only works on Elastic output module.')
+      raise errors.BadConfigOption(u'Only works on Efetch output module.')
 
     case_name = cls._ParseStringOption(
         options, u'case_name', default_value=cls._DEFAULT_CASE)

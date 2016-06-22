@@ -121,15 +121,17 @@ class Efetch(object):
             if args_list and self._helper.plugin_manager.getPluginByName(args_list[0]):
                 args_list.pop(0)
 
-        #TODO NEW
         index = self._helper.get_request_value(request, 'index', 'efetch_evidence*')
-        query = self._helper.get_query(request)
 
         #print("HERE... Index=", index, " Query=", str(query))
-        if '_a' in request.query:
+        if 'selected' in request.query:
+            evidence = self._helper.db_util.get_file_from_pid(self._helper.get_request_value(request, 'selected'))
+
+        elif '_a' in request.query:
             query = self._helper.get_query(request)
             evidence = self._helper.db_util.get_sources(self._helper.db_util.query_index({'query': query}, index, 1),
                                                         True)
+        # TODO Legacy mode, remove once done
         elif args_list:
             pid = '/'.join(args_list)
             print('HERE:' + str(pid))
@@ -137,7 +139,7 @@ class Efetch(object):
         else:
             logging.warn('No PID or Query specified')
 
-        #print("HERE... Evidence=", str(evidence))
+        print("HERE... Evidence=", str(evidence))
 
         if plugin.plugin_object.cache:
             file_cache_path = self._helper.cache_file(evidence)

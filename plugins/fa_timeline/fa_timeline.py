@@ -11,7 +11,7 @@ import pprint
 class FaTimeline(IPlugin):
     def __init__(self):
         self.display_name = 'Log2Timeline'
-        self.popularity = 6
+        self.popularity = 0 # TODO FIX IN ANALYZE
         self.parent = True
         self.cache = False
         self._default_plugin = 'fa_analyze/'
@@ -46,16 +46,12 @@ class FaTimeline(IPlugin):
             return self.get_details(evidence, helper, uuid)
 
         raw_filter = helper.get_request_value(request, 'filter', '{}')
-        filter_query = helper.get_filter(request)
         mode = helper.get_request_value(request, 'mode')
         page = int(helper.get_request_value(request, 'page', 1))
         rows = int(helper.get_request_value(request, 'rows', 100))
         sort = helper.get_request_value(request, 'sort')
         order = helper.get_request_value(request, 'order', 'asc')
         query_string = helper.get_query_string(request)
-
-        query_bool = {}
-
         must = []
         must_not = []
 
@@ -80,17 +76,13 @@ class FaTimeline(IPlugin):
             query_body['sort'] = {sort: order}
         print('HERETIMELINE: ' + str(query_body))
         pprint.PrettyPrinter(indent=4).pprint(query_body)
-        events = helper.db_util.elasticsearch.search(index='efetch_evidence_' + evidence['image_id'], doc_type='event',
+        events = helper.db_util.elasticsearch.search(index='efetch_evidence_' + evidence['image_id'], doc_type='plaso_event',
                                                      body=query_body)
         # Create Table
         table = '<thead>\n<tr>\n'
         table += '    <th formatter="formatThumbnail" field="Thumbnail" sortable="false" width="12">Thumbnail</th>\n'
         table += '    <th formatter="formatLinkUrl" field="Link" sortable="false" width="10">Analyze</th>\n'
 
-        #for item in events['hits']['hits']:
-        #    source = item['_source']
-        #    for key in source:
-        #        columns.add(key)
         width_copy = width[:]
 
         for key in prefix:
@@ -104,10 +96,7 @@ class FaTimeline(IPlugin):
 
             table += '    <th field="' + key + '" sortable="true" ' + th_html \
                      + '>' + key + '</th>\n'
-        #Slows down loading too much
-        #for key in columns:
-        #    if key not in prefix:
-        #        table += '    <th field="' + key + '" sortable="true">' + key + '</th>\n'
+
         table += '</tr>\n</thead>\n'
 
         prefix_copy = prefix[:]
@@ -128,13 +117,13 @@ class FaTimeline(IPlugin):
                     if key == 'star':
                         if 'star' not in source or not source['star']:
                             event_row[key] = """
-                                        <form target='hidden' onsubmit='return toggleStar("""  + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
+                                        <form target='_blank' onsubmit='return toggleStar("""  + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
                                             <input id='""" + source['uuid'] + """' type='image' src='/resources/images/notbookmarked.png'>
                                         </form>
                                     """
                         else:
                             event_row[key] = """
-                                        <form target='hidden' onsubmit='return toggleStar(""" + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
+                                        <form target='_blank' onsubmit='return toggleStar(""" + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
                                             <input id='""" + source['uuid'] + """' type='image' src='/resources/images/bookmarked.png'>
                                         </form>
                                     """
@@ -166,28 +155,8 @@ class FaTimeline(IPlugin):
         template.close()
 
         html = html.replace('<!-- Table -->', table)
-        html = html.replace('<!-- PID -->', evidence['pid'])
-        html = html.replace('<!-- Plugin -->', evidence_item_plugin)
-        html = html.replace('<!-- Title -->', title)
         html = html.replace('<!-- Query -->', query_string)
-        html = html.replace('<!-- Sort -->', prefix[0])
 
-        a_parameter = helper.get_request_value(request, '_a', False)
-        if a_parameter:
-            html = html.replace('<!-- _a -->', '&' + urlencode({'_a': a_parameter}))
-        else:
-            html = html.replace('<!-- _a -->', '')
-
-        index_pattern = helper.get_request_value(request, 'index', False)
-        if index_pattern:
-            html = html.replace('<!-- indexPattern -->', '&' + urlencode({'index': index_pattern}))
-        else:
-            html = html.replace('<!-- indexPattern -->', '')
-
-        if raw_filter:
-            html = html.replace('<!-- Filter -->', '&' + urlencode({'filter': raw_filter}))
-        else:
-            html = html.replace('<!-- Filter -->', '')
         if child_plugins:
             html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
             html = html.replace('<!-- Child -->', helper.plugin_manager.getPluginByName(
@@ -200,7 +169,7 @@ class FaTimeline(IPlugin):
 
     def get_details(self, evidence, helper, uuid):
         table = [ '<table id="t01" class="display">' ]
-        event = helper.db_util.elasticsearch.get(index='efetch_evidence_' + evidence['image_id'], doc_type='event',
+        event = helper.db_util.elasticsearch.get(index='efetch_evidence_' + evidence['image_id'], doc_type='plaso_event',
                                                  id=uuid)
         try:
             for key in event['_source']:

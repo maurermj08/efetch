@@ -151,7 +151,7 @@ class DBUtil(object):
 
         #TODO CHECK IF IMAGE EXISTS
         #TODO Do not hide errors from elasticsearch
-        curr_file = self.elasticsearch.search(index='efetch_evidence_' + image_id, doc_type='event',
+        curr_file = self.elasticsearch.search(index='efetch_evidence_' + image_id, doc_type='efetch_event',
                                               body={ 'query': {'bool': {'must': [{'term': {'pid': pid}},
                                                                        {'term': {'parser': 'efetch'}}]}}})
         if not curr_file['hits'] or not curr_file['hits']['hits'] or not curr_file['hits']['hits'][0]['_source']:
@@ -160,7 +160,7 @@ class DBUtil(object):
                 abort(404, "Could not find file in provided image.")
             else:
                 return
-    
+
         if len(curr_file['hits']['hits']) > 1:
             logging.warn("Found more than one file with pid " + pid)
 
@@ -175,10 +175,10 @@ class DBUtil(object):
         helpers.bulk(self.elasticsearch, json)
 
     #TODO: Determine if abort on error should apply to conflicts
-    def update(self, uuid, image_id, update, abort_on_error=True, repeat=1):
+    def update(self, uuid, image_id, update, abort_on_error=True, repeat=1, doc_type='efetch_event'):
         """Updates evidence event in Elastic Search"""
         try:
-            self.elasticsearch.update(index='efetch_evidence_' + image_id, doc_type='event', id=uuid, body={'doc': update})
+            self.elasticsearch.update(index='efetch_evidence_' + image_id, doc_type=doc_type, id=uuid, body={'doc': update})
         except ConflictError:
             if repeat > 0:
                 logging.info('Failed to update "' + uuid + '" attempting again in 200ms')
@@ -191,7 +191,7 @@ def efetch_root_node():
     """Returns the Elastic Search root node"""
     return {
                 '_index': 'efetch-evidence',
-                '_type' : 'event',
+                '_type' : 'efetch_event',
                 '_id' : '/',
                 '_source' : {
                     'pid' : '/',
