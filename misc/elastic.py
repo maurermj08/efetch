@@ -1,13 +1,5 @@
 # -*- coding: utf-8 -*-
 """An output module that saves data into an ElasticSearch database."""
-#TODO Recreate as the all mighty Efetch Output
-#       TODO: Update Index Name
-#       TODO: Assure that the location is there
-#       ????: Wouldn't it be cool if we could change the
-#               display name to match what I am use to
-#               and possibly add multiple instances
-#               for Kibana
-
 
 import logging
 import sys
@@ -62,15 +54,15 @@ class ElasticSearchOutputModule(interface.OutputModule):
 
     #EFETCH CHANGES###########################################
     parent = (json_serializer._EventObjectJSONEncoder())._ConvertPathSpecToDict(ret_dict['pathspec'])
-    ret_dict['image_id'] = self._image_id 
-    
+    ret_dict['image_id'] = self._image_id
+
     if not self._image_path:
       while 'parent' in parent:
         parent = parent['parent']
       self._image_path = parent['location']
     ret_dict['image_path'] = self._image_path
 
-    root, path = ret_dict['display_name'].split(':/',1)   
+    root, path = ret_dict['display_name'].split(':/',1)
     path = '/' + path
     pid = root + path
     name = os.path.basename(path)
@@ -142,13 +134,13 @@ class ElasticSearchOutputModule(interface.OutputModule):
       event_object: the event object (instance of EventObject).
     """
     ret_dict = event_object.GetValues()
-    #TODO This has the all important location variable I need... 
+    #TODO This has the all important location variable I need...
     #       it is currently nested so I might need to flatten the json
     # Get rid of few attributes that cause issues (and need correcting).
     #EFETCH CHANGES###########################################
     parent = (json_serializer._EventObjectJSONEncoder())._ConvertPathSpecToDict(ret_dict['pathspec'])
-    ret_dict['image_id'] = self._image_id 
-    
+    ret_dict['image_id'] = self._image_id
+
     if not self._image_path:
       while 'parent' in parent:
         parent = parent['parent']
@@ -158,7 +150,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
     ret_dict['image_id'] = self._image_id
 
     # Don't know how I feel about this split... :/ Meh
-    root, path = ret_dict['display_name'].split(':/',1)   
+    root, path = ret_dict['display_name'].split(':/',1)
     path = '/' + path
     root = self._image_id + '/' + root.replace(':', '/')
     pid = root + path
@@ -194,7 +186,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
       self._roots.append(root)
 
     if 'inode' in ret_dict:
-      iid = root + '/' + str(ret_dict['inode']) 
+      iid = root + '/' + str(ret_dict['inode'])
     else:
       iid = root + '/none'
 
@@ -218,7 +210,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
 
     if 'pathspec' in ret_dict:
       del ret_dict['pathspec']
-  
+
     #if 'tag' in ret_dict:
     #  del ret_dict['tag']
     #  tag = getattr(event_object, 'tag', None)
@@ -239,7 +231,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
     #ret_dict['datetime'] = timelib.Timestamp.CopyToIsoFormat(
     #    timelib.Timestamp.RoundToSeconds(event_object.timestamp),
     #    timezone=self._output_mediator.timezone)
-    for time_attribute in ['atime', 'ctime', 'crtime', 'mtime']:   
+    for time_attribute in ['atime', 'ctime', 'crtime', 'mtime']:
       ret_dict[time_attribute] = timelib.Timestamp.CopyToIsoFormat(
           timelib.Timestamp.RoundToSeconds(event_times[time_attribute]),
           timezone=self._output_mediator.timezone)
@@ -379,7 +371,7 @@ class ElasticSearchOutputModule(interface.OutputModule):
         del self._efetch_event_queue[event_object.GetValues()['display_name']]
 
     self._counter += 1
-    
+
     #logging.info('Number of values in Efetch Queue: ' + str(len(self._efetch_event_queue)))
     ############
     # Check if we need to flush.
@@ -427,6 +419,44 @@ class ElasticSearchOutputModule(interface.OutputModule):
     sys.stdout.write('Inserting data')
     sys.stdout.flush()
 
+
+def evidence_template():
+    """Returns the Elastic Search mapping for Evidence"""
+    return {
+        "template" : "efetch_evidence*",
+        "settings" : {
+            "number_of_shards" : 1
+            },
+        "mappings" : {
+            "_default_" : {
+                "_source" : { "enabled" : True },
+                "properties" : {
+                    "root" : {"type": "string", "index" : "not_analyzed"},
+                    "pid" : {"type": "string", "index" : "not_analyzed"},
+                    "iid" : {"type": "string", "index" : "not_analyzed"},
+                    "image_id": {"type": "string", "index" : "not_analyzed"},
+                    "image_path" : {"type": "string", "index" : "not_analyzed"},
+                    "evd_type" : {"type": "string", "index" : "not_analyzed"},
+                    "name" : {"type": "string", "index" : "not_analyzed"},
+                    "path" : {"type": "string", "index" : "not_analyzed"},
+                    "ext" : {"type": "string", "index" : "not_analyzed"},
+                    "dir" : {"type": "string", "index" : "not_analyzed"},
+                    "meta_type" : {"type": "string", "index" : "not_analyzed"},
+                    "inode" : {"type": "string", "index" : "not_analyzed"},
+                    "mtime" : {"type": "date", "format": "date_optional_time", "index" : "not_analyzed"},
+                    "atime" : {"type": "date", "format": "date_optional_time", "index" : "not_analyzed"},
+                    "ctime" : {"type": "date", "format": "date_optional_time", "index" : "not_analyzed"},
+                    "crtime" : {"type": "date", "format": "date_optional_time","index" : "not_analyzed"},
+                    "file_size" : {"type": "string", "index" : "not_analyzed"},
+                    "uid" : {"type": "string", "index" : "not_analyzed"},
+                    "gid" : {"type": "string", "index" : "not_analyzed"},
+                    "driver" : {"type": "string", "index" : "not_analyzed"},
+                    "source_short" : {"type": "string", "index" : "not_analyzed"},
+                    "datetime" : {"type": "date", "format": "date_optional_time","index" : "not_analyzed"}
+                    }
+            }
+        }
+    }
 
 manager.OutputManager.RegisterOutput(
     ElasticSearchOutputModule, disabled=pyelasticsearch is None)

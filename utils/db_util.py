@@ -219,36 +219,37 @@ def efetch_root_node():
 def evidence_template():
     """Returns the Elastic Search mapping for Evidence"""
     return {
-        "template" : "efetch_evidence*",
-        "settings" : {
-            "number_of_shards" : 1
+        "template": "efetch_evidence*",
+        "settings": {
+            "number_of_shards": 1
             },
-        "mappings" : {
-            "_default_" : {
-                "_source" : { "enabled" : True },
-                "properties" : {
-                    "root" : {"type": "string", "index" : "not_analyzed"},
-                    "pid" : {"type": "string", "index" : "not_analyzed"},
-                    "iid" : {"type": "string", "index" : "not_analyzed"},
-                    "image_id": {"type": "string", "index" : "not_analyzed"},
-                    "image_path" : {"type": "string", "index" : "not_analyzed"},
-                    "evd_type" : {"type": "string", "index" : "not_analyzed"},
-                    "name" : {"type": "string", "index" : "not_analyzed"},
-                    "path" : {"type": "string", "index" : "not_analyzed"},
-                    "ext" : {"type": "string", "index" : "not_analyzed"},
-                    "dir" : {"type": "string", "index" : "not_analyzed"},
-                    "meta_type" : {"type": "string", "index" : "not_analyzed"},
-                    "inode" : {"type": "string", "index" : "not_analyzed"},
-                    "mtime" : {"type": "date", "format": "date_optional_time", "index" : "not_analyzed"},
-                    "atime" : {"type": "date", "format": "date_optional_time", "index" : "not_analyzed"},
-                    "ctime" : {"type": "date", "format": "date_optional_time", "index" : "not_analyzed"},
-                    "crtime" : {"type": "date", "format": "date_optional_time","index" : "not_analyzed"},
-                    "file_size" : {"type": "string", "index" : "not_analyzed"},
-                    "uid" : {"type": "string", "index" : "not_analyzed"},
-                    "gid" : {"type": "string", "index" : "not_analyzed"},
-                    "driver" : {"type": "string", "index" : "not_analyzed"},
-                    "source_short" : {"type": "string", "index" : "not_analyzed"},
-                    "datetime" : {"type": "date", "format": "date_optional_time","index" : "not_analyzed"}
+        "mappings": {
+            "_default_": {
+                "_source": { "enabled": True },
+                "properties": {
+                    "root": {"type": "string", "index": "not_analyzed"},
+                    "pid": {"type": "string", "index": "not_analyzed"},
+                    "iid": {"type": "string", "index": "not_analyzed"},
+                    "image_id": {"type": "string", "index": "not_analyzed"},
+                    "image_path": {"type": "string", "index": "not_analyzed"},
+                    "evd_type": {"type": "string", "index": "not_analyzed"},
+                    "name": {"type": "string", "index": "not_analyzed"},
+                    "path": {"type": "string", "index": "not_analyzed"},
+                    "ext": {"type": "string", "index": "not_analyzed"},
+                    "dir": {"type": "string", "index": "not_analyzed"},
+                    "meta_type": {"type": "string", "index": "not_analyzed"},
+                    "inode": {"type": "string", "index": "not_analyzed"},
+                    "mtime": {"type": "date", "format": "date_optional_time", "index": "not_analyzed"},
+                    "atime": {"type": "date", "format": "date_optional_time", "index": "not_analyzed"},
+                    "ctime": {"type": "date", "format": "date_optional_time", "index": "not_analyzed"},
+                    "crtime": {"type": "date", "format": "date_optional_time","index": "not_analyzed"},
+                    "file_size": {"type": "string", "index": "not_analyzed"},
+                    "uid": {"type": "string", "index": "not_analyzed"},
+                    "gid": {"type": "string", "index": "not_analyzed"},
+                    "driver": {"type": "string", "index": "not_analyzed"},
+                    "source_short": {"type": "string", "index": "not_analyzed"},
+                    "source_long": {"type": "string", "index": "not_analyzed"},
+                    "datetime": {"type": "date", "format": "date_optional_time","index": "not_analyzed"}
                     }
             }
         }
@@ -258,16 +259,16 @@ def evidence_template():
 def image_id_template():
     """Returns the Elastic Search mapping for Efetch Image IDs"""
     return {
-        "template" : "efetch_image_ids",
-        "settings" : {
-            "number_of_shards" : 1
+        "template": "efetch_image_ids",
+        "settings": {
+            "number_of_shards": 1
             },
-        "mapping" : {
-            "_default_" : {
-                "_source" : { "enabled" : True },
-                "properties" : {
-                    "key" : {"type": "string", "index" : "not_analyzed"},
-                    "value" : {"type": "string", "index" : "not_analyzed"},
+        "mapping": {
+            "_default_": {
+                "_source": { "enabled": True },
+                "properties": {
+                    "key": {"type": "string", "index": "not_analyzed"},
+                    "value": {"type": "string", "index": "not_analyzed"},
                     }
                 }
             }
@@ -277,19 +278,19 @@ def image_id_template():
 def case_template():
     """Returns the Elastic Search mapping for Efetch Cases"""
     return {
-        "template" : "efetch-cases",
-        "settings" : {
-            "number_of_shards" : 1
+        "template": "efetch-cases",
+        "settings": {
+            "number_of_shards": 1
             },
-        "mapping" : {
-            "_default_" : {
-                "_source" : { "enabled" : True },
-                "properties" : {
-                    "name" : {"type": "string", "index" : "not_analyzed"},
-                    "description" : {"type": "string", "index" : "analyzed"},
-                    "evidence" : {
-                        "properties" : {
-                                "evidence" : {"type" : "string", "index" : "not_analyzed" }
+        "mapping": {
+            "_default_": {
+                "_source": { "enabled": True },
+                "properties": {
+                    "name": {"type": "string", "index": "not_analyzed"},
+                    "description": {"type": "string", "index": "analyzed"},
+                    "evidence": {
+                        "properties": {
+                                "evidence": {"type": "string", "index": "not_analyzed" }
                             }
                         }
                     }

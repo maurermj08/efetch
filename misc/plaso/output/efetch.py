@@ -1,61 +1,65 @@
 # -*- coding: utf-8 -*-
 """An output module that saves data into an ElasticSearch database."""
 
+import copy
 import logging
+import multiprocessing
+import os
 import sys
 import uuid
-import os
-import copy
-import multiprocessing
+try:
+  from elasticsearch import Elasticsearch
+  from elasticsearch import helpers
+except ImportError:
+  Elasticsearch = None
+from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from plaso.lib import errors
 from plaso.lib import timelib
 from plaso.output import interface
 from plaso.output import manager
-from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
-
-try:
-  import requests
-  import pyelasticsearch
-except ImportError:
-  pyelasticsearch = None
-
 
 
 def _ProcessEvents(queue, index_name, doc_type, elastic_host, elastic_port, image_id, image_path, output_mediator):
   """Formats all Plaso Events and loads them into Elastic Search"""
   data = []
   size = len(queue)
+
   while queue:
     event_object = queue.pop(0)
     try:
-      data.append(_EventToDict(event_object, image_id, image_path, output_mediator))
+      data.append(_EventToDict(event_object, image_id, image_path, output_mediator, doc_type, index_name))
     except Exception as e:
       logging.warn('Failed to add event ' + event_object.GetValues()['display_name'])
       logging.warn('Because: ' + e.message)
-  elastic_db = pyelasticsearch.ElasticSearch(u'http://{0:s}:{1:d}'.format(elastic_host, elastic_port))
-  elastic_db.bulk_index(index_name, doc_type, data)
+
+  elastic_search = Elasticsearch(u'http://{0:s}:{1:d}'.format(elastic_host, elastic_port, index_name, doc_type))
+  helpers.bulk(elastic_search, data)
   logging.info('Finished ' + str(size) + ' Events')
   return size
+
 
 def _ProcessEfetchEvents(queue, efetch_time_queue, index_name, doc_type, elastic_host, elastic_port, image_id,
                          image_path, output_mediator):
   """Formats all Efetch Events and loads them into Elastic Search"""
   data = []
   size = len(queue)
+
   while queue:
     event_object = queue.pop(0)
     try:
       data.append(_EventToEfetch(event_object, efetch_time_queue.pop(0),
-                                 image_id, image_path, output_mediator))
+                                 image_id, image_path, output_mediator, doc_type, index_name))
     except Exception as e:
       logging.warn('Failed to add event ' + event_object.GetValues()['display_name'])
       logging.warn('Because: ' + e.message)
-  elastic_db = pyelasticsearch.ElasticSearch(u'http://{0:s}:{1:d}'.format(elastic_host, elastic_port))
-  elastic_db.bulk_index(index_name, doc_type, data)
-  logging.info('Finished ' + str(size) + ' Efetch Events')
+
+  elastic_search = Elasticsearch(u'http://{0:s}:{1:d}'.format(elastic_host, elastic_port, index_name, doc_type))
+  helpers.bulk(elastic_search, data)
+  logging.info('Finished ' + str(size) + ' Events')
   return size
 
-def _EventToDict(event_object, image_id, image_path, output_mediator):
+
+def _EventToDict(event_object, image_id, image_path, output_mediator, doc_type, index):
   """Returns a dict built from an event object.
 
   Args:
@@ -63,7 +67,7 @@ def _EventToDict(event_object, image_id, image_path, output_mediator):
   """
   ret_dict = event_object.GetValues()
 
-  # EFETCH CHANGES
+  # Perform additional parsing to allow for more data analysis options
   ret_dict['image_id'] = image_id
   root, path = ret_dict['display_name'].split(':/',1)
   path = '/' + path
@@ -72,7 +76,7 @@ def _EventToDict(event_object, image_id, image_path, output_mediator):
   name = os.path.basename(path)
   directory = os.path.dirname(pid) + '/'
   ext = os.path.splitext(name)[1][1:] or ""
-  ret_dict['id'] = ret_dict['uuid']
+  #ret_dict['id'] = ret_dict['uuid']
   ret_dict['pid'] = pid
   ret_dict['name'] = name
   ret_dict['dir'] = directory
@@ -119,9 +123,15 @@ def _EventToDict(event_object, image_id, image_path, output_mediator):
   username = output_mediator.GetUsername(event_object)
   ret_dict['username'] = username
 
-  return ret_dict
+  return {
+        "_index": index,
+        "_type": doc_type,
+        "_id": ret_dict['uuid'],
+        "_source": ret_dict
+  }
 
-def _EventToEfetch(event_object, event_times, image_id, image_path, output_mediator):
+
+def _EventToEfetch(event_object, event_times, image_id, image_path, output_mediator, doc_type, index):
   """Returns a dict built from an event object.
 
   Args:
@@ -129,7 +139,7 @@ def _EventToEfetch(event_object, event_times, image_id, image_path, output_media
   """
   ret_dict = event_object.GetValues()
 
-  # Efetch Changes
+  # Perform additional parsing to allow for more data analysis options
   ret_dict['image_id'] = image_id
 
   # Don't know how I feel about this split... :/ Meh
@@ -147,8 +157,8 @@ def _EventToEfetch(event_object, event_times, image_id, image_path, output_media
     iid = root + '/none'
 
   ret_dict['root'] = root
-  ret_dict['id'] = uuid.uuid4().hex
-  ret_dict['uuid'] = ret_dict['id']
+  #ret_dict['id'] = uuid.uuid4().hex
+  ret_dict['uuid'] = uuid.uuid4().hex
   ret_dict['pid'] = pid
   ret_dict['name'] = name
   ret_dict['dir'] = directory
@@ -186,7 +196,12 @@ def _EventToEfetch(event_object, event_times, image_id, image_path, output_media
   username = output_mediator.GetUsername(event_object)
   ret_dict['username'] = username
 
-  return ret_dict
+  return {
+      "_index": index,
+      "_type": doc_type,
+      "_id": ret_dict['uuid'],
+      "_source": ret_dict
+  }
 
 class EfetchOutputModule(interface.OutputModule):
   """Saves the events into an ElasticSearch database to be used for Efetch."""
@@ -205,7 +220,7 @@ class EfetchOutputModule(interface.OutputModule):
     self._max_efetch_queue_size = 500
     self._max_processes = max([multiprocessing.cpu_count() - 1, 1])
     self._queue = []
-    # Maxtasksperchild is being used to prevent out of memory error
+    # Max tasks per child is being used to prevent out of memory error
     self._process_pool = multiprocessing.Pool(processes=self._max_processes, maxtasksperchild=100)
     self._efetch_queue = []
     self._efetch_time_queue = []
@@ -218,13 +233,13 @@ class EfetchOutputModule(interface.OutputModule):
     self._case_name = None
     self._roots = []
     self._efetch_event_queue = {}
-    self._image_path = None
+    self._image_path = ''
     self._ids = []
     self._elastic_port = None
     self._elastic_host = None
     self._efetch_doc_type = 'efetch_event'
 
-  def _RootToDict(self, root):
+  def _RootToDict(self, root, root_uuid):
     sections = root.split('/')
     dictionary = {}
     dictionary['image_id'] = sections[0]
@@ -237,25 +252,34 @@ class EfetchOutputModule(interface.OutputModule):
     dictionary['dir'] = '/'.join(sections[:-1]) + '/'
     dictionary['path'] = root
     dictionary['iid'] = root + '/'
-    dictionary['id'] = uuid.uuid4().hex
-    dictionary['uuid'] = dictionary['id']
+    # dictionary['id'] = uuid.uuid4().hex
+    dictionary['uuid'] = root_uuid
     dictionary['name'] = sections[-1]
     dictionary['image_path'] = self._image_path
-    dictionary['size'] = 0
+    dictionary['size'] = '1'
     dictionary['ext'] = ''
-    dictionary['datetime'] = 0
+    dictionary['datetime'] = '1601-01-01T00:00:00+00:00'
     dictionary['parser'] = 'efetch'
     dictionary['meta_type'] = 'Directory'
     return dictionary
 
   def Close(self):
     """Disconnects from the elastic search server."""
-    root_data = []
+    root_actions = []
+
     for root in self._roots:
-        root_data.append(self._RootToDict(root))
-    self._elastic_db.bulk_index(self._index_name, self._efetch_doc_type, root_data)
+      root_uuid = uuid.uuid4().hex
+      root_actions.append({
+          "_index": self._index_name,
+          "_type": self._efetch_doc_type,
+          "_id": root_uuid,
+          "_source": self._RootToDict(root, root_uuid)
+      })
+
+    helpers.bulk(self._elastic_db, root_actions)
+
     if len(self._efetch_queue) > 0:
-          self._process_pool.apply_async(_ProcessEfetchEvents, args=(self._efetch_queue,
+      self._process_pool.apply_async(_ProcessEfetchEvents, args=(self._efetch_queue,
                                                                      self._efetch_time_queue,
                                                                      self._index_name,
                                                                      self._efetch_doc_type,
@@ -264,7 +288,7 @@ class EfetchOutputModule(interface.OutputModule):
                                                                      self._image_id, self._image_path,
                                                                      self._output_mediator))
     if len(self._queue) > 0:
-          self._process_pool.apply_async(_ProcessEvents, args=(self._queue, self._index_name,
+      self._process_pool.apply_async(_ProcessEvents, args=(self._queue, self._index_name,
                                                                self._doc_type,
                                                                self._elastic_host,
                                                                self._elastic_port,
@@ -312,8 +336,7 @@ class EfetchOutputModule(interface.OutputModule):
     """
     self._elastic_host = elastic_host
     self._elastic_port = elastic_port
-    self._elastic_db = pyelasticsearch.ElasticSearch(
-        u'http://{0:s}:{1:d}'.format(elastic_host, elastic_port))
+    self._elastic_db = Elasticsearch(u'http://{0:s}:{1:d}'.format(elastic_host, elastic_port))
 
   def WriteEventBody(self, event_object):
     """Writes the body of an event object to the output.
@@ -334,7 +357,7 @@ class EfetchOutputModule(interface.OutputModule):
       self._counter = self._counter + self._max_queue_size
       logging.info('Total: %d Queue: %d', self._counter, len(self._efetch_event_queue))
 
-    # Efetch events
+    # Correlate filestat events to be used with Efetch
     if event_object.GetValues()['parser'] == 'filestat':
       if event_object.GetValues()['display_name'] not in self._efetch_event_queue:
         self._efetch_event_queue[event_object.GetValues()['display_name']] = {}
@@ -373,42 +396,51 @@ class EfetchOutputModule(interface.OutputModule):
 
   def WriteHeader(self):
     """Writes the header to the output."""
-    # mapping = {
-    #     self._doc_type: {
-    #         u'properties': {
-    #             u'date': {
-    #                 u'type': 'date',
-    #                 u'format': 'epoch_second'
-    #             }
-    #          }
-    #     }
-    # }
-    # # Check if the mappings exist (only create if not there).
-    # try:
-    #   old_mapping_index = self._elastic_db.get_mapping(self._index_name)
-    #   old_mapping = old_mapping_index.get(self._index_name, {})
-    #   if self._doc_type not in old_mapping:
-    #     self._elastic_db.put_mapping(
-    #         self._index_name, self._doc_type, mapping=mapping)
-    # except (pyelasticsearch.ElasticHttpNotFoundError,
-    #         pyelasticsearch.exceptions.ElasticHttpError):
-    #   try:
-    #     self._elastic_db.create_index(self._index_name, settings={
-    #         'mappings': mapping})
-    #   except pyelasticsearch.IndexAlreadyExistsError:
-    #     raise RuntimeError(u'Unable to created the index')
-    # except requests.exceptions.ConnectionError as exception:
-    #   logging.error(
-    #       u'Unable to proceed, cannot connect to ElasticSearch backend '
-    #       u'with error: {0:s}.\nPlease verify connection.'.format(exception))
-    #   raise RuntimeError(u'Unable to connect to ElasticSearch backend.')
-    #
-    # # pylint: disable=unexpected-keyword-arg
-    # self._elastic_db.health(wait_for_status='yellow')
+    self._elastic_db.indices.create(index='efetch_evidence', ignore=400)
+    self._elastic_db.indices.put_template(name="efetch_evidence", body=evidence_template())
 
     sys.stdout.write('Inserting data')
     sys.stdout.flush()
 
 
+def evidence_template():
+  """Returns the Elastic Search mapping for Evidence"""
+  return {
+      'template': 'efetch_evidence*',
+      'settings': {
+        'number_of_shards': 1
+        },
+      'mappings':{
+        '_default_':{
+          '_source':{ 'enabled':True},
+          'properties':{
+              'root':{'type': 'string', 'index':'not_analyzed'},
+              'pid':{'type': 'string', 'index':'not_analyzed'},
+              'iid':{'type': 'string', 'index':'not_analyzed'},
+              'image_id': {'type': 'string', 'index':'not_analyzed'},
+              'image_path':{'type': 'string', 'index':'not_analyzed'},
+              'evd_type':{'type': 'string', 'index':'not_analyzed'},
+              'name':{'type': 'string', 'index':'not_analyzed'},
+              'path':{'type': 'string', 'index':'not_analyzed'},
+              'ext':{'type': 'string', 'index':'not_analyzed'},
+              'dir':{'type': 'string', 'index':'not_analyzed'},
+              'meta_type':{'type': 'string', 'index':'not_analyzed'},
+              'inode':{'type': 'string', 'index':'not_analyzed'},
+              'mtime':{'type': 'date', 'format': 'date_optional_time', 'index':'not_analyzed'},
+              'atime':{'type': 'date', 'format': 'date_optional_time', 'index':'not_analyzed'},
+              'ctime':{'type': 'date', 'format': 'date_optional_time', 'index':'not_analyzed'},
+              'crtime':{'type': 'date', 'format': 'date_optional_time','index':'not_analyzed'},
+              'file_size':{'type': 'string', 'index':'not_analyzed'},
+              'uid':{'type': 'string', 'index':'not_analyzed'},
+              'gid':{'type': 'string', 'index':'not_analyzed'},
+              'driver':{'type': 'string', 'index':'not_analyzed'},
+              'source_short':{'type': 'string', 'index':'not_analyzed'},
+              'source_long': {'type': 'string', 'index': 'not_analyzed'},
+              'datetime':{'type': 'date', 'format': 'date_optional_time','index': 'not_analyzed'}
+              }
+        }
+      }
+  }
+
 manager.OutputManager.RegisterOutput(
-    EfetchOutputModule, disabled=pyelasticsearch is None)
+    EfetchOutputModule, disabled=Elasticsearch is None)
