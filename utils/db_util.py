@@ -156,6 +156,7 @@ class DBUtil(object):
                                                                        {'term': {'parser': 'efetch'}}]}}})
         if not curr_file['hits'] or not curr_file['hits']['hits'] or not curr_file['hits']['hits'][0]['_source']:
             logging.error("Could not find file. Image='" + image_id + "' pid='" + pid + "'")
+            print('HERE: ' + str(curr_file))
             if abort_on_error:
                 abort(404, "Could not find file in provided image.")
             else:
@@ -249,7 +250,19 @@ def evidence_template():
                     "driver": {"type": "string", "index": "not_analyzed"},
                     "source_short": {"type": "string", "index": "not_analyzed"},
                     "source_long": {"type": "string", "index": "not_analyzed"},
-                    "datetime": {"type": "date", "format": "date_optional_time","index": "not_analyzed"}
+                    "datetime": {"type": "date", "format": "date_optional_time","index": "not_analyzed"},
+                    'url': {'type': 'string', 'index': 'not_analyzed'},
+                    'hostname': {'type': 'string', 'index': 'not_analyzed'},
+                    'pe_type': {'type': 'string', 'index': 'not_analyzed'},
+                    'executable': {'type': 'string', 'index': 'not_analyzed'},
+                    'username': {'type': 'string', 'index': 'not_analyzed'},
+                    'parser': {'type': 'string', 'index': 'not_analyzed'},
+                    'product_name': {'type': 'string', 'index': 'not_analyzed'},
+                    'key_path': {'type': 'string', 'index': 'not_analyzed'},
+                    'ip_address': {'type': 'string', 'index': 'not_analyzed'},
+                    'country': {'type': 'string', 'index': 'not_analyzed'},
+                    'email': {'type': 'string', 'index': 'not_analyzed'},
+                    'computer_name': {'type': 'string', 'index': 'not_analyzed'}
                     }
             }
         }

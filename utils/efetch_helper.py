@@ -94,6 +94,20 @@ class EfetchHelper(object):
         else:
             return  {'query_string': {'analyze_wildcard': True, 'query': '*'}}
 
+    def get_theme(self, request):
+        """Returns the theme from _a RISON"""
+        a_parameter = self.get_request_value(request, '_a', '()')
+        try:
+            a_parsed = rison.loads(a_parameter)
+        except Exception, err:
+            logging.error('Failed to parse rison: ' + a_parameter)
+            traceback.print_exc()
+            return {'query_string': {'analyze_wildcard': True, 'query': '*'}}
+        if 'options' in a_parsed and 'darkTheme' in a_parsed['options'] and a_parsed['options']['darkTheme']:
+            return 'black'
+        else:
+            return 'default'
+
     # NEW KIBANA FILTER
     def get_filters(self, request, must = [], must_not = []):
         """Returns the query from _a RISON"""

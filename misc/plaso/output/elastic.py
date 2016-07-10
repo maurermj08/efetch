@@ -13,6 +13,7 @@ try:
 except ImportError:
   Elasticsearch = None
 
+from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from plaso.lib import errors
 from plaso.lib import timelib
 from plaso.output import interface
@@ -47,34 +48,17 @@ def _EventToDict(event_object, image_id, image_path, output_mediator, doc_type, 
   ret_dict = event_object.GetValues()
 
   # Perform additional parsing to allow for more data analysis options
-  ret_dict['image_id'] = image_id
-  root, path = ret_dict['display_name'].split(':/',1)
-  path = '/' + path
-  root = image_id + '/' + root.replace(':', '/')
-  pid = root + path
-  name = os.path.basename(path)
-  directory = os.path.dirname(pid) + '/'
-  ext = os.path.splitext(name)[1][1:] or ""
-  ret_dict['pid'] = pid
-  ret_dict['name'] = name
-  ret_dict['dir'] = directory
-  ret_dict['ext'] = ext.lower()
-  ret_dict['image_id'] = image_id
-  if 'pathspec' in ret_dict:
-    del ret_dict['pathspec']
+  if u'filename' in ret_dict:
+    ret_dict['name'] = os.path.basename(ret_dict['filename'])
+    ret_dict['ext'] = os.path.splitext(ret_dict['name'])[1][1:].lower() or ""
+    ret_dict['dir'] = os.path.dirname(ret_dict['filename'])
 
-  ret_dict['tag'] = []
+  if 'pathspec' in ret_dict:
+    ret_dict['pathspec'] = JsonPathSpecSerializer.WriteSerialized(ret_dict['pathspec'])
 
   # To not overload the index, remove the regvalue index.
   if 'regvalue' in ret_dict:
     del ret_dict['regvalue']
-
-  # Adding attributes in that are calculated/derived.
-  # We want to remove millisecond precision (causes some issues in
-  # conversion).
-  ret_dict['datetime'] = timelib.Timestamp.CopyToIsoFormat(
-    timelib.Timestamp.RoundToSeconds(event_object.timestamp),
-    timezone=output_mediator.timezone)
 
   message, _ = output_mediator.GetFormattedMessages(event_object)
   if message is None:
@@ -99,6 +83,12 @@ def _EventToDict(event_object, image_id, image_path, output_mediator, doc_type, 
 
   username = output_mediator.GetUsername(event_object)
   ret_dict['username'] = username
+
+  ret_dict['tag'] = []
+
+  ret_dict['datetime'] = timelib.Timestamp.CopyToIsoFormat(
+    timelib.Timestamp.RoundToSeconds(event_object.timestamp),
+    timezone=output_mediator.timezone)
 
   return {
         "_index": index,
@@ -225,34 +215,25 @@ class ElasticSearchOutputModule(interface.OutputModule):
 def evidence_template():
   """Returns the Elastic Search mapping for Evidence"""
   return {
-      'template': 'case*',
+      'template': '*',
       'settings': {
         'number_of_shards': 1
-        },
+      },
       'mappings':{
-        '_default_':{
-          '_source':{ 'enabled':True},
-          'properties':{
-              'root':{'type': 'string', 'index':'not_analyzed'},
-              'pid':{'type': 'string', 'index':'not_analyzed'},
-              'iid':{'type': 'string', 'index':'not_analyzed'},
-              'image_id': {'type': 'string', 'index':'not_analyzed'},
-              'image_path':{'type': 'string', 'index':'not_analyzed'},
-              'evd_type':{'type': 'string', 'index':'not_analyzed'},
-              'name':{'type': 'string', 'index':'not_analyzed'},
-              'path':{'type': 'string', 'index':'not_analyzed'},
-              'ext':{'type': 'string', 'index':'not_analyzed'},
-              'dir':{'type': 'string', 'index':'not_analyzed'},
-              'meta_type':{'type': 'string', 'index':'not_analyzed'},
-              'inode':{'type': 'string', 'index':'not_analyzed'},
-              'file_size':{'type': 'string', 'index':'not_analyzed'},
-              'uid':{'type': 'string', 'index':'not_analyzed'},
-              'gid':{'type': 'string', 'index':'not_analyzed'},
-              'driver':{'type': 'string', 'index':'not_analyzed'},
-              'source_short':{'type': 'string', 'index':'not_analyzed'},
-              'source_long': {'type': 'string', 'index': 'not_analyzed'},
-              'datetime':{'type': 'date', 'format': 'date_optional_time','index': 'not_analyzed'}
-              }
+        'plaso_event':{
+          'dynamic_templates': [ {
+                'strings': {
+                  'match_mapping_type': 'string',
+                  'mapping': {
+                    'fields': {
+                      'raw': {
+                        'type': 'string',
+                        'index': 'not_analyzed'
+                      }
+                    }
+                  }
+                }
+          } ]
         }
       }
   }

@@ -45,7 +45,10 @@ class FaTimeline(IPlugin):
         if method == 'details':
             return self.get_details(evidence, helper, uuid)
 
-        raw_filter = helper.get_request_value(request, 'filter', '{}')
+        # Theme
+        theme = helper.get_theme(request)
+
+        #raw_filter = helper.get_request_value(request, 'filter', '{}')
         mode = helper.get_request_value(request, 'mode')
         page = int(helper.get_request_value(request, 'page', 1))
         rows = int(helper.get_request_value(request, 'rows', 100))
@@ -156,6 +159,7 @@ class FaTimeline(IPlugin):
 
         html = html.replace('<!-- Table -->', table)
         html = html.replace('<!-- Query -->', query_string)
+        html = html.replace('<!-- Theme -->', theme)
 
         if child_plugins:
             html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
