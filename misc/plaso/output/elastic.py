@@ -66,6 +66,9 @@ def _EventToDict(event_object, image_id, image_path, output_mediator, doc_type, 
       u'Unable to find event formatter for: {0:s}.'.format(
         getattr(event_object, u'data_type', u'UNKNOWN')))
 
+  if len(message) > 4000:
+    message = message[:4000] + '..'
+
   ret_dict['message'] = message
 
   source_short, source = output_mediator.GetFormattedSources(

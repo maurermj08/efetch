@@ -4,7 +4,6 @@ import logging
 import os
 import sys
 from bottle import Bottle, request, static_file, abort
-from utils.dfvfs_util import DfvfsUtil
 from utils.efetch_helper import EfetchHelper
 
 
@@ -40,6 +39,8 @@ class Efetch(object):
         if not os.path.isdir(output_dir):
             try:
                 os.mkdir(output_dir)
+                os.mkdir(output_dir + os.path.sep + 'thumbnails')
+                os.mkdir(output_dir + os.path.sep + 'files')
             except:
                 logging.error(u'Could not find nor create output directory ' + output_dir)
                 sys.exit(2)
@@ -58,8 +59,8 @@ class Efetch(object):
         self._app.route('/resources/<resource_path:path>',
                 method='GET', callback=self._get_resource)
         self._app.route('/plugins/', method='GET', callback=self._list_plugins)
-        self._app.route('/plugins/<args:path>', method='GET', callback=self._plugins)
-        self._app.route('/plugins/<args:path>', method='POST', callback=self._plugins)
+        self._app.route('/plugins/<plugin_name>', method='GET', callback=self._plugins)
+        self._app.route('/plugins/<plugin_name>', method='POST', callback=self._plugins)
 
     def _get_resource(self, resource_path):
         """Returns any file in the resource directory.
@@ -86,81 +87,42 @@ class Efetch(object):
 
         return json.dumps(plugin_list)
 
-    def _plugins(self, args):
+    def _plugins(self, plugin_name):
         """Returns the iframe of the given plugin for the given file.
 
         Args:
             args (str): A path of plugins optionally followed by an image id
                 and a file path
-        
-        Examples:
-            /parent_plugin1/parent_plugin2/child_plugin/image_id/path/to/file
-            /parent_plugin1/child_plugin/?some_variable=some_value
-            /child_plugin/image_id/
-            /child_plugin/
         """
-        logging.info('Plugin called "%s"', args)
-        args_list = args.split('/')
-
-        name = str(args_list.pop(0))
-        plugin = self._helper.plugin_manager.getPluginByName(str(name).lower())
+        plugin = self._helper.plugin_manager.getPluginByName(str(plugin_name).lower())
 
         if not plugin:
-            abort(404, "Sorry, could not find plugin " + str(name).lower())
+            abort(404, "Could not find plugin " + str(plugin_name).lower())
 
-        evidence = None
-        file_cache_path = None
-        children = None
+        index = self._helper.get_request_value(request, 'index', 'case*')
+        encoded_path_spec = self._helper.get_request_value(request, 'path_spec', '')
 
-        if plugin.plugin_object.parent:
-            children = '/'.join(args_list)
-            # Updates the args list so parent plugins can get imaged_id, and path
-            while (args_list and self._helper.plugin_manager.getPluginByName(args_list[0]) and
-                    self._helper.plugin_manager.getPluginByName(args_list[0]).plugin_object.parent):
-                args_list.pop(0)
-            if args_list and self._helper.plugin_manager.getPluginByName(args_list[0]):
-                args_list.pop(0)
+        print('!' + plugin_name + ' | ' + self._helper.get_query_string(request))
 
-        index = self._helper.get_request_value(request, 'index', 'efetch_evidence*')
+        logging.info('Plugin called %s, with index=%s and path_spec=%s', plugin_name, index, encoded_path_spec)
+        logging.debug('Query String = %s', self._helper.get_query_string(request))
 
-        #print("HERE... Index=", index, " Query=", str(query))
-        if 'selected' in request.query:
-            evidence = self._helper.db_util.get_file_from_pid(self._helper.get_request_value(request, 'selected'))
-
-        elif '_a' in request.query:
+        if '_a' in request.query:
             query = self._helper.get_query(request)
-            evidence = self._helper.db_util.get_sources(self._helper.db_util.query_index({'query': query}, index, 1),
-                                                        True)
-        # TODO Legacy mode, remove once done
-        elif args_list:
-            pid = '/'.join(args_list)
-            print('HERE:' + str(pid))
-            evidence =  self._helper.db_util.get_file_from_pid(pid)
         else:
-            logging.warn('No PID or Query specified')
+            query = { 'match_all' : {} }
 
-        print("HERE... Evidence=", str(evidence))
+        if not encoded_path_spec:
+            print(str(self._helper.db_util.query_sources(
+                {'query': query}, index, 1)))
+            encoded_path_spec = self._helper.db_util.query_sources(
+                {'query': query}, index, 1)['pathspec']
 
-        if plugin.plugin_object.cache:
-            file_cache_path = self._helper.cache_file(evidence)
-
-        # Get Mimetype if file is cached else guess Mimetype
-        if file_cache_path and 'mimetype' not in evidence:
-            evidence['mimetype'] = self._helper.get_mimetype(file_cache_path)
-            update = {'mimetype': evidence['mimetype']}
-            self._helper.db_util.update(evidence['uuid'], evidence['image_id'], update)
-        elif 'mimetype' not in evidence:
-            evidence['mimetype'] = self._helper.guess_mimetype(evidence['ext'])
-        # Remove Failed Cache
-        elif file_cache_path and not evidence['mimetype']:
-            os.remove(file_cache_path)
-            evidence['mimetype'] = self._helper.get_mimetype(file_cache_path)
-            update = {'mimetype': evidence['mimetype']}
-            self._helper.db_util.update(evidence['uuid'], evidence['image_id'], update)
+        efetch_dictionary = self._helper.get_efetch_dictionary(encoded_path_spec, index, plugin.plugin_object.cache)
         
         # Return plugins frame
-        return plugin.plugin_object.get(evidence, self._helper,
-                file_cache_path, request, children)
+        return plugin.plugin_object.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'],
+                                        request, None)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -35,11 +35,11 @@ class FaCasetree(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        if "case" not in request.query and not request.forms.getall('case'):
+        if "case" not in request.old_query and not request.forms.getall('case'):
             abort(400, 'No case specified')
 
-        if "case" in request.query:
-            case = request.query['case']
+        if "case" in request.old_query:
+            case = request.old_query['case']
         else:
             case = request.forms.get('case')
 

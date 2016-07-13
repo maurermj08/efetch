@@ -3,10 +3,10 @@ Gets all Log2Timeline entries for the current file
 """
 
 from yapsy.IPlugin import IPlugin
-from urllib import urlencode
 import os
 import logging
 import pprint
+from bottle import abort
 
 class FaTimeline(IPlugin):
     def __init__(self):
@@ -27,7 +27,7 @@ class FaTimeline(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
-        return 'parser' in evidence
+        return True
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -39,16 +39,17 @@ class FaTimeline(IPlugin):
             width = [40, 30, 18, 140, 20]):
         """Returns the result of this plugin to be displayed in a browser"""
 
+        index = helper.get_request_value(request, 'index', False)
+        if not index:
+            abort(400, 'Timeline plugin requires an index, but none found')
+
         # This value is the UUID to the event or file
-        uuid = helper.get_request_value(request, 'uuid', False)
+        uuid = helper.get_request_value(request, 'id', False)
         method = helper.get_request_value(request, 'method')
         if method == 'details':
-            return self.get_details(evidence, helper, uuid)
+            return self.get_details(index, helper, uuid)
 
-        # Theme
         theme = helper.get_theme(request)
-
-        #raw_filter = helper.get_request_value(request, 'filter', '{}')
         mode = helper.get_request_value(request, 'mode')
         page = int(helper.get_request_value(request, 'page', 1))
         rows = int(helper.get_request_value(request, 'rows', 100))
@@ -58,34 +59,23 @@ class FaTimeline(IPlugin):
         must = []
         must_not = []
 
-        #Only show specified evidence logs, directories, files
-        if not files and not directories:
-            must_not.append({'term': {'parser': 'efetch'}})
-        elif not logs:
-            must.append({'term': {'parser': 'efetch'}})
-            if not files:
-                must.append({'term': {'meta_type':'Directory'}})
-            if not directories:
-                must.append({'term': {'meta_type':'File'}})
-
         query_filters = helper.get_filters(request, must, must_not)
         print('FILTERS: ' + str(query_filters))
-
         query_body = query_filters
-
         query_body['from'] = rows * (page - 1)
         query_body['size'] = rows
         if sort:
             query_body['sort'] = {sort: order}
         print('HERETIMELINE: ' + str(query_body))
         pprint.PrettyPrinter(indent=4).pprint(query_body)
-        events = helper.db_util.elasticsearch.search(index='efetch_evidence_' + evidence['image_id'], doc_type='plaso_event',
+        events = helper.db_util.elasticsearch.search(index=index, doc_type='plaso_event',
                                                      body=query_body)
+        print(str(events))
+
         # Create Table
         table = '<thead>\n<tr>\n'
         table += '    <th formatter="formatThumbnail" field="Thumbnail" sortable="false" width="12">Thumbnail</th>\n'
         table += '    <th formatter="formatLinkUrl" field="Link" sortable="false" width="10">Analyze</th>\n'
-
         width_copy = width[:]
 
         for key in prefix:
@@ -104,8 +94,8 @@ class FaTimeline(IPlugin):
 
         prefix_copy = prefix[:]
 
-        if 'pid' not in prefix_copy:
-            prefix_copy.append('pid')
+        if 'pathspec' not in prefix_copy:
+            prefix_copy.append('pathspec')
         if 'uuid' not in prefix_copy:
             prefix_copy.append('uuid')
 
@@ -120,13 +110,13 @@ class FaTimeline(IPlugin):
                     if key == 'star':
                         if 'star' not in source or not source['star']:
                             event_row[key] = """
-                                        <form target='_blank' onsubmit='return toggleStar("""  + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
+                                        <form target='_blank' onsubmit='return toggleStar("""  + '"' + index + '", "' + source['uuid'] + '"' + """)'>
                                             <input id='""" + source['uuid'] + """' type='image' src='/resources/images/notbookmarked.png'>
                                         </form>
                                     """
                         else:
                             event_row[key] = """
-                                        <form target='_blank' onsubmit='return toggleStar(""" + '"' + source['pid'] + '", "' + source['uuid'] + '"' + """)'>
+                                        <form target='_blank' onsubmit='return toggleStar(""" + '"' + index + '", "' + source['uuid'] + '"' + """)'>
                                             <input id='""" + source['uuid'] + """' type='image' src='/resources/images/bookmarked.png'>
                                         </form>
                                     """
@@ -141,18 +131,9 @@ class FaTimeline(IPlugin):
             event_dict['rows'] = rows
             return event_dict
 
-        html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-        if evidence['image_id'] in children:
-            child_plugins = str(children).split(evidence['image_id'])[0]
-        else:
-            child_plugins = None
-
-        if child_plugins:
-            template = open(curr_dir + '/split_timeline_template.html', 'r')
-        else:
-            template = open(curr_dir + '/timeline_template.html', 'r')
+        template = open(curr_dir + '/timeline_template.html', 'r')
 
         html = str(template.read())
         template.close()
@@ -160,21 +141,14 @@ class FaTimeline(IPlugin):
         html = html.replace('<!-- Table -->', table)
         html = html.replace('<!-- Query -->', query_string)
         html = html.replace('<!-- Theme -->', theme)
-
-        if child_plugins:
-            html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
-            html = html.replace('<!-- Child -->', helper.plugin_manager.getPluginByName(
-                str(children.split('/', 1)[0]).lower()).plugin_object.display_name)
-            html = html.replace('<!-- Children -->', helper.get_children(evidence['image_id'], children))
-        else:
-            html = html.replace('<!-- Children -->', self._default_plugin)
+        html = html.replace('<!-- Index -->', index)
+        html = html.replace('<!-- Children -->', self._default_plugin)
 
         return html
 
-    def get_details(self, evidence, helper, uuid):
+    def get_details(self, index, helper, uuid):
         table = [ '<table id="t01" class="display">' ]
-        event = helper.db_util.elasticsearch.get(index='efetch_evidence_' + evidence['image_id'], doc_type='plaso_event',
-                                                 id=uuid)
+        event = helper.db_util.query_id(uuid, index)
         try:
             for key in event['_source']:
                 try:

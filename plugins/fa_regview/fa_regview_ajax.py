@@ -36,7 +36,7 @@ class FaRegviewAjax(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        method = request.query['method']
+        method = request.old_query['method']
 
         if not method:
             abort(400, 'No method specified')
@@ -55,7 +55,7 @@ class FaRegviewAjax(IPlugin):
         return json.dumps(data)
 
     def get_children(self, request, path_on_disk):
-        node_id = request.query['node_id']
+        node_id = request.old_query['node_id']
         response.content_type = 'application/json'
         if not node_id:
             return "[]"
@@ -63,7 +63,7 @@ class FaRegviewAjax(IPlugin):
         return json.dumps(data)
 
     def values(self, request, path_on_disk):
-        node_id = request.query['node_id']
+        node_id = request.old_query['node_id']
         response.content_type = 'application/json'
         if not node_id:
             return "[]"

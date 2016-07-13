@@ -34,31 +34,36 @@ class FaTogglestar(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        data = {}
-
-        # This value is the UUID which is returned so that the site knows what image to update
-        data['img_id'] = helper.get_request_value(request, 'image_id', False)
+        index = helper.get_request_value(request, 'index', False)
+        id_value = helper.get_request_value(request, 'id', False)
         starred = False
 
-        if not data['img_id'] or data['img_id'] == evidence['uuid']:
-            data['img_id'] = evidence['uuid']
-            starred = 'star' not in evidence or not evidence['star']
-            doc_type = 'efetch_event'
-        else:
-            event = helper.db_util.elasticsearch.get(index='efetch_evidence_' + evidence['image_id'],
-                                                     doc_type='plaso_event', id=data['img_id'])
-            try:
-                starred = 'star' not in event['_source'] or not event['_source']['star']
-            except:
-                logging.warn('Failed to star event, uuid "' + data['img_id'] + '" not found')
-                abort(404, 'Could not find event')
-            doc_type = 'plaso_event'
+        data = {'img_id' : id_value}
+
+        if not index:
+            abort(400, 'Index required to Star Elasticsearch doc')
+        if not id_value:
+            abort(400, 'ID required to Star Elasticsearch doc')
+
+        event = helper.db_util.query_id(id_value, index)
+        if not event:
+            logging.warn('Toggle Start failed to find event wit ID "' + id_value + '"')
+            abort(400, 'Failed to find event wit ID "' + id_value + '"')
+        doc_type = event['_type']
+        print('HERE123: ' + str(event))
+        source = event['_source']
+
+        try:
+            starred = 'star' not in source or not source['star']
+        except:
+            logging.warn('Failed to star event, id "' + id_value + '" not found')
+            abort(404, 'Could not find event')
 
         if starred:
-            helper.db_util.update(data['img_id'], evidence['image_id'], {'star': True}, doc_type=doc_type)
+            helper.db_util.update(id_value, index, {'star': True}, doc_type=doc_type)
             data['img'] = '/resources/images/bookmarked.png'
         else:
-            helper.db_util.update(data['img_id'], evidence['image_id'], {'star': False}, doc_type=doc_type)
+            helper.db_util.update(id_value, index, {'star': False}, doc_type=doc_type)
             data['img'] = '/resources/images/notbookmarked.png'
 
         return json.dumps(data)

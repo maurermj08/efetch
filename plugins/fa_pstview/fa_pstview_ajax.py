@@ -35,7 +35,7 @@ class FaPstviewAjax(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        method = request.query['method']
+        method = request.old_query['method']
 
         if not method:
             abort(400, 'No method specified')
@@ -54,7 +54,7 @@ class FaPstviewAjax(IPlugin):
         return json.dumps(data)
 
     def get_children(self, request, path_on_disk):
-        path = unicode(request.query['key'])
+        path = unicode(request.old_query['key'])
         if path.endswith('/'):
             path = path[:-1]
         response.content_type = 'application/json'
@@ -62,7 +62,7 @@ class FaPstviewAjax(IPlugin):
         return json.dumps(data)
 
     def values(self, request, path_on_disk):
-        path,key = unicode(request.query['key']).rsplit('/',1)
+        path,key = unicode(request.old_query['key']).rsplit('/', 1)
         response.content_type = 'application/json'
         if not key:
             #No key means it is a folder and currently no support for displaying folder information

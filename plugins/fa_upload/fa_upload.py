@@ -34,7 +34,7 @@ class FaUpload(IPlugin):
         upload = False
 
         try:
-            if request.query['upload'] and request.query['upload'] == 'True':
+            if request.old_query['upload'] and request.old_query['upload'] == 'True':
                 upload = True
         except:
             pass

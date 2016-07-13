@@ -34,31 +34,35 @@ class FaThumbnail(IPlugin):
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns either an icon or thumbnail of the provided file"""
         # If it is folder just return the folder icon
-        if evidence['meta_type'] == 'Directory' or str(evidence['name']).strip() == "." or str(
-                evidence['name']).strip() == "..":
+        if evidence['meta_type'] == 'Directory' or str(evidence['file_name']).strip() == "." or str(
+                evidence['file_name']).strip() == "..":
             return static_file("_folder.png", root=helper.icon_dir, mimetype='image/png')
         if evidence['meta_type'] != 'File':
             return static_file("_blank.png", root=helper.icon_dir, mimetype='image/png')
 
         # Uses extension to determine if it should create a thumbnail
-        # assumed_mimetype = helper.guess_mimetype(str(evidence['ext']).lower())
+        # assumed_mimetype = helper.guess_mimetype(str(evidence['extension']).lower())
 
         # If the file is an image create a thumbnail
         if evidence['mimetype'].startswith('image'):
             # Cache file
             file_cache_path = helper.cache_file(evidence)
-            thumbnail_cache_path = helper.output_dir + 'thumbnails/' + evidence['iid'] + '/' + evidence['name']
-            thumbnail_cache_dir = helper.output_dir + 'thumbnails/' + evidence['iid'] + '/'
+
+            thumbnail_cache_path = evidence['thumbnail_cache_path']
+            thumbnail_cache_dir = evidence['thumbnail_cache_dir']
             # TODO: If this is always a jpeg just state it, should save some time
-            thumbnail_mimetype = helper.get_mimetype(thumbnail_cache_path)
+            #thumbnail_mimetype = helper.get_mimetype(thumbnail_cache_path)
+
+            print('HERE!')
+            print(str(evidence))
 
             if os.path.isfile(thumbnail_cache_path):
-                return static_file(evidence['name'], root=thumbnail_cache_dir, mimetype=thumbnail_mimetype)
+                return static_file(evidence['file_name'], root=thumbnail_cache_dir)
             else:
                 return static_file('_missing.png', root=helper.icon_dir, mimetype='image/png')
         # If file is not an image return the icon associated with the files extension
         else:
-            if not os.path.isfile(helper.icon_dir + str(evidence['ext']).lower() + ".png"):
+            if not os.path.isfile(helper.icon_dir + str(evidence['extension']).lower() + ".png"):
                 return static_file("_blank.png", root=helper.icon_dir, mimetype='image/png')
             else:
-                return static_file(evidence['ext'].lower() + ".png", root=helper.icon_dir, mimetype='image/png')
+                return static_file(evidence['extension'].lower() + ".png", root=helper.icon_dir, mimetype='image/png')

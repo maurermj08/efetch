@@ -35,7 +35,7 @@ class FaSqliteAjax(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns the result of this plugin to be displayed in a browser"""
-        method = request.query['method']
+        method = request.old_query['method']
 
         if not method:
             abort(400, 'No method specified')
@@ -107,7 +107,7 @@ class FaSqliteAjax(IPlugin):
         return json.dumps(base_tree)
 
     def get_children(self, request, path_on_disk):
-        key = unicode(request.query['key'])
+        key = unicode(request.old_query['key'])
         children = []
 
         if key == u'master':
@@ -144,7 +144,7 @@ class FaSqliteAjax(IPlugin):
         return tables
 
     def values(self, request, path_on_disk):
-        key = unicode(request.query['key'])
+        key = unicode(request.old_query['key'])
 
         connection = sqlite3.connect(path_on_disk)
         cursor = connection.cursor()

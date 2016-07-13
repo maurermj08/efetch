@@ -44,7 +44,7 @@ class FaOffice(IPlugin):
                       'ppsx', 'ppsm', 'sldx', 'sldm']
 
         return (evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed) or \
-               (evidence['meta_type'] == 'File' and str(evidence['ext']).lower() in extensions)
+               (evidence['meta_type'] == 'File' and str(evidence['extension']).lower() in extensions)
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

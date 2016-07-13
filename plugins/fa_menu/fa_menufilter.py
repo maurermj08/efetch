@@ -72,7 +72,7 @@ class FaMenuFilter(IPlugin):
         html = html.replace('<!-- Plugin -->', evidence_item_plugin)
         html = html.replace('<!-- Home -->', "/plugins/" + children + query_string)
         # TODO Check if case in query, if not disable evidence buttons
-        html = html.replace('<!-- Case -->', request.query['case'])
+        html = html.replace('<!-- Case -->', request.old_query['case'])
 
         return html
 

@@ -27,7 +27,7 @@
     <body>
         <div class="easyui-layout" style="width:100%;height:100%;">
             <table id="tl01"  class="easyui-datagrid"  style="width:100%;height:100%;"
-        data-options="url:'/plugins/fa_timeline/<!-- Query -->&mode=events',view:scrollview,
+        data-options="url:'/plugins/fa_timeline<!-- Query -->&mode=events',view:scrollview,
         singleSelect:true,pageSize:45,fitColumns:true">
                 <!-- Table -->
             </table>
@@ -37,11 +37,11 @@
 
             function formatLinkUrl(val,row){
                 if (row.meta_type == 'Directory') {
-                    var url = '/plugins/fa_browser/<!-- Query -->&selected='+row.pid;
+                    var url = '/plugins/fa_browser<!-- Query -->&'+ jQuery.param({path_spec: row.pathspec});
                     return '<a href="'+url+'" target="_self">Navigate</a>';
                 }
                 else {
-                    var url = '/plugins/fa_analyze/?selected='+row.pid;
+                    var url = '/plugins/fa_analyze?'+ jQuery.param({path_spec: row.pathspec});
                     return '<a href="'+url+'" target="timeline_frame">Open</a>';
                 }
             }
@@ -49,17 +49,18 @@
             $(function(){
                 $('#tl01').datagrid({
                     detailFormatter: function(rowIndex, rowData){
+                        console.log(rowData)
                         return "<div id='details_" + rowIndex +
-                            "'>Loading...<\/div><script type=\"text/javascript\">$.get('/plugins/fa_timeline/" +
-                            rowData.pid + "/?method=details&uuid=" + rowData.uuid +
-                            "', function(data) { $('#details_" + rowIndex +
+                            "'>Loading...<\/div><script type=\"text/javascript\">$.get('/plugins/fa_timeline?method=details&"
+                             + jQuery.param({id: rowData.uuid}) + "&index=<!-- Index -->', function(data) { $('#details_" + rowIndex +
                             "').html(data); })<\/script>"
                     }
                 });
             });
 
             function formatThumbnail(val,row){
-                var url = '/plugins/fa_thumbnail/'+row.pid;
+                var test = JSON.stringify(row.pathspec)
+                var url = '/plugins/fa_thumbnail?'+ jQuery.param({path_spec: row.pathspec});
                 return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';
             }
 
@@ -86,12 +87,12 @@
                 }
             });
 
-            function toggleStar(pid, img_id) {
+            function toggleStar(index, id) {
                 console.log('toggle started');
-                $.get('/plugins/fa_togglestar/' + pid + '/?image_id=' + img_id, function(data) {
+                $.get('/plugins/fa_togglestar?index=' + index + '&id=' + id, function(data) {
                     var json_data = JSON.parse(data)
                     $('#' + json_data.img_id).attr('src', json_data.img);
-                    console.log('Found: ' + json_data);
+                    console.log('Found: ' + json_data.img);
                     if (typeof(Storage) !== "undefined") {
                         if (localStorage.getItem("fa_star_version") === null) {
                             localStorage.setItem("fa_star_version", 0);

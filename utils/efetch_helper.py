@@ -1,16 +1,20 @@
 #!/usr/bin/python
-import ast
+import hashlib
 import logging
 import magic
 import os
+import datetime
+import pytsk3
 import time
 import threading
-import rison
+import traceback
+from urllib import urlencode
 from db_util import DBUtil
 from PIL import Image
-import traceback
 from yapsy.PluginManager import PluginManager
-import pprint
+from dfvfs.resolver import resolver
+from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
+from bottle import abort
 
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
@@ -20,6 +24,7 @@ class EfetchHelper(object):
         _pymagic = None
         _my_magic = None
         self._edit_lock = threading.Lock()
+        self._mime_lock = threading.Lock()
         self._write_dict = {}
         self.max_file_size = max_file_size
 
@@ -65,13 +70,6 @@ class EfetchHelper(object):
             return request.forms.get(variable_name)
         return default
 
-    def get_children(self, image_id, children, default_children = ''):
-        """Returns a forward slash delimited string of child plugins"""
-        if children and image_id in children:
-            return str(children).split(image_id)[0]
-        else:
-            return default_children
-
     def get_query_string(self, request, default_query=''):
         """Returns the query string of the given request"""
         if request.query_string:
@@ -79,183 +77,246 @@ class EfetchHelper(object):
         else:
             return default_query
 
-    # TODO KIBANA
     def get_query(self, request):
-        """Returns the query from _a RISON"""
-        a_parameter = self.get_request_value(request, '_a', '()')
-        try:
-            a_parsed = rison.loads(a_parameter)
-        except Exception, err:
-            logging.error('Failed to parse rison: ' + a_parameter)
-            traceback.print_exc()
-            return {'query_string': {'analyze_wildcard': True, 'query': '*'}}
-        if 'query' in a_parsed:
-            return a_parsed['query']
-        else:
-            return  {'query_string': {'analyze_wildcard': True, 'query': '*'}}
+        """Gets the Kibana Query from the request"""
+        return self.db_util.get_query(self.get_request_value(request, '_a', '()'))
 
     def get_theme(self, request):
-        """Returns the theme from _a RISON"""
-        a_parameter = self.get_request_value(request, '_a', '()')
-        try:
-            a_parsed = rison.loads(a_parameter)
-        except Exception, err:
-            logging.error('Failed to parse rison: ' + a_parameter)
-            traceback.print_exc()
-            return {'query_string': {'analyze_wildcard': True, 'query': '*'}}
-        if 'options' in a_parsed and 'darkTheme' in a_parsed['options'] and a_parsed['options']['darkTheme']:
-            return 'black'
-        else:
-            return 'default'
+        """Gets the Kibana Theme from the request"""
+        return self.db_util.get_theme(self.get_request_value(request, '_a', '()'))
 
-    # NEW KIBANA FILTER
-    def get_filters(self, request, must = [], must_not = []):
-        """Returns the query from _a RISON"""
-        a_parameter = self.get_request_value(request, '_a', '()')
-        g_parameter = self.get_request_value(request, '_g', '()')
-        a_parsed = rison.loads(a_parameter)
-        g_parsed = rison.loads(g_parameter)
-
-        if 'time' in g_parsed:
-            pprint.pprint(g_parsed)
-            must.append({ 'range': { 'datetime': {
-                'gte': g_parsed['time']['from'],
-                'lte': g_parsed['time']['to']
-                }}})
-
-        pprint.PrettyPrinter(indent=4).pprint(a_parsed)
-        if 'filters' in a_parsed:
-            for filter in a_parsed['filters']:
-                if not filter['meta']['negate']:
-                    must.append({ 'query': filter['query']}) #, '$state': filter['$state']})
-                else:
-                    must_not.append({'query': filter['query']}) #, '$state': filter['$state']})
-
-        query = {
-            'query': {
-                    'filtered': {
-                        'query': {
-                            'query_string': {
-                                'query': '*',
-                                'analyze_wildcard': True
-                            }
-                        }
-                }
-            }
-        }
-
-        if 'query' in a_parsed:
-            must.append({'query': a_parsed['query']})
-
-        if not must and not must_not:
-            return query
-
-        query['query']['filtered']['filter'] = { 'bool': {} }
-
-        if must:
-            #if len(must) == 1:
-            #    must = must[0]
-            query['query']['filtered']['filter']['bool']['must'] = must
-        if must_not:
-            #if len(must_not) == 1:
-            #    must_not = must_not[0]
-            query['query']['filtered']['filter']['bool']['must_not'] = must_not
-
-        return query
-
-
-    # OLD FILTER
-    def get_filter(self, request):
-        """Returns the filter dictionary from a request"""
-        raw_filter = self.get_request_value(request, 'filter', '{}')
-
-        try:
-            filter_query = ast.literal_eval(raw_filter)
-        except:
-            logging.warn('Bad filter %s', raw_filter)
-            filter_query = {}
-        finally:
-            return filter_query
+    def get_filters(self, request, must=[], must_not=[]):
+        """Gets the Kibana Filter from the request"""
+        return self.db_util.get_filters(self.get_request_value(request, '_a', '()'),
+                                        self.get_request_value(request, '_g', '()'), must, must_not)
 
     def get_mimetype(self, file_path, repeat=8):
         """Returns the mimetype for the given file"""
+        self.wait_for_cache(file_path)
+        
         try:
-            if self._pymagic:
-                return self._my_magic.from_file(file_path)
-            else:
-                return self._my_magic.id_filename(file_path)
+            with self._mime_lock:
+                if self._pymagic:
+                    return self._my_magic.from_file(file_path)
+                else:
+                    return self._my_magic.id_filename(file_path)
         except:
             if repeat > 0:
                 logging.warn('Failed to get the mimetype for "%s" attempting again in 100ms', file_path)
                 time.sleep(0.100)
                 self.get_mimetype(file_path, repeat - 1)
+            else:
+                return False
+            traceback.print_stack()
             logging.warn('Failed to get the mimetype for "%s"', file_path)
     
-    def wait_for_cache(self, path, seconds=0.100):
+    def wait_for_cache(self, file_path, seconds=0.100):
         """Waits until a file is finished being cached"""
-        while path in self._write_dict:
+        while file_path in self._write_dict:
             time.sleep(seconds)
 
-    def cache_file(self, curr_file, create_thumbnail=True):
+    def _decode_path_spec(self, encoded_path_spec):
+        """Returns a Path Spec object from an encoded path spec, causes a 400 abort if the decode fails"""
+        if not encoded_path_spec:
+            logging.warn('Path Spec required but none found')
+            abort(400, 'Expected an encoded Path Spec, but none found')
+
+        try:
+            return JsonPathSpecSerializer.ReadSerialized(encoded_path_spec)
+        except Exception as e:
+            logging.warn('Failed to decode pathspec')
+            logging.debug(encoded_path_spec)
+            logging.debug(e.message)
+            logging.debug(traceback.format_exc())
+            abort(400, 'Failed to decode path spec')
+
+    def _get_file_entry(self, encoded_path_spec):
+        """Returns an open File Entry object of the given path spec, causes a 404 abort if the file is not found"""
+        try:
+            return resolver.Resolver.OpenFileEntry(self._decode_path_spec(encoded_path_spec))
+        except Exception as e:
+            logging.warn('Failed to find or open file entry')
+            logging.debug(encoded_path_spec)
+            logging.debug(e.message)
+            logging.debug(traceback.format_exc())
+            abort(404, 'Failed to find or open file entry')
+
+    def get_inode(self, encoded_path_spec):
+        return self._decode_path_spec(encoded_path_spec).inode
+
+    def get_file_path(self, encoded_path_spec):
+        """Returns the full path of the given path spec"""
+        return self._decode_path_spec(encoded_path_spec).location
+
+    def get_file_name(self, encoded_path_spec):
+        """Returns the file name with extension of the given path spec"""
+        return os.path.basename(self.get_file_path(encoded_path_spec))
+
+    def get_file_directory(self, encoded_path_spec):
+        """Returns the full path of the parent directory of the given path spec"""
+        return os.path.dirname(self.get_file_path(encoded_path_spec))
+
+    def get_file_extension(self, encoded_path_spec):
+        """Returns the file extension of the given path spec"""
+        return os.path.splitext(self.get_file_name(encoded_path_spec))[1][1:].lower() or ""
+
+    def guess_file_mimetype(self, encoded_path_spec, ignore_cache=False):
+        """Returns a mimetype based on the files extension"""
+        if not ignore_cache and self.is_file_cached(encoded_path_spec):
+            actual_mimetype = self.get_mimetype(self.get_cache_path(encoded_path_spec))
+            if actual_mimetype:
+                return actual_mimetype
+        return self.guess_mimetype(self.get_file_extension(encoded_path_spec))
+
+    def _get_path_spec_hash(self, encoded_path_spec):
+        """Returns the SHA1 hash of the path spec"""
+        return hashlib.sha1(encoded_path_spec).hexdigest()
+
+    def get_cache_directory(self, encoded_path_spec, parent_directory='files'):
+        """Returns the full path of the directory that should contain the cached evidence file"""
+        return self.output_dir + parent_directory + os.path.sep + self._get_path_spec_hash(encoded_path_spec)\
+               + os.path.sep
+
+    def get_cache_path(self, encoded_path_spec, parent_directory='files'):
+        """Returns the full path to the cached evidence file"""
+        return self.get_cache_directory(encoded_path_spec, parent_directory) + \
+               str(self.get_file_name(encoded_path_spec))
+
+    def is_file_cached(self, encoded_path_spec, parent_directory = 'files'):
+        """Returns True if the evidence file is cached and false if it is not cached"""
+        return os.path.isfile(self.get_cache_path(encoded_path_spec, parent_directory))
+
+    def get_file_object(self, encoded_path_spec):
+        """Opens the provided path spec and returns it as a file object"""
+        self._get_file_entry(encoded_path_spec).GetFileObject()
+
+    def get_efetch_dictionary(self, encoded_path_spec, index='case*', cache=False):
+        """Creates and returns an Efetch object from an encoded path spec"""
+        efetch_dictionary = {}
+        efetch_dictionary['path_spec'] = encoded_path_spec
+        efetch_dictionary['url_query'] = urlencode({ 'path_spec': encoded_path_spec,
+                                                     'index': index})
+
+        path_spec = self._decode_path_spec(encoded_path_spec)
+
+        efetch_dictionary['path'] = path_spec.location
+        efetch_dictionary['inode'] = path_spec.inode
+        efetch_dictionary['type_indicator'] = path_spec.type_indicator
+        efetch_dictionary['file_name'] = os.path.basename(efetch_dictionary['path'])
+        efetch_dictionary['directory'] = os.path.dirname(efetch_dictionary['path'])
+        efetch_dictionary['extension'] = os.path.splitext(efetch_dictionary['file_name'])[1][1:].lower() or ""
+        efetch_dictionary['mime_type'] = self.guess_mimetype(efetch_dictionary['extension'])
+
+        file_entry = self._get_file_entry(encoded_path_spec)
+
+        if file_entry.IsFile() and path_spec.type_indicator == u'TSK':
+            tsk_object = file_entry.GetFileObject()._tsk_file
+            file_type = tsk_object.info.meta.type
+            if file_type == None:
+                efetch_dictionary['meta_type'] = 'None'
+            elif file_type == pytsk3.TSK_FS_META_TYPE_REG:
+                efetch_dictionary['meta_type'] = 'File'
+            elif file_type == pytsk3.TSK_FS_META_TYPE_DIR:
+                efetch_dictionary['meta_type'] = 'Directory'
+            elif file_type == pytsk3.TSK_FS_META_TYPE_LNK:
+                efetch_dictionary['meta_type'] = 'Link'
+            else:
+                efetch_dictionary['meta_type'] = str(file_type)
+
+            efetch_dictionary['mtime'] = datetime.datetime.utcfromtimestamp(tsk_object.info.meta.mtime).isoformat()
+            efetch_dictionary['atime'] = datetime.datetime.utcfromtimestamp(tsk_object.info.meta.atime).isoformat()
+            efetch_dictionary['ctime'] = datetime.datetime.utcfromtimestamp(tsk_object.info.meta.ctime).isoformat()
+            efetch_dictionary['crtime'] = datetime.datetime.utcfromtimestamp(tsk_object.info.meta.crtime).isoformat()
+            efetch_dictionary['size'] = str(tsk_object.info.meta.size)
+            efetch_dictionary['uid'] = str(tsk_object.info.meta.uid)
+            efetch_dictionary['gid'] = str(tsk_object.info.meta.gid)
+        elif file_entry.IsDirectory():
+            efetch_dictionary['meta_type'] = 'Directory'
+        else:
+            efetch_dictionary['meta_type'] = 'Unknown'
+
+        efetch_dictionary['file_cache_path'] = self.get_cache_path(encoded_path_spec)
+        efetch_dictionary['file_cache_dir'] = self.get_cache_directory(encoded_path_spec)
+        efetch_dictionary['thumbnail_cache_path'] = self.get_cache_path(encoded_path_spec, 'thumbnails')
+        efetch_dictionary['thumbnail_cache_dir'] = self.get_cache_directory(encoded_path_spec, 'thumbnails')
+
+        if self.is_file_cached(encoded_path_spec):
+            efetch_dictionary['cached'] = True
+            self.wait_for_cache(efetch_dictionary['file_cache_path'])
+            efetch_dictionary['mimetype'] = self.guess_file_mimetype(encoded_path_spec)
+            efetch_dictionary['mimetype_known'] = True
+        elif cache:
+            efetch_dictionary['cached'] = self.cache_file(efetch_dictionary, file_entry)
+            efetch_dictionary['mimetype'] = self.guess_file_mimetype(encoded_path_spec)
+            efetch_dictionary['mimetype_known'] = True
+        else:
+            efetch_dictionary['cached'] = False
+            efetch_dictionary['mimetype'] = self.guess_mimetype(efetch_dictionary['extension'])
+            efetch_dictionary['mimetype_known'] = False
+
+        return efetch_dictionary
+
+    # TODO CHECK FOR THUMBNAIL REGARDLESS
+    def cache_file(self, efetch_dictionary, file_entry=False):
         """Caches the provided file and returns the files cached directory"""
-        if curr_file['meta_type'] != 'File':
-            return None
-        if int(curr_file['file_size'][0]) > self.max_file_size:
-            return None
+        if efetch_dictionary['meta_type'] != 'File':
+            return False
+        if int(efetch_dictionary['size'][0]) > self.max_file_size:
+            return False
 
-        file_cache_path = self.output_dir + 'files/' + curr_file['iid'] + '/' + curr_file['name']
-        file_cache_dir = self.output_dir + 'files/' + curr_file['iid'] + '/'
-        thumbnail_cache_path = self.output_dir + 'thumbnails/' + curr_file['iid'] + '/' + \
-                curr_file['name']
-        thumbnail_cache_dir = self.output_dir + 'thumbnails/' + curr_file['iid'] + '/'
+        if not os.path.isdir(efetch_dictionary['file_cache_dir']):
+            os.makedirs(efetch_dictionary['file_cache_dir'])
 
-        # Makesure cache directories exist
-        if not os.path.isdir(thumbnail_cache_dir):
-            os.makedirs(thumbnail_cache_dir)
-        if not os.path.isdir(file_cache_dir):
-            os.makedirs(file_cache_dir)
+        self.wait_for_cache(efetch_dictionary['file_cache_path'])
 
-        self.wait_for_cache(file_cache_path)
-        
         write = False
 
         # If file does not exist cat it to directory
-        if not os.path.isfile(file_cache_path):
+        if not os.path.isfile(efetch_dictionary['file_cache_path']):
             with self._edit_lock:
-                if file_cache_path in self._write_dict or os.path.isfile(file_cache_path):
+                if efetch_dictionary['file_cache_path'] in self._write_dict \
+                        or os.path.isfile(efetch_dictionary['file_cache_path']):
                     write = False
                 else:
-                    self._write_dict[file_cache_path] = True
+                    self._write_dict[efetch_dictionary['file_cache_path']] = True
                     write = True
-        
+
         if write:
-            if file_cache_path in self._write_dict:
-                logging.info('Caching file "%s"', curr_file['pid'])
-                self.plugin_manager.getPluginByName(curr_file['driver']).plugin_object.icat(curr_file, 
-                        file_cache_path)
+            if efetch_dictionary['file_cache_path'] in self._write_dict:
+                if not file_entry:
+                    file_entry = self._get_file_entry(efetch_dictionary['path_spec'])
+                in_file = file_entry.GetFileObject()
+                out_file = open(efetch_dictionary['file_cache_path'], "wb")
+                data = in_file.read(32768)
+                while data:
+                    out_file.write(data)
+                    data = in_file.read(32768)
+                in_file.close()
+                out_file.close()
 
-                # Uses extension to determine if it should create a thumbnail
-                assumed_mimetype = self.guess_mimetype(str(curr_file['ext']).lower())
-
-                # If the file is an image create a thumbnail
-                if assumed_mimetype.startswith('image') and create_thumbnail and \
-                        not os.path.isfile(thumbnail_cache_path):
-                    try:
-                        image = Image.open(file_cache_path)
-                        image.thumbnail('64x64')
-                        image.save(thumbnail_cache_path)
-                    except IOError:
-                        logging.warn('IOError when trying to create thumbnail for ' + curr_file['name'] + \
-                                ' at cached path ' + file_cache_path)
-                    except:
-                        logging.warn('Failed to create thumbnail for ' + curr_file['name'] + \
-                                ' at cached path ' + file_cache_path)
                 with self._edit_lock:
-                    del self._write_dict[file_cache_path]
-        else:
-            self.wait_for_cache(file_cache_path)
+                    del self._write_dict[efetch_dictionary['file_cache_path']]
 
-        return file_cache_path
+        # If the file is an image create a thumbnail
+        if self.get_mimetype(efetch_dictionary['file_cache_path']).startswith('image') \
+                and not os.path.isfile(efetch_dictionary['thumbnail_cache_path']):
+            if not os.path.isdir(efetch_dictionary['thumbnail_cache_dir']):
+                os.makedirs(efetch_dictionary['thumbnail_cache_dir'])
+            try:
+                image = Image.open(efetch_dictionary['file_cache_path'])
+                image.thumbnail('64x64')
+                image.save(efetch_dictionary['thumbnail_cache_path'])
+            except IOError:
+                logging.warn('IOError when trying to create thumbnail for '
+                             + efetch_dictionary['file_name'] + ' at cached path ' +
+                             efetch_dictionary['file_cache_path'])
+            except:
+                logging.warn('Failed to create thumbnail for ' + efetch_dictionary['file_name'] +
+                             ' at cached path ' + efetch_dictionary['file_cache_path'])
+        else:
+            self.wait_for_cache(efetch_dictionary['file_cache_path'])
+
+        return True
 
     def guess_mimetype(self, extension):
         """Returns the assumed mimetype based on the extension"""

@@ -26,7 +26,7 @@ class FaSqlite(IPlugin):
         """Checks if the file is compatible with this plugin"""
         allowed_mimetype = ['application/octet-stream']
         allowed_extensions = ['sqlite', 'QuarantineEvents', 'QuarantineEventsV2']
-        return str(evidence['mimetype']).lower() in allowed_mimetype and evidence['ext'].lower() in allowed_extensions
+        return str(evidence['mimetype']).lower() in allowed_mimetype and evidence['extension'].lower() in allowed_extensions
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

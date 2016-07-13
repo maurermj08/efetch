@@ -50,7 +50,7 @@ class FaTree(IPlugin):
             return self.get_child(evidence, helper, files, directories, filter_query)
         elif mode == 'root':
             return json.dumps([{
-                'title': evidence['name'],
+                'title': evidence['file_name'],
                 'key': evidence['pid'],
                 'folder': True,
                 'lazy': True,
