@@ -90,7 +90,7 @@ class EfetchHelper(object):
         return self.db_util.get_filters(self.get_request_value(request, '_a', '()'),
                                         self.get_request_value(request, '_g', '()'), must, must_not)
 
-    def get_mimetype(self, file_path, repeat=8):
+    def get_mimetype(self, file_path, repeat=2):
         """Returns the mimetype for the given file"""
         self.wait_for_cache(file_path)
         
@@ -208,9 +208,10 @@ class EfetchHelper(object):
         efetch_dictionary['mime_type'] = self.guess_mimetype(efetch_dictionary['extension'])
 
         file_entry = self._get_file_entry(encoded_path_spec)
+        file_object = file_entry.GetFileObject()
 
         if file_entry.IsFile() and path_spec.type_indicator == u'TSK':
-            tsk_object = file_entry.GetFileObject()._tsk_file
+            tsk_object = file_object._tsk_file
             file_type = tsk_object.info.meta.type
             if file_type == None:
                 efetch_dictionary['meta_type'] = 'None'
@@ -235,6 +236,9 @@ class EfetchHelper(object):
         else:
             efetch_dictionary['meta_type'] = 'Unknown'
 
+        # file_object.close()
+        del file_entry
+
         efetch_dictionary['file_cache_path'] = self.get_cache_path(encoded_path_spec)
         efetch_dictionary['file_cache_dir'] = self.get_cache_directory(encoded_path_spec)
         efetch_dictionary['thumbnail_cache_path'] = self.get_cache_path(encoded_path_spec, 'thumbnails')
@@ -246,7 +250,7 @@ class EfetchHelper(object):
             efetch_dictionary['mimetype'] = self.guess_file_mimetype(encoded_path_spec)
             efetch_dictionary['mimetype_known'] = True
         elif cache:
-            efetch_dictionary['cached'] = self.cache_file(efetch_dictionary, file_entry)
+            efetch_dictionary['cached'] = self.cache_file(efetch_dictionary)
             efetch_dictionary['mimetype'] = self.guess_file_mimetype(encoded_path_spec)
             efetch_dictionary['mimetype_known'] = True
         else:

@@ -53,8 +53,8 @@ class FaThumbnail(IPlugin):
             # TODO: If this is always a jpeg just state it, should save some time
             #thumbnail_mimetype = helper.get_mimetype(thumbnail_cache_path)
 
-            print('HERE!')
-            print(str(evidence))
+            # print('HERE!')
+            # print(str(evidence))
 
             if os.path.isfile(thumbnail_cache_path):
                 return static_file(evidence['file_name'], root=thumbnail_cache_dir)

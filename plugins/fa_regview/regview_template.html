@@ -71,7 +71,7 @@
         <script>
               $(function() {
               $('#regtree').fancytree({
-                source: { url: '/plugins/fa_regview_ajax/<!-- Path -->/?method=base' },
+                source: { url: '/plugins/fa_regview_ajax?<!-- Query -->&method=base' },
                 autoScroll: true,
                 init: function(event, data) {
                     data.tree.getFirstChild().setFocus();
@@ -82,7 +82,7 @@
                 activate: function(event, data) {
                     node = data.node;
                     $.ajax(
-                          { url: '/plugins/fa_regview_ajax/<!-- Path -->/?method=values',
+                          { url: '/plugins/fa_regview_ajax?<!-- Query -->&method=values',
                             data: {node_id: node.refKey},
                             success: function(data) {
                                 var values_content = '<table id="regt01" class="display"><thead><tr><th>Key</th><th>Data Type</th> <th>Value</th></tr></thead>'
@@ -109,7 +109,7 @@
                     console.log(node);
                     // Issue an ajax request to load child nodes
                     data.result = {
-                        url: "/plugins/fa_regview_ajax/<!-- Path -->/?method=children",
+                        url: "/plugins/fa_regview_ajax?<!-- Query -->&method=children",
                         data: {node_id: node.refKey}
                     }
                 }
