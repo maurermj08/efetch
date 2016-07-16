@@ -5,7 +5,6 @@ Gets all Log2Timeline entries for the current file
 from yapsy.IPlugin import IPlugin
 import os
 import logging
-import pprint
 from bottle import abort
 
 class FaTimeline(IPlugin):
@@ -15,6 +14,7 @@ class FaTimeline(IPlugin):
         self.parent = True
         self.cache = False
         self._default_plugin = 'fa_analyze/'
+        self.fast = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -60,17 +60,14 @@ class FaTimeline(IPlugin):
         must_not = []
 
         query_filters = helper.get_filters(request, must, must_not)
-        print('FILTERS: ' + str(query_filters))
         query_body = query_filters
         query_body['from'] = rows * (page - 1)
         query_body['size'] = rows
         if sort:
             query_body['sort'] = {sort: order}
-        print('HERETIMELINE: ' + str(query_body))
-        pprint.PrettyPrinter(indent=4).pprint(query_body)
+
         events = helper.db_util.elasticsearch.search(index=index, doc_type='plaso_event',
                                                      body=query_body)
-        print(str(events))
 
         # Create Table
         table = '<thead>\n<tr>\n'

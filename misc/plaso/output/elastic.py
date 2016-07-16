@@ -193,7 +193,6 @@ class ElasticSearchOutputModule(interface.OutputModule):
     Args:
       event_object: the event object (instance of EventObject).
     """
-
     self._queue.append(event_object)
     if len(self._queue) >= self._max_queue_size:
       self._process_pool.apply_async(_ProcessEvents, args=(self._queue, self._index_name,
@@ -231,7 +230,8 @@ def evidence_template():
                     'fields': {
                       'raw': {
                         'type': 'string',
-                        'index': 'not_analyzed'
+                        'index': 'not_analyzed',
+                        'ignore_above': 10922
                       }
                     }
                   }

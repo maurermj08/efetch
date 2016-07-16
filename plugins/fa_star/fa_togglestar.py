@@ -14,6 +14,7 @@ class FaTogglestar(IPlugin):
         self.popularity = 0
         self.parent = False
         self.cache = False
+        self.fast = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -50,7 +51,6 @@ class FaTogglestar(IPlugin):
             logging.warn('Toggle Start failed to find event wit ID "' + id_value + '"')
             abort(400, 'Failed to find event wit ID "' + id_value + '"')
         doc_type = event['_type']
-        print('HERE123: ' + str(event))
         source = event['_source']
 
         try:

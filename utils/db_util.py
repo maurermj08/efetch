@@ -88,13 +88,13 @@ class DBUtil(object):
         g_parsed = rison.loads(g_parameter)
 
         if 'time' in g_parsed:
-            pprint.pprint(g_parsed)
+            # pprint.pprint(g_parsed)
             must.append({'range': {'datetime': {
                 'gte': g_parsed['time']['from'],
                 'lte': g_parsed['time']['to']
             }}})
 
-        pprint.PrettyPrinter(indent=4).pprint(a_parsed)
+        # pprint.PrettyPrinter(indent=4).pprint(a_parsed)
         if 'filters' in a_parsed:
             for filter in a_parsed['filters']:
                 if not filter['meta']['negate']:

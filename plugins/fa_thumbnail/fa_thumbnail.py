@@ -13,6 +13,7 @@ class FaThumbnail(IPlugin):
         self.popularity = 0
         self.parent = False
         self.cache = False
+        self.fast = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -34,14 +35,11 @@ class FaThumbnail(IPlugin):
     def get(self, evidence, helper, path_on_disk, request, children):
         """Returns either an icon or thumbnail of the provided file"""
         # If it is folder just return the folder icon
-        if evidence['meta_type'] == 'Directory' or str(evidence['file_name']).strip() == "." or str(
+        if evidence['meta_type'] == 'Directory' or unicode(evidence['file_name']).strip() == "." or unicode(
                 evidence['file_name']).strip() == "..":
             return static_file("_folder.png", root=helper.icon_dir, mimetype='image/png')
         if evidence['meta_type'] != 'File':
             return static_file("_blank.png", root=helper.icon_dir, mimetype='image/png')
-
-        # Uses extension to determine if it should create a thumbnail
-        # assumed_mimetype = helper.guess_mimetype(str(evidence['extension']).lower())
 
         # If the file is an image create a thumbnail
         if evidence['mimetype'].startswith('image'):
@@ -50,11 +48,6 @@ class FaThumbnail(IPlugin):
 
             thumbnail_cache_path = evidence['thumbnail_cache_path']
             thumbnail_cache_dir = evidence['thumbnail_cache_dir']
-            # TODO: If this is always a jpeg just state it, should save some time
-            #thumbnail_mimetype = helper.get_mimetype(thumbnail_cache_path)
-
-            # print('HERE!')
-            # print(str(evidence))
 
             if os.path.isfile(thumbnail_cache_path):
                 return static_file(evidence['file_name'], root=thumbnail_cache_dir)

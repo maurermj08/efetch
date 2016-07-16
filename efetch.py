@@ -102,8 +102,6 @@ class Efetch(object):
         index = self._helper.get_request_value(request, 'index', 'case*')
         encoded_path_spec = self._helper.get_request_value(request, 'path_spec', '')
 
-        # print('!' + plugin_name + ' | ' + self._helper.get_query_string(request))
-
         logging.info('Plugin called %s, with index=%s and path_spec=%s', plugin_name, index, encoded_path_spec)
         logging.debug('Query String = %s', self._helper.get_query_string(request))
 
@@ -113,12 +111,12 @@ class Efetch(object):
             query = { 'match_all' : {} }
 
         if not encoded_path_spec:
-            # print(str(self._helper.db_util.query_sources(
-            #    {'query': query}, index, 1)))
             encoded_path_spec = self._helper.db_util.query_sources(
                 {'query': query}, index, 1)['pathspec']
 
-        efetch_dictionary = self._helper.get_efetch_dictionary(encoded_path_spec, index, plugin.plugin_object.cache)
+        efetch_dictionary = self._helper.\
+            get_efetch_dictionary(encoded_path_spec, index, plugin.plugin_object.cache,
+                                  hasattr(plugin.plugin_object, 'fast') and plugin.plugin_object.fast)
         
         # Return plugins frame
         return plugin.plugin_object.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'],

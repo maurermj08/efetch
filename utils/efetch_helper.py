@@ -23,9 +23,11 @@ class EfetchHelper(object):
         """Initializes the Efetch Helper"""
         _pymagic = None
         _my_magic = None
-        self._edit_lock = threading.Lock()
+        self._cache_lock = threading.Lock()
         self._mime_lock = threading.Lock()
-        self._write_dict = {}
+        self._read_lock = threading.Lock()
+        self._caching = []
+        self._reading = {}
         self.max_file_size = max_file_size
 
         # Setup directory references
@@ -90,10 +92,13 @@ class EfetchHelper(object):
         return self.db_util.get_filters(self.get_request_value(request, '_a', '()'),
                                         self.get_request_value(request, '_g', '()'), must, must_not)
 
-    def get_mimetype(self, file_path, repeat=2):
+    def get_mimetype(self, encoded_path_spec, file_path, repeat=2):
         """Returns the mimetype for the given file"""
-        self.wait_for_cache(file_path)
-        
+
+        if encoded_path_spec in self._caching:
+            with self._cache_lock:
+                pass
+
         try:
             with self._mime_lock:
                 if self._pymagic:
@@ -104,16 +109,11 @@ class EfetchHelper(object):
             if repeat > 0:
                 logging.warn('Failed to get the mimetype for "%s" attempting again in 100ms', file_path)
                 time.sleep(0.100)
-                self.get_mimetype(file_path, repeat - 1)
+                self.get_mimetype(encoded_path_spec, file_path, repeat - 1)
             else:
                 return False
             traceback.print_stack()
             logging.warn('Failed to get the mimetype for "%s"', file_path)
-    
-    def wait_for_cache(self, file_path, seconds=0.100):
-        """Waits until a file is finished being cached"""
-        while file_path in self._write_dict:
-            time.sleep(seconds)
 
     def _decode_path_spec(self, encoded_path_spec):
         """Returns a Path Spec object from an encoded path spec, causes a 400 abort if the decode fails"""
@@ -163,7 +163,7 @@ class EfetchHelper(object):
     def guess_file_mimetype(self, encoded_path_spec, ignore_cache=False):
         """Returns a mimetype based on the files extension"""
         if not ignore_cache and self.is_file_cached(encoded_path_spec):
-            actual_mimetype = self.get_mimetype(self.get_cache_path(encoded_path_spec))
+            actual_mimetype = self.get_mimetype(encoded_path_spec, self.get_cache_path(encoded_path_spec))
             if actual_mimetype:
                 return actual_mimetype
         return self.guess_mimetype(self.get_file_extension(encoded_path_spec))
@@ -180,17 +180,64 @@ class EfetchHelper(object):
     def get_cache_path(self, encoded_path_spec, parent_directory='files'):
         """Returns the full path to the cached evidence file"""
         return self.get_cache_directory(encoded_path_spec, parent_directory) + \
-               str(self.get_file_name(encoded_path_spec))
+               unicode(self.get_file_name(encoded_path_spec))
 
     def is_file_cached(self, encoded_path_spec, parent_directory = 'files'):
         """Returns True if the evidence file is cached and false if it is not cached"""
         return os.path.isfile(self.get_cache_path(encoded_path_spec, parent_directory))
 
-    def get_file_object(self, encoded_path_spec):
-        """Opens the provided path spec and returns it as a file object"""
-        self._get_file_entry(encoded_path_spec).GetFileObject()
+    def get_file_information(self, encoded_path_spec, path_spec):
+        with self._read_lock:
+            if encoded_path_spec in self._reading:
+                self._reading[encoded_path_spec] += 1
+            else:
+                self._reading[encoded_path_spec] = 1
 
-    def get_efetch_dictionary(self, encoded_path_spec, index='case*', cache=False):
+        efetch_dictionary = {}
+        file_entry = self._get_file_entry(encoded_path_spec)
+
+        if file_entry.IsFile() and path_spec.type_indicator == u'TSK':
+            file_object = file_entry.GetFileObject()
+            tsk_object = file_object._tsk_file
+            file_type = tsk_object.info.meta.type
+            if file_type == None:
+                efetch_dictionary['meta_type'] = 'None'
+            elif file_type == pytsk3.TSK_FS_META_TYPE_REG:
+                efetch_dictionary['meta_type'] = 'File'
+            elif file_type == pytsk3.TSK_FS_META_TYPE_DIR:
+                efetch_dictionary['meta_type'] = 'Directory'
+            elif file_type == pytsk3.TSK_FS_META_TYPE_LNK:
+                efetch_dictionary['meta_type'] = 'Link'
+            else:
+                efetch_dictionary['meta_type'] = str(file_type)
+
+            efetch_dictionary['mtime'] = datetime.datetime.utcfromtimestamp(
+                tsk_object.info.meta.mtime).isoformat()
+            efetch_dictionary['atime'] = datetime.datetime.utcfromtimestamp(
+                tsk_object.info.meta.atime).isoformat()
+            efetch_dictionary['ctime'] = datetime.datetime.utcfromtimestamp(
+                tsk_object.info.meta.ctime).isoformat()
+            efetch_dictionary['crtime'] = datetime.datetime.utcfromtimestamp(
+                tsk_object.info.meta.crtime).isoformat()
+            efetch_dictionary['size'] = str(tsk_object.info.meta.size)
+            efetch_dictionary['uid'] = str(tsk_object.info.meta.uid)
+            efetch_dictionary['gid'] = str(tsk_object.info.meta.gid)
+            with self._read_lock:
+                if self._reading[encoded_path_spec]  == 1:
+                    file_object.close()
+        elif file_entry.IsDirectory():
+            efetch_dictionary['meta_type'] = 'Directory'
+        else:
+            efetch_dictionary['meta_type'] = 'Unknown'
+
+        with self._read_lock:
+            if self._reading[encoded_path_spec]  == 1:
+                del file_entry
+            self._reading[encoded_path_spec] -= 1
+
+        return efetch_dictionary
+
+    def get_efetch_dictionary(self, encoded_path_spec, index='case*', cache=False, fast=False):
         """Creates and returns an Efetch object from an encoded path spec"""
         efetch_dictionary = {}
         efetch_dictionary['path_spec'] = encoded_path_spec
@@ -206,47 +253,19 @@ class EfetchHelper(object):
         efetch_dictionary['directory'] = os.path.dirname(efetch_dictionary['path'])
         efetch_dictionary['extension'] = os.path.splitext(efetch_dictionary['file_name'])[1][1:].lower() or ""
         efetch_dictionary['mime_type'] = self.guess_mimetype(efetch_dictionary['extension'])
-
-        file_entry = self._get_file_entry(encoded_path_spec)
-        file_object = file_entry.GetFileObject()
-
-        if file_entry.IsFile() and path_spec.type_indicator == u'TSK':
-            tsk_object = file_object._tsk_file
-            file_type = tsk_object.info.meta.type
-            if file_type == None:
-                efetch_dictionary['meta_type'] = 'None'
-            elif file_type == pytsk3.TSK_FS_META_TYPE_REG:
-                efetch_dictionary['meta_type'] = 'File'
-            elif file_type == pytsk3.TSK_FS_META_TYPE_DIR:
-                efetch_dictionary['meta_type'] = 'Directory'
-            elif file_type == pytsk3.TSK_FS_META_TYPE_LNK:
-                efetch_dictionary['meta_type'] = 'Link'
-            else:
-                efetch_dictionary['meta_type'] = str(file_type)
-
-            efetch_dictionary['mtime'] = datetime.datetime.utcfromtimestamp(tsk_object.info.meta.mtime).isoformat()
-            efetch_dictionary['atime'] = datetime.datetime.utcfromtimestamp(tsk_object.info.meta.atime).isoformat()
-            efetch_dictionary['ctime'] = datetime.datetime.utcfromtimestamp(tsk_object.info.meta.ctime).isoformat()
-            efetch_dictionary['crtime'] = datetime.datetime.utcfromtimestamp(tsk_object.info.meta.crtime).isoformat()
-            efetch_dictionary['size'] = str(tsk_object.info.meta.size)
-            efetch_dictionary['uid'] = str(tsk_object.info.meta.uid)
-            efetch_dictionary['gid'] = str(tsk_object.info.meta.gid)
-        elif file_entry.IsDirectory():
-            efetch_dictionary['meta_type'] = 'Directory'
-        else:
-            efetch_dictionary['meta_type'] = 'Unknown'
-
-        # file_object.close()
-        del file_entry
-
         efetch_dictionary['file_cache_path'] = self.get_cache_path(encoded_path_spec)
         efetch_dictionary['file_cache_dir'] = self.get_cache_directory(encoded_path_spec)
         efetch_dictionary['thumbnail_cache_path'] = self.get_cache_path(encoded_path_spec, 'thumbnails')
         efetch_dictionary['thumbnail_cache_dir'] = self.get_cache_directory(encoded_path_spec, 'thumbnails')
 
-        if self.is_file_cached(encoded_path_spec):
+        #if os.path.isfile(efetch_dictionary['file_cache_path']) and encoded_path_spec not in self._caching:
+        efetch_dictionary.update(self.get_file_information(encoded_path_spec, path_spec))
+        #elif not fast:
+        ##    with self._cache_lock:
+         #       efetch_dictionary.update(self.get_file_information(encoded_path_spec, path_spec))
+
+        if os.path.isfile(efetch_dictionary['file_cache_path']):
             efetch_dictionary['cached'] = True
-            self.wait_for_cache(efetch_dictionary['file_cache_path'])
             efetch_dictionary['mimetype'] = self.guess_file_mimetype(encoded_path_spec)
             efetch_dictionary['mimetype_known'] = True
         elif cache:
@@ -260,7 +279,6 @@ class EfetchHelper(object):
 
         return efetch_dictionary
 
-    # TODO CHECK FOR THUMBNAIL REGARDLESS
     def cache_file(self, efetch_dictionary, file_entry=False):
         """Caches the provided file and returns the files cached directory"""
         if efetch_dictionary['meta_type'] != 'File':
@@ -271,22 +289,14 @@ class EfetchHelper(object):
         if not os.path.isdir(efetch_dictionary['file_cache_dir']):
             os.makedirs(efetch_dictionary['file_cache_dir'])
 
-        self.wait_for_cache(efetch_dictionary['file_cache_path'])
-
-        write = False
-
-        # If file does not exist cat it to directory
-        if not os.path.isfile(efetch_dictionary['file_cache_path']):
-            with self._edit_lock:
-                if efetch_dictionary['file_cache_path'] in self._write_dict \
-                        or os.path.isfile(efetch_dictionary['file_cache_path']):
-                    write = False
-                else:
-                    self._write_dict[efetch_dictionary['file_cache_path']] = True
-                    write = True
-
-        if write:
-            if efetch_dictionary['file_cache_path'] in self._write_dict:
+        with self._cache_lock:
+            if not os.path.isfile(efetch_dictionary['file_cache_path']):
+                with self._read_lock:
+                    if efetch_dictionary['path_spec'] in self._reading:
+                        self._reading[efetch_dictionary['path_spec']] += 1
+                    else:
+                        self._reading[efetch_dictionary['path_spec']] = 1
+                self._caching.append(efetch_dictionary['path_spec'])
                 if not file_entry:
                     file_entry = self._get_file_entry(efetch_dictionary['path_spec'])
                 in_file = file_entry.GetFileObject()
@@ -295,14 +305,18 @@ class EfetchHelper(object):
                 while data:
                     out_file.write(data)
                     data = in_file.read(32768)
-                in_file.close()
                 out_file.close()
 
-                with self._edit_lock:
-                    del self._write_dict[efetch_dictionary['file_cache_path']]
+                with self._read_lock:
+                    if self._reading[efetch_dictionary['path_spec']] == 1:
+                        del file_entry
+                        in_file.close()
+                    self._reading[efetch_dictionary['path_spec']] -= 1
+                self._caching.remove(efetch_dictionary['path_spec'])
 
         # If the file is an image create a thumbnail
-        if self.get_mimetype(efetch_dictionary['file_cache_path']).startswith('image') \
+        if self.get_mimetype(efetch_dictionary['path_spec'],
+                             efetch_dictionary['file_cache_path']).startswith('image') \
                 and not os.path.isfile(efetch_dictionary['thumbnail_cache_path']):
             if not os.path.isdir(efetch_dictionary['thumbnail_cache_dir']):
                 os.makedirs(efetch_dictionary['thumbnail_cache_dir'])
@@ -317,8 +331,6 @@ class EfetchHelper(object):
             except:
                 logging.warn('Failed to create thumbnail for ' + efetch_dictionary['file_name'] +
                              ' at cached path ' + efetch_dictionary['file_cache_path'])
-        else:
-            self.wait_for_cache(efetch_dictionary['file_cache_path'])
 
         return True
 
