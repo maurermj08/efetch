@@ -34,6 +34,6 @@ class FaPreview(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return evidence['mimetype']
 
-    def get(self, evidence, helper, path_on_disk, request, children):
+    def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
         return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk))

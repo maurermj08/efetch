@@ -32,7 +32,7 @@ class FaAnalyze(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
-    def get(self, evidence, helper, path_on_disk, request, children):
+    def get(self, evidence, helper, path_on_disk, request):
         """Provides a web view with all applicable plugins, defaults to most popular"""
 
         # Add Directoy link

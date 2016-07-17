@@ -50,7 +50,7 @@ class FaOffice(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return mimetype
 
-    def get(self, evidence, helper, path_on_disk, request, children):
+    def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
         newname = os.path.splitext(path_on_disk)[0] + ".pdf"
         if not os.path.isfile(newname):

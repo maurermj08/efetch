@@ -1,17 +1,18 @@
 """
-Lazy loading registry viewer
+API for running a single plugin against multiple pathspecs
 """
 
 from yapsy.IPlugin import IPlugin
-import os
+import logging
 
 
-class FaRegview(IPlugin):
+class FaActionRegex(IPlugin):
+
     def __init__(self):
-        self.display_name = 'Reg. View'
-        self.popularity = 8
-        self.parent = False
-        self.cache = True
+        self.display_name = 'Action AJAX'
+        self.popularity = 0
+        self.cache = False
+        self.fast = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -24,8 +25,7 @@ class FaRegview(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
-        allowed = ['application/octet-stream']
-        return str(evidence['mimetype']).lower() in allowed
+        return True
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -33,10 +33,4 @@ class FaRegview(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        curr_dir = os.path.dirname(os.path.realpath(__file__))
-        template = open(curr_dir + '/regview_template.html', 'r')
-        html = str(template.read())
-        html = html.replace("<!-- Query -->", evidence['url_query'])
-        template.close()
-
-        return html
+        return '<xmp style="white-space: pre-wrap;">TODO</xmp>'

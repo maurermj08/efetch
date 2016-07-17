@@ -32,12 +32,12 @@ class FaSqlite(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
-    def get(self, evidence, helper, path_on_disk, request, children):
+    def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/sqlite_template.html', 'r')
         html = str(template.read())
-        html = html.replace("<!-- Path -->", evidence['pid'])
+        html = html.replace("<!-- Query -->", evidence['url_query'])
         template.close()
 
         return html

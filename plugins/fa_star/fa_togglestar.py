@@ -33,22 +33,24 @@ class FaTogglestar(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
-    def get(self, evidence, helper, path_on_disk, request, children):
+    def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
         index = helper.get_request_value(request, 'index', False)
-        id_value = helper.get_request_value(request, 'id', False)
-        starred = False
-
-        data = {'img_id' : id_value}
-
         if not index:
             abort(400, 'Index required to Star Elasticsearch doc')
-        if not id_value:
+
+        id_value = helper.get_request_value(request, 'id', False)
+        if not id_value and '_id' not in evidence:
             abort(400, 'ID required to Star Elasticsearch doc')
+        elif not id_value:
+            id_value = evidence['_id']
+
+        starred = False
+        data = {'img_id' : id_value}
 
         event = helper.db_util.query_id(id_value, index)
         if not event:
-            logging.warn('Toggle Start failed to find event wit ID "' + id_value + '"')
+            logging.warn('Toggle Start failed to find event with ID "' + id_value + '"')
             abort(400, 'Failed to find event wit ID "' + id_value + '"')
         doc_type = event['_type']
         source = event['_source']

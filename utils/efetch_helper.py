@@ -133,7 +133,8 @@ class EfetchHelper(object):
     def _get_file_entry(self, encoded_path_spec):
         """Returns an open File Entry object of the given path spec, causes a 404 abort if the file is not found"""
         try:
-            return resolver.Resolver.OpenFileEntry(self._decode_path_spec(encoded_path_spec))
+            with self._read_lock:
+                return resolver.Resolver.OpenFileEntry(self._decode_path_spec(encoded_path_spec))
         except Exception as e:
             logging.warn('Failed to find or open file entry')
             logging.debug(encoded_path_spec)
@@ -187,6 +188,7 @@ class EfetchHelper(object):
         return os.path.isfile(self.get_cache_path(encoded_path_spec, parent_directory))
 
     def get_file_information(self, encoded_path_spec, path_spec):
+        """Returns a dictionary of key information within a File Entry"""
         with self._read_lock:
             if encoded_path_spec in self._reading:
                 self._reading[encoded_path_spec] += 1
@@ -224,15 +226,17 @@ class EfetchHelper(object):
             efetch_dictionary['gid'] = str(tsk_object.info.meta.gid)
             with self._read_lock:
                 if self._reading[encoded_path_spec]  == 1:
-                    file_object.close()
+                    # Attempt close again, if exception
+                    try:
+                        file_object.close()
+                    except:
+                        file_object.close()
         elif file_entry.IsDirectory():
             efetch_dictionary['meta_type'] = 'Directory'
         else:
             efetch_dictionary['meta_type'] = 'Unknown'
 
         with self._read_lock:
-            if self._reading[encoded_path_spec]  == 1:
-                del file_entry
             self._reading[encoded_path_spec] -= 1
 
         return efetch_dictionary
@@ -258,11 +262,8 @@ class EfetchHelper(object):
         efetch_dictionary['thumbnail_cache_path'] = self.get_cache_path(encoded_path_spec, 'thumbnails')
         efetch_dictionary['thumbnail_cache_dir'] = self.get_cache_directory(encoded_path_spec, 'thumbnails')
 
-        #if os.path.isfile(efetch_dictionary['file_cache_path']) and encoded_path_spec not in self._caching:
-        efetch_dictionary.update(self.get_file_information(encoded_path_spec, path_spec))
-        #elif not fast:
-        ##    with self._cache_lock:
-         #       efetch_dictionary.update(self.get_file_information(encoded_path_spec, path_spec))
+        if not fast:
+            efetch_dictionary.update(self.get_file_information(encoded_path_spec, path_spec))
 
         if os.path.isfile(efetch_dictionary['file_cache_path']):
             efetch_dictionary['cached'] = True
@@ -309,7 +310,7 @@ class EfetchHelper(object):
 
                 with self._read_lock:
                     if self._reading[efetch_dictionary['path_spec']] == 1:
-                        del file_entry
+                        # del file_entry
                         in_file.close()
                     self._reading[efetch_dictionary['path_spec']] -= 1
                 self._caching.remove(efetch_dictionary['path_spec'])

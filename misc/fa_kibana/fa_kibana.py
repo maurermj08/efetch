@@ -51,7 +51,7 @@ class FaKibana(IPlugin):
             query = "(query_string:(analyze_wildcard:!t,query:'*'))"
 
         print('RISON: ' + str(query))
-        html = ""
+
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/kibana_template.html', 'r')
         html = str(template.read())

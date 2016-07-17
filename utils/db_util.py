@@ -18,7 +18,6 @@ class DBUtil(object):
         else:
             self.elasticsearch = Elasticsearch()
 
-    # Elastic
     def create_index(self, index_name):
         """Create index in Elasticsearch with the provided name, ignoring error if it exists"""
         self.elasticsearch.indices.create(index=index_name, ignore=400)

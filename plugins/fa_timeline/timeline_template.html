@@ -41,7 +41,7 @@
                     return '<a href="'+url+'" target="_self">Navigate</a>';
                 }
                 else {
-                    var url = '/plugins/fa_analyze?'+ jQuery.param({path_spec: row.pathspec});
+                    var url = '/plugins/fa_analyze?'+ jQuery.param({path_spec: row.pathspec, index: row.index});
                     return '<a href="'+url+'" target="timeline_frame">Open</a>';
                 }
             }

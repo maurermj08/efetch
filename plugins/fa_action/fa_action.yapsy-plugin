@@ -1,0 +1,10 @@
+[Core]
+Name = fa_action
+Module = fa_action
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Runs a single plugin against multiple path specs from an Elasticsearch query
+Copyright = 2016

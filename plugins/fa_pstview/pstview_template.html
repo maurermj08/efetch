@@ -78,7 +78,7 @@
         <script>
               $(function() {
               $('#psttree').fancytree({
-                source: { url: '/plugins/fa_pstview_ajax/<!-- Path -->/?method=base' },
+                source: { url: '/plugins/fa_pstview_ajax?<!-- Query -->&method=base' },
                 autoScroll: true,
                 init: function(event, data) {
                     data.tree.getFirstChild().setFocus();
@@ -89,7 +89,7 @@
                 activate: function(event, data) {
                     node = data.node;
                     $.ajax(
-                          { url: '/plugins/fa_pstview_ajax/<!-- Path -->/?method=values',
+                          { url: '/plugins/fa_pstview_ajax?<!-- Query -->&method=values',
                             data: {key: node.key},
                             success: function(data) {
                                 console.log(data);
@@ -104,7 +104,7 @@
                     console.log(node);
                     // Issue an ajax request to load child nodes
                     data.result = {
-                        url: "/plugins/fa_pstview_ajax/<!-- Path -->/?method=children",
+                        url: "/plugins/fa_pstview_ajax?<!-- Query -->&method=children",
                         data: {key: node.key}
                     }
                 }

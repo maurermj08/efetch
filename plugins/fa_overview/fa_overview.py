@@ -32,7 +32,7 @@ class FaOverview(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
-    def get(self, evidence, helper, path_on_disk, request, children):
+    def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
 
         listing = []

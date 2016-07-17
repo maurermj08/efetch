@@ -32,7 +32,7 @@ class FaThumbnail(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
-    def get(self, evidence, helper, path_on_disk, request, children):
+    def get(self, evidence, helper, path_on_disk, request):
         """Returns either an icon or thumbnail of the provided file"""
         # If it is folder just return the folder icon
         if evidence['meta_type'] == 'Directory' or unicode(evidence['file_name']).strip() == "." or unicode(

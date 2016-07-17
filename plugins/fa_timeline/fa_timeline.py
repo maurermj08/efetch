@@ -10,7 +10,7 @@ from bottle import abort
 class FaTimeline(IPlugin):
     def __init__(self):
         self.display_name = 'Log2Timeline'
-        self.popularity = 0 # TODO FIX IN ANALYZE
+        self.popularity = 5
         self.parent = True
         self.cache = False
         self._default_plugin = 'fa_analyze/'
@@ -33,7 +33,7 @@ class FaTimeline(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
-    def get(self, evidence, helper, path_on_disk, request, children, logs=True, files=False, directories=False,
+    def get(self, evidence, helper, path_on_disk, request, logs=True, files=False, directories=False,
             sub_directories=True, evidence_item_plugin='fa_timeline', title='Log2timeline',
             prefix = ['name', 'datetime', 'source_short', 'message', 'star'],
             width = [40, 30, 18, 140, 20]):
@@ -58,6 +58,11 @@ class FaTimeline(IPlugin):
         query_string = helper.get_query_string(request)
         must = []
         must_not = []
+
+        path_spec = helper.get_request_value(request, 'path_spec', False)
+
+        if path_spec:
+            must.append({ 'term': { 'pathspec.raw': path_spec}})
 
         query_filters = helper.get_filters(request, must, must_not)
         query_body = query_filters
@@ -108,13 +113,13 @@ class FaTimeline(IPlugin):
                         if 'star' not in source or not source['star']:
                             event_row[key] = """
                                         <form target='_blank' onsubmit='return toggleStar("""  + '"' + index + '", "' + source['uuid'] + '"' + """)'>
-                                            <input id='""" + source['uuid'] + """' type='image' src='/resources/images/notbookmarked.png'>
+                                            <input id='""" + item['_id'] + """' type='image' src='/resources/images/notbookmarked.png'>
                                         </form>
                                     """
                         else:
                             event_row[key] = """
                                         <form target='_blank' onsubmit='return toggleStar(""" + '"' + index + '", "' + source['uuid'] + '"' + """)'>
-                                            <input id='""" + source['uuid'] + """' type='image' src='/resources/images/bookmarked.png'>
+                                            <input id='""" + item['_id'] + """' type='image' src='/resources/images/bookmarked.png'>
                                         </form>
                                     """
                     elif key in source:
@@ -124,6 +129,7 @@ class FaTimeline(IPlugin):
                             event_row[key] = source[key]
                     else:
                         event_row[key] = ''
+                event_row['index'] = index
                 rows.append(event_row)
             event_dict['rows'] = rows
             return event_dict

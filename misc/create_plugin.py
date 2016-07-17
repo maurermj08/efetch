@@ -29,7 +29,6 @@ def main(argv):
     description = ""
     cname = ""
     popularity = "5"
-    parent = 'True'
     check = "return True"
     get = 'return \'<xmp style="white-space: pre-wrap;">TODO</xmp>\''
     imports = []
@@ -40,7 +39,6 @@ def main(argv):
     get_display()
     get_author()
     get_description()
-    get_parent()
     get_popularity()
     get_imports()
     get_check()
@@ -52,7 +50,6 @@ def main(argv):
     print("Author:      " + author)
     print("Description: " + description)
     print("Popularity:  " + str(popularity))
-    print("Parent:      " + parent)
     print("Imports:     " + ",".join(imports))
     print("check:       " + check)
     #print("Get:         " + get)
@@ -64,7 +61,6 @@ def main(argv):
     plugin = str(template.read())
     plugin = plugin.replace("%{description}", description)
     plugin = plugin.replace("%{cname}", cname)
-    plugin = plugin.replace("%{parent}", parent)
     plugin = plugin.replace("%{popularity}", str(popularity))
     plugin = plugin.replace("%{check}", check)
     plugin = plugin.replace("%{get}", get)
@@ -122,10 +118,6 @@ def get_popularity():
     global popularity
     popularity = raw_input("Popularity, 0(Hidden) 1(low) - 10(high): ")
 
-def get_parent():
-    global parent
-    parent = str(not raw_input("Is parent [Y/n]: ").strip().lower().startswith('n'))
-    
 def get_imports():
     global imports
     raw = raw_input("Imports, blank when done (i.e. 'os'): ")

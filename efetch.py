@@ -119,8 +119,7 @@ class Efetch(object):
                                   hasattr(plugin.plugin_object, 'fast') and plugin.plugin_object.fast)
         
         # Return plugins frame
-        return plugin.plugin_object.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'],
-                                        request, None)
+        return plugin.plugin_object.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'], request)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

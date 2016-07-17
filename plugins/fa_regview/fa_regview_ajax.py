@@ -34,7 +34,7 @@ class FaRegviewAjax(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "application/json"
 
-    def get(self, evidence, helper, path_on_disk, request, children):
+    def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
         method = request.query['method']
 

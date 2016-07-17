@@ -1,0 +1,10 @@
+[Core]
+Name = fa_action_regex
+Module = fa_action_regex
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = API for running a single plugin against multiple pathspecs
+Copyright = 2016
