@@ -4,6 +4,7 @@ Runs a single plugin against multiple path specs from an Elasticsearch query
 
 from yapsy.IPlugin import IPlugin
 import logging
+import os
 from bottle import abort
 
 
@@ -37,13 +38,17 @@ class FaAction(IPlugin):
         index = helper.get_request_value(request, 'index', False)
         theme = helper.get_theme(request)
 
-        # method = helper.get_request_value(request, 'method')
-        # plugin = helper.get_request_value(request, 'plugin', False)
-        # size = helper.get_request_value(request, 'size', 10000)
-        # sort = helper.get_request_value(request, 'sort', False)
-        # order = helper.get_request_value(request, 'order', 'asc')
-
         if not index:
             abort(400, 'Action plugin requires an index, but none found')
 
-        return '<xmp style="white-space: pre-wrap;">Done</xmp>'
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+
+        template = open(curr_dir + '/action_template.html', 'r')
+
+        html = str(template.read())
+        template.close()
+
+        html = html.replace('<!-- Theme -->', theme)
+        html = html.replace('<!-- Index -->', index)
+
+        return html

@@ -2,11 +2,17 @@
 API for running a single plugin against multiple pathspecs
 """
 
-from yapsy.IPlugin import IPlugin
+import copy
 import logging
 import thread
 import uuid
 from bottle import abort
+from yapsy.IPlugin import IPlugin
+
+
+class SimpleRequest(object):
+    """Pseudo Request object to pass to plugins"""
+    pass
 
 
 class FaActionAjax(IPlugin):
@@ -54,11 +60,14 @@ class FaActionAjax(IPlugin):
                                         'fail': 0,
                                         'current': 0.,
                                         'percent': '0'}
-            thread.start_new_thread(self.action, (evidence, helper, request, action_id))
+            pseudo_request = SimpleRequest()
+            pseudo_request.query = copy.deepcopy(request.query)
+            pseudo_request.forms = copy.deepcopy(request.forms)
+            thread.start_new_thread(self.action, (evidence, helper, pseudo_request, action_id))
         elif method == 'status':
             action_id = helper.get_request_value(request, 'action_id', '')
             if not action_id:
-                abort(400, 'Method STATUS requires an action_id, but none found')
+                return self._actions
             if action_id not in self._actions:
                 abort(404, 'No action "' + str(action_id) + '" found')
         else:
@@ -68,7 +77,6 @@ class FaActionAjax(IPlugin):
 
     def action(self, evidence, helper, request, action_id):
         """Runs a single plugin against multiple pathspecs"""
-
         index = helper.get_request_value(request, 'index', False)
         size = helper.get_request_value(request, 'size', 10000)
         sort = helper.get_request_value(request, 'sort', False)
@@ -90,8 +98,8 @@ class FaActionAjax(IPlugin):
         if sort:
             query_body['sort'] = {sort: order}
         events = helper.db_util.elasticsearch.search(index=index, doc_type='plaso_event', body=query_body)
-        self._actions[action_id]['total'] = events['hits']['total']
-        self._actions[action_id]['status'] = 'running'
+        self._actions[action_id]['total'] = min(events['hits']['total'], int(size))
+        self._actions[action_id]['status'] = 'active'
 
         # Run Events
         # TODO Add try catch for running individual plugin
@@ -109,7 +117,7 @@ class FaActionAjax(IPlugin):
                 plugin_object.get(efetch_dictionary, helper, efetch_dictionary['file_cache_path'], request)
                 self._actions[action_id]['current'] += 1.
                 self._actions[action_id]['success'] += 1
-                self._action[action_id]['percent']\
+                self._actions[action_id]['percent']\
                     = "{0:.0f}%".format(self._actions[action_id]['current']/self._actions[action_id]['total'] * 100)
 
         self._actions[action_id]['status'] = 'done'

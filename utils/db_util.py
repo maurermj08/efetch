@@ -79,7 +79,7 @@ class DBUtil(object):
         if 'options' in a_parsed and 'darkTheme' in a_parsed['options'] and a_parsed['options']['darkTheme']:
             return 'black'
         else:
-            return 'default'
+            return 'gray'
 
     def get_filters(self, a_parameter, g_parameter, must=[], must_not=[]):
         """Returns the query from _a RISON"""
