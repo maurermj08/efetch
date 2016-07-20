@@ -33,7 +33,7 @@ class FaPdfinfo(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        process = os.popen('pdfinfo ' + path_on_disk)
+        process = os.popen('pdfinfo "' + path_on_disk + '"')
         pdfinfo = process.read()
         process.close()
 
