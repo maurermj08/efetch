@@ -16,12 +16,13 @@ setup(
                       'Pillow>=3.3.0',
                       'Registry>=0.4.2',
                       'python_magic>=0.4.12',
-                      'pyelasticsearch>=1.4',
-                      'pytsk3>=20160325',
                       'Requests>=2.10.0',
-                      'rison>=1.1',
                       'cherrypy>=5.0.0',
-                      'ExifRead>=2.1.0'],
+                      'ExifRead>=2.1.0',
+                      'rison>=1.0',
+                      'python-registry>=1.0'],
+    dependency_links=['https://github.com/maurermj08/rison/tarball/master#egg=rison-1.1',
+                      'https://github.com/williballenthin/python-registry/tarball/master#egg=python-registry-1.2'],
     author_email='maurermj08@gmail.com',
     description='A pathspec viewer RESTful API'
 )
