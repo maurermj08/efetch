@@ -101,11 +101,11 @@
 
             function formatLinkUrl(val,row){
                 if (row.meta_type == 'Directory') {
-                    var url = '/plugins/fa_browser<!-- Query -->&'+ jQuery.param({path_spec: row.pathspec});
+                    var url = '/plugins/fa_browser<!-- Query -->&'+ jQuery.param({pathspec: row.pathspec});
                     return '<a href="'+url+'" target="_self">Navigate</a>';
                 }
                 else {
-                    var url = '/plugins/fa_analyze?'+ jQuery.param({path_spec: row.pathspec, index: row.index});
+                    var url = '/plugins/fa_analyze?'+ jQuery.param({pathspec: row.pathspec, index: row.index});
                     return '<a href="'+url+'" target="timeline_frame">Open</a>';
                 }
             }
@@ -124,7 +124,7 @@
 
             function formatThumbnail(val,row){
                 var test = JSON.stringify(row.pathspec)
-                var url = '/plugins/fa_thumbnail?'+ jQuery.param({path_spec: row.pathspec});
+                var url = '/plugins/fa_thumbnail?'+ jQuery.param({pathspec: row.pathspec});
                 return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';
             }
 

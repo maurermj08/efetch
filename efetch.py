@@ -1,3 +1,18 @@
+# Copyright 2016 Michael J Maurer
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import argparse
 import json
 import logging
@@ -8,11 +23,10 @@ from utils.efetch_helper import EfetchHelper
 
 
 class Efetch(object):
-    def __init__(self, argv, address, port, debug, cache_dir, max_file_size):
+    def __init__(self, address, port, debug, cache_dir, max_file_size):
         """Initializes Efetch variables and utils.
         
         Args:
-            argv ([str]): A list of system arguments
             address: The hostname or IP address to listen on
             port: The port number the server is running on
             debug: The boolean that enables debug logging
@@ -41,7 +55,7 @@ class Efetch(object):
                 os.mkdir(output_dir)
                 os.mkdir(output_dir + os.path.sep + 'thumbnails')
                 os.mkdir(output_dir + os.path.sep + 'files')
-            except:
+            except IOError:
                 logging.error(u'Could not find nor create output directory ' + output_dir)
                 sys.exit(2)
 
@@ -57,7 +71,7 @@ class Efetch(object):
         """Applies the routes to Efetch methods."""
         self._app.route('/', method='GET', callback=self._index)
         self._app.route('/resources/<resource_path:path>',
-                method='GET', callback=self._get_resource)
+                        method='GET', callback=self._get_resource)
         self._app.route('/plugins/', method='GET', callback=self._list_plugins)
         self._app.route('/plugins/<plugin_name>', method='GET', callback=self._plugins)
         self._app.route('/plugins/<plugin_name>', method='POST', callback=self._plugins)
@@ -91,8 +105,7 @@ class Efetch(object):
         """Returns the iframe of the given plugin for the given file.
 
         Args:
-            args (str): A path of plugins optionally followed by an image id
-                and a file path
+            plugin_name (str): The name of the plugin as defined in the yapsy-plugin file
         """
         plugin = self._helper.plugin_manager.getPluginByName(str(plugin_name).lower())
 
@@ -100,22 +113,22 @@ class Efetch(object):
             abort(404, "Could not find plugin " + str(plugin_name).lower())
 
         index = self._helper.get_request_value(request, 'index', 'case*')
-        encoded_path_spec = self._helper.get_request_value(request, 'path_spec', '')
+        encoded_pathspec = self._helper.get_request_value(request, 'pathspec', '')
 
-        logging.info('Plugin called %s, with index=%s and path_spec=%s', plugin_name, index, encoded_path_spec)
+        logging.info('Plugin called %s, with index=%s and pathspec=%s', plugin_name, index, encoded_pathspec)
         logging.debug('Query String = %s', self._helper.get_query_string(request))
 
         if '_a' in request.query:
             query = self._helper.get_query(request)
         else:
-            query = { 'match_all' : {} }
+            query = {'match_all': {}}
 
-        if not encoded_path_spec:
-            encoded_path_spec = self._helper.db_util.query_sources(
+        if not encoded_pathspec:
+            encoded_pathspec = self._helper.db_util.query_sources(
                 {'query': query}, index, 1)['pathspec']
 
         efetch_dictionary = self._helper.\
-            get_efetch_dictionary(encoded_path_spec, index, plugin.plugin_object.cache,
+            get_efetch_dictionary(encoded_pathspec, index, plugin.plugin_object.cache,
                                   hasattr(plugin.plugin_object, 'fast') and plugin.plugin_object.fast)
         
         # Return plugins frame
@@ -143,5 +156,5 @@ if __name__ == "__main__":
                         action=u'store',
                         default=10000)
     args = parser.parse_args()
-    efetch = Efetch(sys.argv[1:], args.address, args.port, args.debug, args.cache, args.maxfilesize)
+    efetch = Efetch(args.address, args.port, args.debug, args.cache, args.maxfilesize)
     efetch.start()

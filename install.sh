@@ -11,35 +11,6 @@ echo 'Installing Efetch dependencies...'
 sudo add-apt-repository -y ppa:gift/stable
 sudo add-apt-repository -y ppa:sift/stable
 sudo apt-get update
-sudo apt-get -y install python-plaso python-dev python-pip default-jre unoconv libpff libpff-python
-sudo update-rc.d elasticsearch defaults
-sudo service elasticsearch start
-
-#Install Efetch Dependencies
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-sudo pip install -r $DIR/requirements.txt
-
-
-#PLASO FUNCTIONALITY:
-echo 'Adding Efetch to Plaso and modifying file_stat...'
-sudo cp $DIR/misc/plaso/events/file_system_events.py /usr/lib/python2.7/dist-packages/plaso/events/.
-sudo cp $DIR/misc/plaso/parsers/filestat.py /usr/lib/python2.7/dist-packages/plaso/parsers/.
-sudo cp $DIR/misc/plaso/output/efetch.py /usr/lib/python2.7/dist-packages/plaso/output/.
-sudo cp $DIR/misc/plaso/cli/helpers/efetch_output.py /usr/lib/python2.7/dist-packages/plaso/cli/helpers/.
-echo "from plaso.output import efetch" | sudo tee --append /usr/lib/python2.7/dist-packages/plaso/output/__init__.py
-echo "from plaso.cli.helpers import efetch_output" | sudo tee --append /usr/lib/python2.7/dist-packages/plaso/cli/helpers/__init__.py
-
-#Installing external dependencies
-wget https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/2.3.3/elasticsearch-2.3.3.deb -O /tmp/elasticsearch-2.3.3.deb
-dpkg -i /tmp/elasticsearch-2.3.3.deb
-rm /tmp/elasticsearch-2.3.3.deb
-wget https://github.com/williballenthin/python-registry/archive/master.zip -O /tmp/reglib.zip
-mkdir /tmp/reglib
-unzip /tmp/reglib.zip -d /tmp/reglib
-cd /tmp/reglib/python-registry-master/
-python setup.py install
-cd $DIR
-rm /tmp/reglib.zip
-rm -rf /tmp/reglib
-
+sudo apt-get -y install python-plaso python-dev python-setuptools unoconv libpff libpff-python zlib1g-dev libjpeg-dev libtiff5-dev
+${PWD}/setup.py install
 echo 'Done!'

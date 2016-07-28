@@ -59,10 +59,10 @@ class FaTimeline(IPlugin):
         must = []
         must_not = []
 
-        path_spec = helper.get_request_value(request, 'path_spec', False)
+        pathspec = helper.get_request_value(request, 'pathspec', False)
 
-        if path_spec:
-            must.append({ 'term': { 'pathspec.raw': path_spec}})
+        if pathspec:
+            must.append({ 'term': { 'pathspec.raw': pathspec}})
 
         query_filters = helper.get_filters(request, must, must_not)
         query_body = query_filters

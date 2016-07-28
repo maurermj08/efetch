@@ -1,4 +1,18 @@
-#!/usr/bin/python
+# Copyright 2016 Michael J Maurer
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import hashlib
 import logging
 import magic
@@ -92,10 +106,10 @@ class EfetchHelper(object):
         return self.db_util.get_filters(self.get_request_value(request, '_a', '()'),
                                         self.get_request_value(request, '_g', '()'), must, must_not)
 
-    def get_mimetype(self, encoded_path_spec, file_path, repeat=2):
+    def get_mimetype(self, encoded_pathspec, file_path, repeat=2):
         """Returns the mimetype for the given file"""
 
-        if encoded_path_spec in self._caching:
+        if encoded_pathspec in self._caching:
             with self._cache_lock:
                 pass
 
@@ -109,96 +123,96 @@ class EfetchHelper(object):
             if repeat > 0:
                 logging.warn('Failed to get the mimetype for "%s" attempting again in 100ms', file_path)
                 time.sleep(0.100)
-                self.get_mimetype(encoded_path_spec, file_path, repeat - 1)
+                self.get_mimetype(encoded_pathspec, file_path, repeat - 1)
             else:
                 return False
             traceback.print_stack()
             logging.warn('Failed to get the mimetype for "%s"', file_path)
 
-    def _decode_path_spec(self, encoded_path_spec):
+    def _decode_pathspec(self, encoded_pathspec):
         """Returns a Path Spec object from an encoded path spec, causes a 400 abort if the decode fails"""
-        if not encoded_path_spec:
+        if not encoded_pathspec:
             logging.warn('Path Spec required but none found')
             abort(400, 'Expected an encoded Path Spec, but none found')
 
         try:
-            return JsonPathSpecSerializer.ReadSerialized(encoded_path_spec)
+            return JsonPathSpecSerializer.ReadSerialized(encoded_pathspec)
         except Exception as e:
             logging.warn('Failed to decode pathspec')
-            logging.debug(encoded_path_spec)
+            logging.debug(encoded_pathspec)
             logging.debug(e.message)
             logging.debug(traceback.format_exc())
             abort(400, 'Failed to decode path spec')
 
-    def _get_file_entry(self, encoded_path_spec):
+    def _get_file_entry(self, encoded_pathspec):
         """Returns an open File Entry object of the given path spec, causes a 404 abort if the file is not found"""
         try:
             with self._read_lock:
-                return resolver.Resolver.OpenFileEntry(self._decode_path_spec(encoded_path_spec))
+                return resolver.Resolver.OpenFileEntry(self._decode_pathspec(encoded_pathspec))
         except Exception as e:
             logging.warn('Failed to find or open file entry')
-            logging.debug(encoded_path_spec)
+            logging.debug(encoded_pathspec)
             logging.debug(e.message)
             logging.debug(traceback.format_exc())
             abort(404, 'Failed to find or open file entry')
 
-    def get_inode(self, encoded_path_spec):
-        return self._decode_path_spec(encoded_path_spec).inode
+    def get_inode(self, encoded_pathspec):
+        return self._decode_pathspec(encoded_pathspec).inode
 
-    def get_file_path(self, encoded_path_spec):
+    def get_file_path(self, encoded_pathspec):
         """Returns the full path of the given path spec"""
-        return self._decode_path_spec(encoded_path_spec).location
+        return self._decode_pathspec(encoded_pathspec).location
 
-    def get_file_name(self, encoded_path_spec):
+    def get_file_name(self, encoded_pathspec):
         """Returns the file name with extension of the given path spec"""
-        return os.path.basename(self.get_file_path(encoded_path_spec))
+        return os.path.basename(self.get_file_path(encoded_pathspec))
 
-    def get_file_directory(self, encoded_path_spec):
+    def get_file_directory(self, encoded_pathspec):
         """Returns the full path of the parent directory of the given path spec"""
-        return os.path.dirname(self.get_file_path(encoded_path_spec))
+        return os.path.dirname(self.get_file_path(encoded_pathspec))
 
-    def get_file_extension(self, encoded_path_spec):
+    def get_file_extension(self, encoded_pathspec):
         """Returns the file extension of the given path spec"""
-        return os.path.splitext(self.get_file_name(encoded_path_spec))[1][1:].lower() or ""
+        return os.path.splitext(self.get_file_name(encoded_pathspec))[1][1:].lower() or ""
 
-    def guess_file_mimetype(self, encoded_path_spec, ignore_cache=False):
+    def guess_file_mimetype(self, encoded_pathspec, ignore_cache=False):
         """Returns a mimetype based on the files extension"""
-        if not ignore_cache and self.is_file_cached(encoded_path_spec):
-            actual_mimetype = self.get_mimetype(encoded_path_spec, self.get_cache_path(encoded_path_spec))
+        if not ignore_cache and self.is_file_cached(encoded_pathspec):
+            actual_mimetype = self.get_mimetype(encoded_pathspec, self.get_cache_path(encoded_pathspec))
             if actual_mimetype:
                 return actual_mimetype
-        return self.guess_mimetype(self.get_file_extension(encoded_path_spec))
+        return self.guess_mimetype(self.get_file_extension(encoded_pathspec))
 
-    def _get_path_spec_hash(self, encoded_path_spec):
+    def _get_pathspec_hash(self, encoded_pathspec):
         """Returns the SHA1 hash of the path spec"""
-        return hashlib.sha1(encoded_path_spec).hexdigest()
+        return hashlib.sha1(encoded_pathspec).hexdigest()
 
-    def get_cache_directory(self, encoded_path_spec, parent_directory='files'):
+    def get_cache_directory(self, encoded_pathspec, parent_directory='files'):
         """Returns the full path of the directory that should contain the cached evidence file"""
-        return self.output_dir + parent_directory + os.path.sep + self._get_path_spec_hash(encoded_path_spec)\
+        return self.output_dir + parent_directory + os.path.sep + self._get_pathspec_hash(encoded_pathspec)\
                + os.path.sep
 
-    def get_cache_path(self, encoded_path_spec, parent_directory='files'):
+    def get_cache_path(self, encoded_pathspec, parent_directory='files'):
         """Returns the full path to the cached evidence file"""
-        return self.get_cache_directory(encoded_path_spec, parent_directory) + \
-               unicode(self.get_file_name(encoded_path_spec))
+        return self.get_cache_directory(encoded_pathspec, parent_directory) + \
+               unicode(self.get_file_name(encoded_pathspec))
 
-    def is_file_cached(self, encoded_path_spec, parent_directory = 'files'):
+    def is_file_cached(self, encoded_pathspec, parent_directory = 'files'):
         """Returns True if the evidence file is cached and false if it is not cached"""
-        return os.path.isfile(self.get_cache_path(encoded_path_spec, parent_directory))
+        return os.path.isfile(self.get_cache_path(encoded_pathspec, parent_directory))
 
-    def get_file_information(self, encoded_path_spec, path_spec):
+    def get_file_information(self, encoded_pathspec, pathspec):
         """Returns a dictionary of key information within a File Entry"""
         with self._read_lock:
-            if encoded_path_spec in self._reading:
-                self._reading[encoded_path_spec] += 1
+            if encoded_pathspec in self._reading:
+                self._reading[encoded_pathspec] += 1
             else:
-                self._reading[encoded_path_spec] = 1
+                self._reading[encoded_pathspec] = 1
 
         efetch_dictionary = {}
-        file_entry = self._get_file_entry(encoded_path_spec)
+        file_entry = self._get_file_entry(encoded_pathspec)
 
-        if file_entry.IsFile() and path_spec.type_indicator == u'TSK':
+        if file_entry.IsFile() and pathspec.type_indicator == u'TSK':
             file_object = file_entry.GetFileObject()
             tsk_object = file_object._tsk_file
             file_type = tsk_object.info.meta.type
@@ -225,7 +239,7 @@ class EfetchHelper(object):
             efetch_dictionary['uid'] = str(tsk_object.info.meta.uid)
             efetch_dictionary['gid'] = str(tsk_object.info.meta.gid)
             with self._read_lock:
-                if self._reading[encoded_path_spec]  == 1:
+                if self._reading[encoded_pathspec]  == 1:
                     # Attempt close again, if exception
                     try:
                         file_object.close()
@@ -233,45 +247,48 @@ class EfetchHelper(object):
                         file_object.close()
         elif file_entry.IsDirectory():
             efetch_dictionary['meta_type'] = 'Directory'
+        elif file_entry.IsFile():
+            efetch_dictionary['meta_type'] = 'File'
+            efetch_dictionary['size'] = [0]
         else:
             efetch_dictionary['meta_type'] = 'Unknown'
 
         with self._read_lock:
-            self._reading[encoded_path_spec] -= 1
+            self._reading[encoded_pathspec] -= 1
 
         return efetch_dictionary
 
-    def get_efetch_dictionary(self, encoded_path_spec, index='case*', cache=False, fast=False):
+    def get_efetch_dictionary(self, encoded_pathspec, index='case*', cache=False, fast=False):
         """Creates and returns an Efetch object from an encoded path spec"""
         efetch_dictionary = {}
-        efetch_dictionary['path_spec'] = encoded_path_spec
-        efetch_dictionary['url_query'] = urlencode({ 'path_spec': encoded_path_spec,
+        efetch_dictionary['pathspec'] = encoded_pathspec
+        efetch_dictionary['url_query'] = urlencode({ 'pathspec': encoded_pathspec,
                                                      'index': index})
 
-        path_spec = self._decode_path_spec(encoded_path_spec)
+        pathspec = self._decode_pathspec(encoded_pathspec)
 
-        efetch_dictionary['path'] = path_spec.location
-        efetch_dictionary['inode'] = path_spec.inode
-        efetch_dictionary['type_indicator'] = path_spec.type_indicator
+        efetch_dictionary['path'] = pathspec.location
+        efetch_dictionary['inode'] = pathspec.inode
+        efetch_dictionary['type_indicator'] = pathspec.type_indicator
         efetch_dictionary['file_name'] = os.path.basename(efetch_dictionary['path'])
         efetch_dictionary['directory'] = os.path.dirname(efetch_dictionary['path'])
         efetch_dictionary['extension'] = os.path.splitext(efetch_dictionary['file_name'])[1][1:].lower() or ""
         efetch_dictionary['mime_type'] = self.guess_mimetype(efetch_dictionary['extension'])
-        efetch_dictionary['file_cache_path'] = self.get_cache_path(encoded_path_spec)
-        efetch_dictionary['file_cache_dir'] = self.get_cache_directory(encoded_path_spec)
-        efetch_dictionary['thumbnail_cache_path'] = self.get_cache_path(encoded_path_spec, 'thumbnails')
-        efetch_dictionary['thumbnail_cache_dir'] = self.get_cache_directory(encoded_path_spec, 'thumbnails')
+        efetch_dictionary['file_cache_path'] = self.get_cache_path(encoded_pathspec)
+        efetch_dictionary['file_cache_dir'] = self.get_cache_directory(encoded_pathspec)
+        efetch_dictionary['thumbnail_cache_path'] = self.get_cache_path(encoded_pathspec, 'thumbnails')
+        efetch_dictionary['thumbnail_cache_dir'] = self.get_cache_directory(encoded_pathspec, 'thumbnails')
 
         if not fast:
-            efetch_dictionary.update(self.get_file_information(encoded_path_spec, path_spec))
+            efetch_dictionary.update(self.get_file_information(encoded_pathspec, pathspec))
 
         if os.path.isfile(efetch_dictionary['file_cache_path']):
             efetch_dictionary['cached'] = True
-            efetch_dictionary['mimetype'] = self.guess_file_mimetype(encoded_path_spec)
+            efetch_dictionary['mimetype'] = self.guess_file_mimetype(encoded_pathspec)
             efetch_dictionary['mimetype_known'] = True
         elif cache:
             efetch_dictionary['cached'] = self.cache_file(efetch_dictionary)
-            efetch_dictionary['mimetype'] = self.guess_file_mimetype(encoded_path_spec)
+            efetch_dictionary['mimetype'] = self.guess_file_mimetype(encoded_pathspec)
             efetch_dictionary['mimetype_known'] = True
         else:
             efetch_dictionary['cached'] = False
@@ -293,13 +310,13 @@ class EfetchHelper(object):
         with self._cache_lock:
             if not os.path.isfile(efetch_dictionary['file_cache_path']):
                 with self._read_lock:
-                    if efetch_dictionary['path_spec'] in self._reading:
-                        self._reading[efetch_dictionary['path_spec']] += 1
+                    if efetch_dictionary['pathspec'] in self._reading:
+                        self._reading[efetch_dictionary['pathspec']] += 1
                     else:
-                        self._reading[efetch_dictionary['path_spec']] = 1
-                self._caching.append(efetch_dictionary['path_spec'])
+                        self._reading[efetch_dictionary['pathspec']] = 1
+                self._caching.append(efetch_dictionary['pathspec'])
                 if not file_entry:
-                    file_entry = self._get_file_entry(efetch_dictionary['path_spec'])
+                    file_entry = self._get_file_entry(efetch_dictionary['pathspec'])
                 in_file = file_entry.GetFileObject()
                 out_file = open(efetch_dictionary['file_cache_path'], "wb")
                 data = in_file.read(32768)
@@ -309,14 +326,14 @@ class EfetchHelper(object):
                 out_file.close()
 
                 with self._read_lock:
-                    if self._reading[efetch_dictionary['path_spec']] == 1:
+                    if self._reading[efetch_dictionary['pathspec']] == 1:
                         # del file_entry
                         in_file.close()
-                    self._reading[efetch_dictionary['path_spec']] -= 1
-                self._caching.remove(efetch_dictionary['path_spec'])
+                    self._reading[efetch_dictionary['pathspec']] -= 1
+                self._caching.remove(efetch_dictionary['pathspec'])
 
         # If the file is an image create a thumbnail
-        if self.get_mimetype(efetch_dictionary['path_spec'],
+        if self.get_mimetype(efetch_dictionary['pathspec'],
                              efetch_dictionary['file_cache_path']).startswith('image') \
                 and not os.path.isfile(efetch_dictionary['thumbnail_cache_path']):
             if not os.path.isdir(efetch_dictionary['thumbnail_cache_dir']):
