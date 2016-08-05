@@ -42,7 +42,7 @@ class FaOverview(IPlugin):
                 listing.append('<tr><td>' + str(item) + '</td><td><img src="/plugins/fa_thumbnail?'
                                + evidence['url_query'] + '" alt="' + evidence['meta_type'] + '-'
                                + evidence['extension'] + '" title="' + evidence['meta_type']
-                        + '-' + evidence['extension'] + '" style="width:64px;height:64px;"></td></tr>')
+                        + '-' + evidence['extension'] + '" style="height:64px;"></td></tr>')
             elif item in evidence:
                 listing.append('<tr><td>' + str(item) + '</td><td>' + str(evidence[item]) + '</td></tr>')
 

@@ -32,7 +32,7 @@ class FaPreview(IPlugin):
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
-        return evidence['mimetype']
+        return mimetype
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""

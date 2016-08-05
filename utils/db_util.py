@@ -14,8 +14,8 @@
 
 
 import logging
-import time
 import rison
+import time
 import traceback
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import ConflictError
@@ -51,6 +51,25 @@ class DBUtil(object):
             logging.warn('No ID provided for query_id')
             return {}
         return self.elasticsearch.get(index=index, id=id, doc_type=doc_type)
+
+    def query_uuid(self, uuid, index):
+        """Returns the result of an Elasticsearch request for the specified UID"""
+        if not uuid:
+            logging.warn('No uid provided for query_uuid')
+            return {}
+        query = {'query':{'term':{'uuid':uuid}}}
+        query_result = self.query(query, index)
+        if not 'hits' in query_result or 'hits' not in query_result['hits']:
+            logging.error('Query failed for UUID, missing hits')
+            return {}
+        if len(query_result['hits']['hits']) > 1:
+            logging.error('Multiple matching UUIDs')
+            return {}
+        elif len(query_result['hits']['hits']) == 0:
+            logging.error('No results for UUID query')
+            return {}
+
+        return query_result['hits']['hits'][0]
 
     def query_sources(self, query, index, size=False):
         """Returns the source values of an Elasticsearch query without error checking"""

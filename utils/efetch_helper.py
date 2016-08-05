@@ -13,30 +13,29 @@
 # limitations under the License.
 
 
+import datetime
 import hashlib
 import logging
 import magic
 import os
-import datetime
 import pytsk3
 import time
 import threading
 import traceback
-from urllib import urlencode
+from bottle import abort
 from db_util import DBUtil
-from PIL import Image
-from yapsy.PluginManager import PluginManager
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
-from bottle import abort
+from PIL import Image
+from urllib import urlencode
+from yapsy.PluginManager import PluginManager
+
 
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
 
     def __init__(self, curr_directory, output_directory, upload_directory, max_file_size, es_url=None):
         """Initializes the Efetch Helper"""
-        _pymagic = None
-        _my_magic = None
         self._cache_lock = threading.Lock()
         self._mime_lock = threading.Lock()
         self._read_lock = threading.Lock()
@@ -189,15 +188,15 @@ class EfetchHelper(object):
 
     def get_cache_directory(self, encoded_pathspec, parent_directory='files'):
         """Returns the full path of the directory that should contain the cached evidence file"""
-        return self.output_dir + parent_directory + os.path.sep + self._get_pathspec_hash(encoded_pathspec)\
-               + os.path.sep
+        return self.output_dir + parent_directory + os.path.sep +\
+               self._get_pathspec_hash(encoded_pathspec) + os.path.sep
 
     def get_cache_path(self, encoded_pathspec, parent_directory='files'):
         """Returns the full path to the cached evidence file"""
         return self.get_cache_directory(encoded_pathspec, parent_directory) + \
                unicode(self.get_file_name(encoded_pathspec))
 
-    def is_file_cached(self, encoded_pathspec, parent_directory = 'files'):
+    def is_file_cached(self, encoded_pathspec, parent_directory='files'):
         """Returns True if the evidence file is cached and false if it is not cached"""
         return os.path.isfile(self.get_cache_path(encoded_pathspec, parent_directory))
 
@@ -340,8 +339,11 @@ class EfetchHelper(object):
                 os.makedirs(efetch_dictionary['thumbnail_cache_dir'])
             try:
                 image = Image.open(efetch_dictionary['file_cache_path'])
-                image.thumbnail('64x64')
-                image.save(efetch_dictionary['thumbnail_cache_path'])
+                image.thumbnail((64,64), Image.ANTIALIAS)
+                if efetch_dictionary['mimetype'] == 'image/jpeg':
+                    image.save(efetch_dictionary['thumbnail_cache_path'], 'JPEG')
+                else:
+                    image.save(efetch_dictionary['thumbnail_cache_path'])
             except IOError:
                 logging.warn('IOError when trying to create thumbnail for '
                              + efetch_dictionary['file_name'] + ' at cached path ' +

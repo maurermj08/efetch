@@ -46,9 +46,12 @@ class FaTogglestar(IPlugin):
             id_value = evidence['_id']
 
         starred = False
-        data = {'img_id' : id_value}
+        data = {'img_id':id_value}
 
-        event = helper.db_util.query_id(id_value, index)
+        event = helper.db_util.query_uuid(id_value, index)
+        if '_index' in event:
+            index = event['_index']
+
         if not event:
             logging.warn('Toggle Start failed to find event with ID "' + id_value + '"')
             abort(400, 'Failed to find event wit ID "' + id_value + '"')

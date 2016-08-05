@@ -151,7 +151,10 @@ class FaTimeline(IPlugin):
 
     def get_details(self, index, helper, uuid):
         table = [ '<table id="t01" class="display">' ]
-        event = helper.db_util.query_id(uuid, index)
+        event = helper.db_util.query_uuid(uuid, index)
+        if '_index' in event:
+            index = event['_index']
+
         try:
             for key in event['_source']:
                 try:
