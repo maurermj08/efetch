@@ -24,17 +24,17 @@ import threading
 import traceback
 from bottle import abort
 from db_util import DBUtil
+from plugin_manager import EfetchPluginManager
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from PIL import Image
 from urllib import urlencode
-from yapsy.PluginManager import PluginManager
 
 
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
 
-    def __init__(self, curr_directory, output_directory, upload_directory, max_file_size, es_url=None):
+    def __init__(self, curr_directory, output_directory, upload_directory, max_file_size, plugins_file, es_url=None):
         """Initializes the Efetch Helper"""
         self._cache_lock = threading.Lock()
         self._mime_lock = threading.Lock()
@@ -52,16 +52,13 @@ class EfetchHelper(object):
         if not os.path.isdir(self.icon_dir):
             logging.error(u'Could not find icon directory ' + self.icon_dir)
 
+        self.plugin_manager = EfetchPluginManager(plugins_file, curr_directory)
+
         # Elastic Search DB setup
         if es_url:
             self.db_util = DBUtil()
         else:
             self.db_util = DBUtil(es_url)
-        
-        # Plugin Manager Setup
-        self.plugin_manager = PluginManager()
-        self.plugin_manager.setPluginPlaces([self.curr_dir + u'/plugins/'])
-        self.reload_plugins()
 
         # Determine which magic lib to use
         try:
@@ -71,11 +68,6 @@ class EfetchHelper(object):
             self._my_magic = magic.Magic(flags=magic.MAGIC_MIME_TYPE)
             self._pymagic = False
 
-    def reload_plugins(self):
-        """Reloads all Yapsy plugins"""
-        self.plugin_manager.collectPlugins()
-        for plugin in self.plugin_manager.getAllPlugins():
-            self.plugin_manager.activatePluginByName(plugin.name)
 
     def get_request_value(self, request, variable_name, default=None):
         """Gets the value of a variable in either a GET or POST request"""

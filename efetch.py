@@ -23,7 +23,7 @@ from utils.efetch_helper import EfetchHelper
 
 
 class Efetch(object):
-    def __init__(self, address, port, debug, cache_dir, max_file_size):
+    def __init__(self, address, port, debug, cache_dir, max_file_size, plugins_file):
         """Initializes Efetch variables and utils.
         
         Args:
@@ -59,7 +59,10 @@ class Efetch(object):
                 logging.error(u'Could not find nor create output directory ' + output_dir)
                 sys.exit(2)
 
-        self._helper = EfetchHelper(curr_dir, output_dir, upload_dir, max_file_size * 1000000)
+        if not os.path.isfile(plugins_file):
+            logging.warn(u'Plugin config file "' + plugins_file + u'" is empty')
+
+        self._helper = EfetchHelper(curr_dir, output_dir, upload_dir, max_file_size * 1000000, plugins_file)
 
         self._route()
 
@@ -90,16 +93,11 @@ class Efetch(object):
 
     def _index(self):
         """Returns the home page for Efetch."""
-        return self._get_resource('cases_table.html')
+        return self._list_plugins
 
     def _list_plugins(self):
         """Returns a json object of all the plugins."""
-        plugin_list = []
-
-        for plugin in self._helper.plugin_manager.getAllPlugins():
-            plugin_list.append(plugin.name)
-
-        return json.dumps(plugin_list)
+        return json.dumps(self._helper.plugin_manager.get_all_plugins())
 
     def _plugins(self, plugin_name):
         """Returns the iframe of the given plugin for the given file.
@@ -107,10 +105,7 @@ class Efetch(object):
         Args:
             plugin_name (str): The name of the plugin as defined in the yapsy-plugin file
         """
-        plugin = self._helper.plugin_manager.getPluginByName(str(plugin_name).lower())
-
-        if not plugin:
-            abort(404, "Could not find plugin " + str(plugin_name).lower())
+        plugin = self._helper.plugin_manager.get_plugin_by_name(str(plugin_name).lower())
 
         index = self._helper.get_request_value(request, 'index', 'case*')
         encoded_pathspec = self._helper.get_request_value(request, 'pathspec', '')
@@ -128,11 +123,10 @@ class Efetch(object):
                 {'query': query}, index, 1)['pathspec']
 
         efetch_dictionary = self._helper.\
-            get_efetch_dictionary(encoded_pathspec, index, plugin.plugin_object.cache,
-                                  hasattr(plugin.plugin_object, 'fast') and plugin.plugin_object.fast)
+            get_efetch_dictionary(encoded_pathspec, index, plugin.cache, hasattr(plugin, 'fast') and plugin.fast)
         
         # Return plugins frame
-        return plugin.plugin_object.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'], request)
+        return plugin.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'], request)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -140,14 +134,14 @@ if __name__ == "__main__":
                         help=u'the IP address or hostname this server runs on',
                         action=u'store',
                         default=u'0.0.0.0')
-    parser.add_argument(u'-p', u'--port', type=str,
+    parser.add_argument(u'-p', u'--port', type=unicode,
                         help=u'the port this servers runs on',
                         action=u'store',
                         default=8080)
     parser.add_argument(u'-d', u'--debug',
                         help=u'displays debug output',
                         action=u'store_true')
-    parser.add_argument(u'-c', u'--cache', type=str,
+    parser.add_argument(u'-c', u'--cache', type=unicode,
                         help=u'the directory to stored cached files',
                         action=u'store',
                         default=os.path.dirname(os.path.realpath(__file__)) + os.path.sep + u'cache' + os.path.sep)
@@ -155,6 +149,10 @@ if __name__ == "__main__":
                         help=u'the max file size allowed to be cached in Megabytes',
                         action=u'store',
                         default=10000)
+    parser.add_argument(u'-f', u'--pluginsfile', type=unicode,
+                        help=u'the path to the plugins config file',
+                        action=u'store',
+                        default=os.path.dirname(os.path.realpath(__file__)) + os.path.sep + u'plugins.yml')
     args = parser.parse_args()
-    efetch = Efetch(args.address, args.port, args.debug, args.cache, args.maxfilesize)
+    efetch = Efetch(args.address, args.port, args.debug, args.cache, args.maxfilesize, args.pluginsfile)
     efetch.start()

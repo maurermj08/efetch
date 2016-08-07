@@ -1,0 +1,60 @@
+###
+# Efetch Plugin file
+#
+# Each item in this file becomes an efetch plugin
+#
+# Below is a simple example with all fields
+#
+#   office:
+#       name: "Adv. Preview"
+#       description: List the strings   # Optional
+#       cache: True                     # Defaults to True, so not necessary
+#       popularity: 2                   # Defaults to 5, changes list order, 0 is hidden
+#       os:                             # Defaults to all, list of supported operating systems
+#           - linux
+#       mimetypes:                      # Defaults to all, list of supported mimetypes
+#			- application/mspowerpoint
+#			- application/vnd.ms-works
+#           ...
+#           - text/rtf
+#       extensions:                     # Defaults to all, list of supported file extensions
+#           - ppt
+#           - pptx
+#           ...
+#           - docx
+#       command: "unoconv -f pdf -o '{{ file_cache_path }}.pdf' '{{ file_cache_path }}' "
+#		file: "{{ file_cache_path }}.pdf"
+#
+# The COMMAND and FILE options use JINJA2 templating
+#
+# If no FILE is specified, the plugin returns the results of the command using the specified formatter
+#
+# Currently supported formatters are:
+#   Text (default)
+#   CSV
+#   TSV
+###
+
+ziplist:
+    name: ZIP List
+    os: [ 'linux' ]
+    mimetypes: [ 'application/zip' ]
+    command: "unzip -l '{{ file_cache_path }}'"
+clamscan:
+    name: Clam Scan
+    os: [ 'linux' ]
+    command: "clamscan '{{ file_cache_path }}'"
+
+#file:
+#    name: File
+#    os: [ 'linux' ]
+#    command: "file {{ file_cache_path }}"
+#hexdumpc:
+#    name: "hexdump -c"
+#    os: [ 'linux' ]
+#    command: "hexdump -C {{ file_cache_path }}"
+#strings:
+#    name: "strings bash"
+#    os: [ 'linux' ]
+#    command: "strings {{ file_cache_path }}"
+

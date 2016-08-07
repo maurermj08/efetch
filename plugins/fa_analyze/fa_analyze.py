@@ -50,16 +50,17 @@ class FaAnalyze(IPlugin):
 
         # Order Plugins by populatiry from highest to lowest
         for pop in reversed(range(1, 11)):
-            for plugin in helper.plugin_manager.getAllPlugins():
-                if plugin.plugin_object.popularity == pop:
+            for plugin_name in helper.plugin_manager.get_all_plugins():
+                plugin = helper.plugin_manager.get_plugin_by_name(plugin_name)
+                if plugin.popularity == pop:
                     # Check if plugin applies to curr file
-                    if plugin.plugin_object.display_name != 'Overview' and \
-                            plugin.plugin_object.check(evidence, evidence['file_cache_path']):
-                        logging.debug("Check matched, adding plugin " + plugin.plugin_object.display_name)
-                        plugins.append('<a href="/plugins/' + plugin.name + '?' + evidence['url_query']
-                                       + '" target="frame">' + plugin.plugin_object.display_name + '</a><br>')
+                    if plugin.display_name != 'Overview' and \
+                            plugin.check(evidence, evidence['file_cache_path']):
+                        logging.debug("Check matched, adding plugin " + plugin.display_name)
+                        plugins.append('<a href="/plugins/' + plugin_name + '?' + evidence['url_query']
+                                       + '" target="frame">' + plugin.display_name + '</a><br>')
                     else:
-                        logging.debug("Check did not match, NOT adding plugin " + plugin.plugin_object.display_name)
+                        logging.debug("Check did not match, NOT adding plugin " + plugin.display_name)
 
         # Modifies HTML page
         curr_dir = os.path.dirname(os.path.realpath(__file__))
