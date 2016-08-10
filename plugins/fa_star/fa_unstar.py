@@ -11,7 +11,6 @@ class FaUnstar(IPlugin):
     def __init__(self):
         self.display_name = 'Remove Bookmark'
         self.popularity = 0
-        self.parent = False
         self.cache = False
         IPlugin.__init__(self)
 

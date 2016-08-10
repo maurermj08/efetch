@@ -13,7 +13,6 @@ class FaExif(IPlugin):
     def __init__(self):
         self.display_name = 'EXIF'
         self.popularity = 6
-        self.parent = True
         self.cache = True
         IPlugin.__init__(self)
 

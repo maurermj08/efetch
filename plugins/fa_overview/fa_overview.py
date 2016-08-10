@@ -10,7 +10,6 @@ class FaOverview(IPlugin):
     def __init__(self):
         self.display_name = 'Overview'
         self.popularity = 10
-        self.parent = False
         self.cache = False
         self._order = [ 'thumbnail', 'path', 'mtime', 'atime', 'ctime', 'crtime', 'file_size', 'pid', 'mimetype', 'dir',
                         'name', 'ext', 'root', 'iid']

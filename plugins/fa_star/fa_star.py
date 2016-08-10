@@ -11,7 +11,6 @@ class FaStar(IPlugin):
     def __init__(self):
         self.display_name = 'Bookmark'
         self.popularity = 0
-        self.parent = False
         self.cache = False
         IPlugin.__init__(self)
 

@@ -11,7 +11,6 @@ class FaThumbnail(IPlugin):
     def __init__(self):
         self.display_name = 'Thumbnail'
         self.popularity = 0
-        self.parent = False
         self.cache = False
         self.fast = False
         IPlugin.__init__(self)

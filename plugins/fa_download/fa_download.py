@@ -11,7 +11,6 @@ class FaDownload(IPlugin):
     def __init__(self):
         self.display_name = 'Download'
         self.popularity = 1
-        self.parent = False
         self.cache = True
         IPlugin.__init__(self)
 

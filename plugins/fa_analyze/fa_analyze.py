@@ -11,7 +11,6 @@ class FaAnalyze(IPlugin):
     def __init__(self):
         self.display_name = 'File Analyze'
         self.popularity = 0
-        self.parent = False
         self.cache = True
         self.ignore_loader = ['fa_preview', 'fa_timeline']
         IPlugin.__init__(self)

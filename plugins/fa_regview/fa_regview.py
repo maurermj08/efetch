@@ -10,7 +10,6 @@ class FaRegview(IPlugin):
     def __init__(self):
         self.display_name = 'Reg. View'
         self.popularity = 8
-        self.parent = False
         self.cache = True
         IPlugin.__init__(self)
 

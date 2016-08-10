@@ -13,7 +13,6 @@ class FaPstviewAjax(IPlugin):
     def __init__(self):
         self.display_name = 'Pstview Ajax'
         self.popularity = 0
-        self.parent = False
         self.cache = True
         IPlugin.__init__(self)
 

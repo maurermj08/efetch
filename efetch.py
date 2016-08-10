@@ -75,6 +75,7 @@ class Efetch(object):
         self._app.route('/', method='GET', callback=self._index)
         self._app.route('/resources/<resource_path:path>',
                         method='GET', callback=self._get_resource)
+        self._app.route('/plugins', method='GET', callback=self._list_plugins)
         self._app.route('/plugins/', method='GET', callback=self._list_plugins)
         self._app.route('/plugins/<plugin_name>', method='GET', callback=self._plugins)
         self._app.route('/plugins/<plugin_name>', method='POST', callback=self._plugins)
@@ -93,7 +94,19 @@ class Efetch(object):
 
     def _index(self):
         """Returns the home page for Efetch."""
-        return self._list_plugins
+        return """<h1>Efetch Beta</h1>
+                <hr>
+                <p>You have successfully installed Efetch!</p>
+                <p>Efetch manages plugins that allow you to analyze and view files using an encoded
+                dfVFS pathspec</p>
+                <p>To set a pathspec use ?pathspec=[PATHSPEC]</p>
+                <p>Example: localhost:8080/plugins/fa_analyze?pathspec=[PATHSPEC]</p>
+                <a href="/plugins">Click here to see the list of installed plugins</a>
+                <hr>
+                <p>For more information or to post a bug/comment see:</p>
+                <a href="https://github.com/maurermj08/efetch/wiki">Github</a>
+                <p></p>
+                <a href="https://diftdisk.blogspot.com">Blog</a>"""
 
     def _list_plugins(self):
         """Returns a json object of all the plugins."""
@@ -133,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument(u'-a', u'--address',
                         help=u'the IP address or hostname this server runs on',
                         action=u'store',
-                        default=u'0.0.0.0')
+                        default=u'localhost')
     parser.add_argument(u'-p', u'--port', type=unicode,
                         help=u'the port this servers runs on',
                         action=u'store',

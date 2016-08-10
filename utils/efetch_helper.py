@@ -25,6 +25,7 @@ import traceback
 from bottle import abort
 from db_util import DBUtil
 from plugin_manager import EfetchPluginManager
+from poll import Poll
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from PIL import Image
@@ -52,7 +53,10 @@ class EfetchHelper(object):
         if not os.path.isdir(self.icon_dir):
             logging.error(u'Could not find icon directory ' + self.icon_dir)
 
+        # Create plugin manager and begin polling for changes to plugins
         self.plugin_manager = EfetchPluginManager(plugins_file, curr_directory)
+        self.poll = Poll(self.plugin_manager)
+        self.poll.start()
 
         # Elastic Search DB setup
         if es_url:
@@ -475,4 +479,4 @@ class EfetchHelper(object):
         if extension in types_map:
             return types_map[extension]
         else:
-            return '' 
+            return ''

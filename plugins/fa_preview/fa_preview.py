@@ -11,7 +11,6 @@ class FaPreview(IPlugin):
     def __init__(self):
         self.display_name = 'Preview'
         self.popularity = 8
-        self.parent = False
         self.cache = True
         IPlugin.__init__(self)
 

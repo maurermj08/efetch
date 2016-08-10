@@ -9,7 +9,6 @@ class FaHexdump(IPlugin):
     def __init__(self):
         self.display_name = 'Hex View'
         self.popularity = 5
-        self.parent = False
         self.cache = True
         IPlugin.__init__(self)
 

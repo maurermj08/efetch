@@ -32,14 +32,19 @@ class EfetchPluginManager(object):
         # Plugin Manager Setup
         self.plugin_manager = PluginManager()
         self.plugin_manager.setPluginPlaces([curr_directory + u'/plugins/'])
+        self.plugins_file = plugins_file
         self.reload_plugins()
-        self.config_file_plugins = self.load_plugin_config(plugins_file)
+
+    def reload_plugins_file(self):
+        """Reloads all plugins from the YAML file"""
+        self.config_file_plugins = self.load_plugin_config(self.plugins_file)
 
     def reload_plugins(self):
-        """Reloads all Yapsy plugins"""
+        """Reloads all Yapsy and YAML file plugins"""
         self.plugin_manager.collectPlugins()
         for plugin in self.plugin_manager.getAllPlugins():
             self.plugin_manager.activatePluginByName(plugin.name)
+        self.reload_plugins_file()
 
     def load_plugin_config(self, plugins_file):
         """Loads the plugin config file"""
@@ -87,6 +92,9 @@ class EfetchPluginManager(object):
                           plugin.get('file', False))
         else:
             return plugin.plugin_object
+
+
+
 
 
 class Plugin(object):
