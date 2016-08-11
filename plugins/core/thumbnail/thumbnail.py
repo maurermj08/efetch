@@ -7,7 +7,7 @@ from bottle import static_file
 import os
 
 
-class FaThumbnail(IPlugin):
+class Thumbnail(IPlugin):
     def __init__(self):
         self.display_name = 'Thumbnail'
         self.popularity = 0

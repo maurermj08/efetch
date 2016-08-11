@@ -1,6 +1,6 @@
 [Core]
-Name = fa_preview
-Module = fa_preview
+Name = preview
+Module = preview
 
 [Documentation]
 Author = Michael Maurer

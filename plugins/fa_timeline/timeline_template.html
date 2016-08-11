@@ -41,7 +41,7 @@
                     return '<a href="'+url+'" target="_self">Navigate</a>';
                 }
                 else {
-                    var url = '/plugins/fa_analyze?'+ jQuery.param({pathspec: row.pathspec, index: row.index});
+                    var url = '/plugins/analyze?'+ jQuery.param({pathspec: row.pathspec, index: row.index});
                     return '<a href="'+url+'" target="timeline_frame">Open</a>';
                 }
             }
@@ -55,12 +55,12 @@
                              + jQuery.param({id: rowData.uuid}) + "&index=<!-- Index -->', function(data) { $('#details_" + rowIndex +
                             "').html(data); })<\/script>"
                     }
-                });
+                });F
             });
 
             function formatThumbnail(val,row){
                 var test = JSON.stringify(row.pathspec)
-                var url = '/plugins/fa_thumbnail?'+ jQuery.param({pathspec: row.pathspec});
+                var url = '/plugins/thumbnail?'+ jQuery.param({pathspec: row.pathspec});
                 return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';
             }
 

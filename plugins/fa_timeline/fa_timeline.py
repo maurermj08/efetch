@@ -12,7 +12,7 @@ class FaTimeline(IPlugin):
         self.display_name = 'Log2Timeline'
         self.popularity = 5
         self.cache = False
-        self._default_plugin = 'fa_analyze/'
+        self._default_plugin = 'analyze/'
         self.fast = True
         IPlugin.__init__(self)
 
@@ -34,8 +34,8 @@ class FaTimeline(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request, logs=True, files=False, directories=False,
             sub_directories=True, evidence_item_plugin='fa_timeline', title='Log2timeline',
-            prefix = ['name', 'datetime', 'source_short', 'message', 'star'],
-            width = [40, 30, 18, 140, 20]):
+            prefix = ['datetime', 'source_short', 'source_long', 'message', 'star'],
+            width = [40, 15, 30, 140, 20]):
         """Returns the result of this plugin to be displayed in a browser"""
 
         index = helper.get_request_value(request, 'index', False)

@@ -7,12 +7,12 @@ import os
 import logging
 
 
-class FaAnalyze(IPlugin):
+class Analyze(IPlugin):
     def __init__(self):
         self.display_name = 'File Analyze'
         self.popularity = 0
         self.cache = True
-        self.ignore_loader = ['fa_preview', 'fa_timeline']
+        self.ignore_loader = ['preview', 'fa_timeline']
         IPlugin.__init__(self)
 
     def activate(self):
@@ -37,7 +37,7 @@ class FaAnalyze(IPlugin):
         # Add Directoy link
         plugins = []
         plugins.append(
-            '<a href="/plugins/fa_overview?' + evidence['url_query']
+            '<a href="/plugins/overview?' + evidence['url_query']
             + '" target="frame">Overview</a><br>')
 
         if not evidence['mimetype']:
@@ -54,7 +54,8 @@ class FaAnalyze(IPlugin):
                 if plugin.popularity == pop:
                     # Check if plugin applies to curr file
                     if plugin.display_name != 'Overview' and \
-                            plugin.check(evidence, evidence['file_cache_path']):
+                            plugin.check(evidence, evidence['file_cache_path']) and \
+                            (not plugin.cache or int(size) <= helper.max_file_size):
                         logging.debug("Check matched, adding plugin " + plugin.display_name)
                         plugins.append('<a href="/plugins/' + plugin_name + '?' + evidence['url_query']
                                        + '" target="frame">' + plugin.display_name + '</a><br>')
@@ -66,7 +67,7 @@ class FaAnalyze(IPlugin):
         template = open(curr_dir + '/analyze_template.html', 'r')
         html = str(template.read())
         template.close()
-        html = html.replace('<!-- Home -->', "/plugins/fa_overview?" + evidence['url_query'])
+        html = html.replace('<!-- Home -->', "/plugins/overview?" + evidence['url_query'])
 
         if evidence['meta_type'] == 'Directory':
             html = html.replace('<!-- File -->', evidence['file_name'])

@@ -18,12 +18,12 @@ import json
 import logging
 import os
 import sys
-from bottle import Bottle, request, static_file, abort
+from bottle import Bottle, request, static_file
 from utils.efetch_helper import EfetchHelper
 
 
 class Efetch(object):
-    def __init__(self, address, port, debug, cache_dir, max_file_size, plugins_file):
+    def __init__(self, address, port, elastic_url, debug, cache_dir, max_file_size, plugins_file):
         """Initializes Efetch variables and utils.
         
         Args:
@@ -62,7 +62,8 @@ class Efetch(object):
         if not os.path.isfile(plugins_file):
             logging.warn(u'Plugin config file "' + plugins_file + u'" is empty')
 
-        self._helper = EfetchHelper(curr_dir, output_dir, upload_dir, max_file_size * 1000000, plugins_file)
+        self._helper = EfetchHelper(curr_dir, output_dir, upload_dir,
+                                    max_file_size * 1000000, plugins_file, elastic_url)
 
         self._route()
 
@@ -100,7 +101,7 @@ class Efetch(object):
                 <p>Efetch manages plugins that allow you to analyze and view files using an encoded
                 dfVFS pathspec</p>
                 <p>To set a pathspec use ?pathspec=[PATHSPEC]</p>
-                <p>Example: localhost:8080/plugins/fa_analyze?pathspec=[PATHSPEC]</p>
+                <p>Example: localhost:8080/plugins/analyze?pathspec=[PATHSPEC]</p>
                 <a href="/plugins">Click here to see the list of installed plugins</a>
                 <hr>
                 <p>For more information or to post a bug/comment see:</p>
@@ -151,6 +152,10 @@ if __name__ == "__main__":
                         help=u'the port this servers runs on',
                         action=u'store',
                         default=8080)
+    parser.add_argument(u'-e', u'--elastic', type=unicode,
+                        help=u'the elasticsearch URL, i.e. localhost:9200',
+                        action=u'store',
+                        default=None)
     parser.add_argument(u'-d', u'--debug',
                         help=u'displays debug output',
                         action=u'store_true')
@@ -159,13 +164,13 @@ if __name__ == "__main__":
                         action=u'store',
                         default=os.path.dirname(os.path.realpath(__file__)) + os.path.sep + u'cache' + os.path.sep)
     parser.add_argument(u'-m', u'--maxfilesize', type=int,
-                        help=u'the max file size allowed to be cached in Megabytes',
+                        help=u'the max file size allowed to be cached in Megabytes, default 1GB',
                         action=u'store',
-                        default=10000)
+                        default=1000)
     parser.add_argument(u'-f', u'--pluginsfile', type=unicode,
                         help=u'the path to the plugins config file',
                         action=u'store',
                         default=os.path.dirname(os.path.realpath(__file__)) + os.path.sep + u'plugins.yml')
     args = parser.parse_args()
-    efetch = Efetch(args.address, args.port, args.debug, args.cache, args.maxfilesize, args.pluginsfile)
+    efetch = Efetch(args.address, args.port, args.elastic, args.debug, args.cache, args.maxfilesize, args.pluginsfile)
     efetch.start()

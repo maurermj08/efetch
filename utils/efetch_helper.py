@@ -35,7 +35,7 @@ from urllib import urlencode
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
 
-    def __init__(self, curr_directory, output_directory, upload_directory, max_file_size, plugins_file, es_url=None):
+    def __init__(self, curr_directory, output_directory, upload_directory, max_file_size, plugins_file, es_url):
         """Initializes the Efetch Helper"""
         self._cache_lock = threading.Lock()
         self._mime_lock = threading.Lock()
@@ -263,8 +263,9 @@ class EfetchHelper(object):
         pathspec = self._decode_pathspec(encoded_pathspec)
 
         efetch_dictionary['path'] = pathspec.location
-        efetch_dictionary['inode'] = pathspec.inode
         efetch_dictionary['type_indicator'] = pathspec.type_indicator
+        if efetch_dictionary['type_indicator'] == 'TSK':
+            efetch_dictionary['inode'] = pathspec.inode
         efetch_dictionary['file_name'] = os.path.basename(efetch_dictionary['path'])
         efetch_dictionary['directory'] = os.path.dirname(efetch_dictionary['path'])
         efetch_dictionary['extension'] = os.path.splitext(efetch_dictionary['file_name'])[1][1:].lower() or ""

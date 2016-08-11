@@ -1,6 +1,6 @@
 [Core]
-Name = fa_download
-Module = fa_download
+Name = download
+Module = download
 
 [Documentation]
 Author = Michael Maurer

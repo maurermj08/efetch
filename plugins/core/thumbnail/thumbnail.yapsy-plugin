@@ -1,6 +1,6 @@
 [Core]
-Name = fa_thumbnail
-Module = fa_thumbnail
+Name = thumbnail
+Module = thumbnail
 
 [Documentation]
 Author = Michael Maurer

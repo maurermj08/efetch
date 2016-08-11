@@ -1,5 +1,5 @@
 """
-This plugin returns common files that can be opened in a browser i.e. images and PDF documents
+A simple plugin that starts a download of the file
 """
 
 from yapsy.IPlugin import IPlugin
@@ -7,10 +7,10 @@ from bottle import static_file
 import os
 
 
-class FaPreview(IPlugin):
+class Download(IPlugin):
     def __init__(self):
-        self.display_name = 'Preview'
-        self.popularity = 8
+        self.display_name = 'Download'
+        self.popularity = 1
         self.cache = True
         IPlugin.__init__(self)
 
@@ -24,10 +24,7 @@ class FaPreview(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
-        allowed_mimetype = ['application/xml', 'application/pdf']
-        allowed_prefix = ['image', 'text', 'video', 'audio']
-        return (str(evidence['mimetype'].split('/')[0]).lower() in allowed_prefix
-                or evidence['mimetype'] in allowed_mimetype ) and evidence['meta_type'] != 'Directory'
+        return path_on_disk and os.path.isfile(path_on_disk) and evidence['meta_type'] == 'File'
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -35,4 +32,5 @@ class FaPreview(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk))
+        return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk),
+                           download=os.path.basename(path_on_disk))

@@ -13,12 +13,9 @@
 # limitations under the License.
 
 
-import datetime
 import logging
 import os
-import time
-import threading
-import traceback
+import platform
 import yaml
 from bottle import abort, static_file
 from jinja2 import Template
@@ -85,8 +82,9 @@ class EfetchPluginManager(object):
                           plugin.get('cache', True),
                           plugin.get('popularity', 5),
                           plugin.get('fast', False),
-                          plugin.get('mimetypes', []),
-                          plugin.get('extensions', []),
+                          map(str.lower, plugin.get('mimetypes', [])),
+                          map(str.lower, plugin.get('extensions', [])),
+                          map(str.lower, plugin.get('os', [])),
                           plugin.get('command', False),
                           plugin.get('format', 'Text'),
                           plugin.get('file', False))
@@ -101,7 +99,7 @@ class Plugin(object):
     """Simple dynamically created plugin object"""
 
     def __init__(self, display_name, description, cache, popularity, fast, mimetypes,
-                 extensions, command, format, file):
+                 extensions, operating_systems, command, format, file):
         self.display_name = display_name
         self.description = description
         self.popularity = popularity
@@ -109,12 +107,16 @@ class Plugin(object):
         self.fast = fast
         self._mimetypes = mimetypes
         self._extensions = extensions
+        self._operating_systems = operating_systems
         self._command = command
         self._format = format
         self._file = file
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
+        if self._operating_systems and platform.system().lower() not in self._operating_systems:
+            return False
+
         if 'meta_type' in evidence and evidence['meta_type'] != 'File':
             return False
 

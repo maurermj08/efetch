@@ -124,7 +124,7 @@
 
             function formatThumbnail(val,row){
                 var test = JSON.stringify(row.pathspec)
-                var url = '/plugins/fa_thumbnail?'+ jQuery.param({pathspec: row.pathspec});
+                var url = '/plugins/thumbnail?'+ jQuery.param({pathspec: row.pathspec});
                 return '<img style="height:32px;width:32px;" src="'+url+'" alt="Thumbnail">';
             }
 

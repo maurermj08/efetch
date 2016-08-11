@@ -1,7 +1,8 @@
 argparse>=1.2.1
 bottle>=0.12.8
 dfvfs>=20150708
-elasticsearch>=2.1.0
+elasticsearch>=2.1.
+Jinja2>=2.1
 pefile>=1.2.10_139
 Yapsy>=1.11.223
 Pillow>=3.3.0

@@ -6,7 +6,7 @@ from yapsy.IPlugin import IPlugin
 import os
 
 
-class FaOverview(IPlugin):
+class Overview(IPlugin):
     def __init__(self):
         self.display_name = 'Overview'
         self.popularity = 10
@@ -38,7 +38,7 @@ class FaOverview(IPlugin):
 
         for item in self._order:
             if item == 'thumbnail':
-                listing.append('<tr><td>' + str(item) + '</td><td><img src="/plugins/fa_thumbnail?'
+                listing.append('<tr><td>' + str(item) + '</td><td><img src="/plugins/thumbnail?'
                                + evidence['url_query'] + '" alt="' + evidence['meta_type'] + '-'
                                + evidence['extension'] + '" title="' + evidence['meta_type']
                         + '-' + evidence['extension'] + '" style="height:64px;"></td></tr>')

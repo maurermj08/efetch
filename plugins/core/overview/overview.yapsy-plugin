@@ -1,6 +1,6 @@
 [Core]
-Name = fa_overview
-Module = fa_overview
+Name = overview
+Module = overview
 
 [Documentation]
 Author = Michael Maurer
