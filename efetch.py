@@ -19,6 +19,8 @@ import logging
 import os
 import sys
 from bottle import Bottle, request, static_file
+from rocket import Rocket
+from threading import Thread
 from utils.efetch_helper import EfetchHelper
 
 
@@ -69,7 +71,16 @@ class Efetch(object):
 
     def start(self):
         """Starts the Bottle server."""
-        self._app.run(host=self._address, port=self._port, server='cherrypy')
+        rocket = Rocket((self._address, self._port), 'wsgi', {'wsgi_app': self._app})
+        server_thread = Thread(target=rocket.start, name='_rocket')
+        server_thread.start()
+
+        try:
+            while server_thread.is_alive():
+                self._helper.poll.stop = True
+                server_thread.join(5)
+        except (KeyboardInterrupt, SystemExit):
+            rocket.stop()
 
     def _route(self):
         """Applies the routes to Efetch methods."""
