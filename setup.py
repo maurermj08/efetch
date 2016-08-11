@@ -30,6 +30,7 @@ setup(
                       u'Requests>=2.10.0',
                       u'cherrypy>=5.0.0',
                       u'ExifRead>=2.1.0',
+                      u'Jinja2>=2.1',
                       u'rison>=1.0',
                       u'python-registry>=1.0']),
     dependency_links=[u'https://github.com/maurermj08/rison/tarball/master#egg=rison-1.1',
