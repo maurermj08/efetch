@@ -120,7 +120,7 @@ class Efetch(object):
         """
         plugin = self._helper.plugin_manager.get_plugin_by_name(str(plugin_name).lower())
 
-        index = self._helper.get_request_value(request, 'index', 'case*')
+        index = self._helper.get_request_value(request, 'index', '*')
         encoded_pathspec = self._helper.get_request_value(request, 'pathspec', '')
 
         logging.info('Plugin called %s, with index=%s and pathspec=%s', plugin_name, index, encoded_pathspec)
@@ -129,7 +129,7 @@ class Efetch(object):
         if '_a' in request.query:
             query = self._helper.get_query(request)
         else:
-            query = {'match_all': {}}
+            query = {'exists': {'field': 'pathspec'}}
 
         if not encoded_pathspec:
             encoded_pathspec = self._helper.db_util.query_sources(

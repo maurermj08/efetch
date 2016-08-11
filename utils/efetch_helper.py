@@ -253,7 +253,7 @@ class EfetchHelper(object):
 
         return efetch_dictionary
 
-    def get_efetch_dictionary(self, encoded_pathspec, index='case*', cache=False, fast=False):
+    def get_efetch_dictionary(self, encoded_pathspec, index='*', cache=False, fast=False):
         """Creates and returns an Efetch object from an encoded path spec"""
         efetch_dictionary = {}
         efetch_dictionary['pathspec'] = encoded_pathspec
