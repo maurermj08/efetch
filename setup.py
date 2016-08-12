@@ -9,6 +9,7 @@ setup(
     version=u'0.6 Alpha',
     descript=efetch_description,
     packages=find_packages(),
+    include_package_data=True,
     url=u'https://github.com/maurermj08/efetch',
     license=u'Apache License Version 2.0',
     author=u'Michael Maurer',
