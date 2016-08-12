@@ -1,7 +1,7 @@
 ###
 # Efetch Plugin file
 #
-# Each item in this file becomes an efetch plugin
+# Each item in this file becomes an efetch_server plugin
 #
 # Below is a simple example, note only the name field is required
 #

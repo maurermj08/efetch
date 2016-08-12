@@ -15,7 +15,7 @@
 
 import argparse
 import os
-from efetch import Efetch
+from efetch_server import Efetch
 
 
 if __name__ == "__main__":

@@ -5,12 +5,12 @@ efetch_description = (
 )
 
 setup(
-    name=u'efetch',
+    name=u'efetch_server',
     version=u'0.6 Alpha',
     descript=efetch_description,
     packages=find_packages(),
     include_package_data=True,
-    url=u'https://github.com/maurermj08/efetch',
+    url=u'https://github.com/maurermj08/efetch_server',
     license=u'Apache License Version 2.0',
     author=u'Michael Maurer',
     classifiers=[
@@ -19,9 +19,9 @@ setup(
         u'Operating System :: OS Independent',
         u'Programming Language :: Python',
     ],
-    scripts=[u'efetch.py'],
+    scripts=[u'efetch_server.py'],
     zip_safe=False,
-    data_files=[(u'share/efetch_plugins.yml', [u'efetch_plugins.yml'])],
+    data_files=[(u'/etc', [u'efetch_plugins.yml'])],
     install_requires=frozenset([u'argparse>=1.2.1',
                       u'bottle>=0.12.8',
                       u'dfvfs>=20150708',

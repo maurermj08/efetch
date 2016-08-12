@@ -113,7 +113,7 @@ class Efetch(object):
                 <a href="/plugins">Click here to see the list of installed plugins</a>
                 <hr>
                 <p>For more information or to post a bug/comment see:</p>
-                <a href="https://github.com/maurermj08/efetch/wiki">Github</a>
+                <a href="https://github.com/maurermj08/efetch_server/wiki">Github</a>
                 <p></p>
                 <a href="https://diftdisk.blogspot.com">Blog</a>"""
 
