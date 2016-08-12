@@ -18,6 +18,7 @@ setup(
         u'Operating System :: OS Independent',
         u'Programming Language :: Python',
     ],
+    scripts=[u'efetch'],
     install_requires=frozenset([u'argparse>=1.2.1',
                       u'bottle>=0.12.8',
                       u'dfvfs>=20150708',

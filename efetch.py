@@ -47,6 +47,7 @@ class Efetch(object):
 
         if debug:
             logging.basicConfig(level=logging.DEBUG)
+            logging.getLogger(u'Rocket').setLevel(logging.WARNING)
         else:
             logging.basicConfig(level=logging.INFO)
 
@@ -55,8 +56,8 @@ class Efetch(object):
         if not os.path.isdir(output_dir):
             try:
                 os.mkdir(output_dir)
-                os.mkdir(output_dir + os.path.sep + 'thumbnails')
-                os.mkdir(output_dir + os.path.sep + 'files')
+                os.mkdir(output_dir + os.path.sep + u'thumbnails')
+                os.mkdir(output_dir + os.path.sep + u'files')
             except IOError:
                 logging.error(u'Could not find nor create output directory ' + output_dir)
                 sys.exit(2)
