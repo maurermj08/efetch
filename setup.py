@@ -5,7 +5,7 @@ efetch_description = (
 )
 
 setup(
-    name=u'efetch_server',
+    name=u'efetch',
     version=u'0.6 Alpha',
     descript=efetch_description,
     packages=find_packages(),
@@ -19,7 +19,7 @@ setup(
         u'Operating System :: OS Independent',
         u'Programming Language :: Python',
     ],
-    scripts=[u'efetch_server.py'],
+    scripts=[u'efetch'],
     zip_safe=False,
     data_files=[(u'/etc', [u'efetch_plugins.yml'])],
     install_requires=frozenset([u'argparse>=1.2.1',
