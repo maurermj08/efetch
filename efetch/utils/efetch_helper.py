@@ -35,7 +35,7 @@ from urllib import urlencode
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
 
-    def __init__(self, curr_directory, output_directory, upload_directory, max_file_size, plugins_file, es_url):
+    def __init__(self, curr_directory, output_directory, max_file_size, plugins_file, es_url):
         """Initializes the Efetch Helper"""
         self._cache_lock = threading.Lock()
         self._mime_lock = threading.Lock()
@@ -47,14 +47,13 @@ class EfetchHelper(object):
         # Setup directory references
         self.curr_dir = curr_directory
         self.output_dir = output_directory
-        self.upload_dir = upload_directory
         self.resource_dir = self.curr_dir + os.path.sep + u'resources' + os.path.sep
         self.icon_dir = self.resource_dir + u'icons' + os.path.sep
         if not os.path.isdir(self.icon_dir):
             logging.error(u'Could not find icon directory ' + self.icon_dir)
 
         # Create plugin manager and begin polling for changes to plugins
-        self.plugin_manager = EfetchPluginManager(plugins_file, curr_directory)
+        self.plugin_manager = EfetchPluginManager(plugins_file, self.curr_dir)
         self.poll = Poll(self.plugin_manager)
         self.poll.start()
 
