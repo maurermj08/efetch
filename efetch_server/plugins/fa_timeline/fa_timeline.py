@@ -112,13 +112,13 @@ class FaTimeline(IPlugin):
                         if 'star' not in source or not source['star']:
                             event_row[key] = """
                                         <form target='_blank' onsubmit='return toggleStar("""  + '"' + index + '", "' + source['uuid'] + '"' + """)'>
-                                            <input id='""" + item['_id'] + """' type='image' src='/resources/images/notbookmarked.png'>
+                                            <input id='""" + source['uuid'] + """' type='image' src='/resources/images/notbookmarked.png'>
                                         </form>
                                     """
                         else:
                             event_row[key] = """
                                         <form target='_blank' onsubmit='return toggleStar(""" + '"' + index + '", "' + source['uuid'] + '"' + """)'>
-                                            <input id='""" + item['_id'] + """' type='image' src='/resources/images/bookmarked.png'>
+                                            <input id='""" + source['uuid'] + """' type='image' src='/resources/images/bookmarked.png'>
                                         </form>
                                     """
                     elif key in source:
