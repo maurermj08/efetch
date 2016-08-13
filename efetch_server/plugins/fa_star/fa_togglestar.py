@@ -38,29 +38,34 @@ class FaTogglestar(IPlugin):
         if not index:
             abort(400, 'Index required to Star Elasticsearch doc')
 
-        id_value = helper.get_request_value(request, 'id', False)
-        if not id_value and '_id' not in evidence:
+        uuid_value = helper.get_request_value(request, 'id', False)
+        if not uuid_value and '_id' not in evidence:
             abort(400, 'ID required to Star Elasticsearch doc')
-        elif not id_value:
-            id_value = evidence['_id']
+        elif not uuid_value:
+            uuid_value = evidence['_id']
 
         starred = False
-        data = {'img_id':id_value}
+        data = {'img_id':uuid_value}
 
-        event = helper.db_util.query_uuid(id_value, index)
+        event = helper.db_util.query_uuid(uuid_value, index)
         if '_index' in event:
             index = event['_index']
+        if '_id' in event:
+            id_value = event['_id']
+        else:
+            logging.warn('No _id found in event, using uuid')
+            id_value = uuid_value
 
         if not event:
-            logging.warn('Toggle Start failed to find event with ID "' + id_value + '"')
-            abort(400, 'Failed to find event wit ID "' + id_value + '"')
+            logging.warn('Toggle Start failed to find event with ID "' + uuid_value + '"')
+            abort(400, 'Failed to find event wit ID "' + uuid_value + '"')
         doc_type = event['_type']
         source = event['_source']
 
         try:
             starred = 'star' not in source or not source['star']
         except:
-            logging.warn('Failed to star event, id "' + id_value + '" not found')
+            logging.warn('Failed to star event, id "' + uuid_value + '" not found')
             abort(404, 'Could not find event')
 
         if starred:
