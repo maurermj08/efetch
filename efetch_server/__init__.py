@@ -109,7 +109,7 @@ class Efetch(object):
                 <p>Efetch manages plugins that allow you to analyze and view files using an encoded
                 dfVFS pathspec</p>
                 <p>To set a pathspec use ?pathspec=[PATHSPEC]</p>
-                <p>Example: localhost:8080/plugins/analyze?pathspec=[PATHSPEC]</p>
+                <p>Example for Kibana Link: http://localhost:8080/plugins/analyze?pathspec={{value}}</p>
                 <a href="/plugins">Click here to see the list of installed plugins</a>
                 <hr>
                 <p>For more information or to post a bug/comment see:</p>
