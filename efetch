@@ -20,31 +20,31 @@ from efetch_server import Efetch
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(u'-d', u'--debug',
+                        help=u'Displays debug messages',
+                        action=u'store_true')
     parser.add_argument(u'-a', u'--address',
-                        help=u'the IP address or hostname this server runs on',
+                        help=u'IP address for the Efetch server',
                         action=u'store',
                         default=u'localhost')
     parser.add_argument(u'-p', u'--port', type=int,
-                        help=u'the port this servers runs on',
+                        help=u'Port for the Efetch server',
                         action=u'store',
                         default=8080)
     parser.add_argument(u'-e', u'--elastic', type=unicode,
-                        help=u'the elasticsearch URL, i.e. localhost:9200',
+                        help=u'Elasticsearch URL, i.e. localhost:9200',
                         action=u'store',
                         default=None)
-    parser.add_argument(u'-d', u'--debug',
-                        help=u'displays debug output',
-                        action=u'store_true')
     parser.add_argument(u'-c', u'--cache', type=unicode,
-                        help=u'the directory to stored cached files',
+                        help=u'Directory to store cached files',
                         action=u'store',
                         default=os.path.sep + u'tmp' + os.path.sep + u'efetch_cache' + os.path.sep)
     parser.add_argument(u'-m', u'--maxfilesize', type=int,
-                        help=u'the max file size allowed to be cached in Megabytes, default 1GB',
+                        help=u'Max file size to cache in Megabytes, default 1GB',
                         action=u'store',
                         default=1000)
     parser.add_argument(u'-f', u'--pluginsfile', type=unicode,
-                        help=u'the path to the plugins config file',
+                        help=u'Path to the plugins config file',
                         action=u'store',
                         default=os.path.sep + u'etc' + os.path.sep + u'efetch_plugins.yml')
     args = parser.parse_args()

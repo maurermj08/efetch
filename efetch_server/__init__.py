@@ -82,6 +82,7 @@ class Efetch(object):
     def _route(self):
         """Applies the routes to Efetch methods."""
         self._app.route('/', method='GET', callback=self._index)
+        self._app.route('/favicon.ico', method='GET', callback=self._get_favicon)
         self._app.route('/resources/<resource_path:path>',
                         method='GET', callback=self._get_resource)
         self._app.route('/plugins', method='GET', callback=self._list_plugins)
@@ -101,21 +102,13 @@ class Efetch(object):
         res_name = os.path.basename(full_path)
         return static_file(res_name, root=res_dir)
 
+    def _get_favicon(self):
+        """Returns the favicon"""
+        return self._get_resource('favicon.ico')
+
     def _index(self):
         """Returns the home page for Efetch."""
-        return """<h1>Efetch Beta</h1>
-                <hr>
-                <p>You have successfully installed Efetch!</p>
-                <p>Efetch manages plugins that allow you to analyze and view files using an encoded
-                dfVFS pathspec</p>
-                <p>To set a pathspec use ?pathspec=[PATHSPEC]</p>
-                <p>Example for Kibana Link: http://localhost:8080/plugins/analyze?pathspec={{value}}</p>
-                <a href="/plugins">Click here to see the list of installed plugins</a>
-                <hr>
-                <p>For more information or to post a bug/comment see:</p>
-                <a href="https://github.com/maurermj08/efetch/wiki">Github</a>
-                <p></p>
-                <a href="https://diftdisk.blogspot.com">Blog</a>"""
+        return self._get_resource(u'index.html')
 
     def _list_plugins(self):
         """Returns a json object of all the plugins."""
@@ -140,7 +133,7 @@ class Efetch(object):
         else:
             query = {'exists': {'field': 'pathspec'}}
 
-        if not encoded_pathspec:
+        if not encoded_pathspec.strip():
             encoded_pathspec = self._helper.db_util.query_sources(
                 {'query': query}, index, 1)['pathspec']
 

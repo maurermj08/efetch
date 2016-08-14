@@ -46,6 +46,8 @@ class Analyze(IPlugin):
             mimetype = evidence['mimetype']
 
         size = evidence.get('size', 0)
+        if isinstance(size, list):
+            size = size[0]
 
         # Order Plugins by populatiry from highest to lowest
         for pop in reversed(range(1, 11)):

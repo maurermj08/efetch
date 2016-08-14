@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+div.container {
+    width: 100%;
+}
+html {
+      background-color: #FFFFFF;
+}
+header, footer {
+    padding: 1em;
+    clear: left;
+    text-align: center;
+}
+nav {
+    float: left;
+    max-width: 160px;
+    margin: 0;
+    padding: 1em;
+}
+a:link {
+    color: #3A89C9;
+}
+nav ul {
+    list-style-type: none;
+    padding: 0;
+}
+nav ul a {
+    text-decoration: none;
+}
+article {
+    margin-left: 170px;
+    border-left: 1px solid gray;
+    padding: 1em;
+    overflow: hidden;
+}
+#analyze {
+    height: 150px;
+    width: 300px;
+    padding-right: 100px;
+    margin: auto;
+}
+#footer {
+    position: fixed;
+    bottom:-20px;
+    left: 30%;
+    margin:0;
+    width:760px;
+    height:435px;
+    background-position: center;
+    background:url(/resources/fetch.png) no-repeat bottom right;
+    background-size:100%;
+    overflow: hidden;
+    z-index:-1;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="/resources/efetch_header.png" alt="Efetch" style="width:180px;height:47px;">
+        </header>
+
+        <nav>
+          <ul>
+            <li><a href="https://github.com/maurermj08/efetch">Github</a></li>
+            <br>
+            <li><a href="https://github.com/maurermj08/efetch/wiki">Wiki</a></li>
+            <br>
+            <li><a href="https://github.com/maurermj08/efetch/issues">Issue</a></li>
+            <br>
+            <li><a href="https://diftdisk.blogspot.com">Blog</a></li>
+          </ul>
+        </nav>
+
+        <article>
+            <form action="/plugins/analyze" id="analyze" target="_blank">
+                <input type="text" name="pathspec" placeholder="Pathspec">
+                <input type="submit" value="Analyze">
+            </form>
+        </article>
+
+        <div id=footer></div>
+    </div>
+</body>
+</html>
