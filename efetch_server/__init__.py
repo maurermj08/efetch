@@ -33,7 +33,6 @@ class Efetch(object):
             cache_dir: The directory to cache temporary files
             max_file_size: The max file size in Megabytes to cache
         """
-
         self._address = address
         self._port = port
         self._helper = None
@@ -74,9 +73,9 @@ class Efetch(object):
 
         try:
             while server_thread.is_alive():
-                self._helper.poll.stop = True
                 server_thread.join(5)
         except (KeyboardInterrupt, SystemExit):
+            self._helper.poll.stop = True
             rocket.stop()
 
     def _route(self):

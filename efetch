@@ -15,6 +15,7 @@
 
 import argparse
 import os
+import sys
 from efetch_server import Efetch
 
 
@@ -47,6 +48,9 @@ if __name__ == "__main__":
                         help=u'Path to the plugins config file',
                         action=u'store',
                         default=os.path.sep + u'etc' + os.path.sep + u'efetch_plugins.yml')
+
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
     args = parser.parse_args()
     efetch = Efetch(args.address, args.port, args.elastic, args.debug, args.cache, args.maxfilesize, args.pluginsfile)
     efetch.start()

@@ -31,28 +31,52 @@
 ###
 
 ziplist:
-    name: ZIP List
-    os: [ 'linux' ]
-    mimetypes: [ 'application/zip' ]
-    command: "unzip -l '{{ file_cache_path }}'"
+  name: ZIP List
+  os: [ 'linux' ]
+  mimetypes: [ 'application/zip' ]
+  command: "unzip -l '{{ file_cache_path }}'"
+
+corexml:
+  name: Core.xml
+  os: [ 'linux' ]
+  extensions: [ 'pptx', 'xlsx', 'docx' ]
+  command: "unzip -qc '{{ file_cache_path }}' docProps/core.xml | xmllint --format  -"
+
+cleanxml:
+  name: Clean XML
+  os: [ 'linux' ]
+  mimetypes: [ 'application/xml' ]
+  command: "cat '{{ file_cache_path }}' | xmllint --format --recover -"
+
+cleanjson:
+  name: Clean JSON
+  os: [ 'linux' ]
+  extensions: [ 'json' ]
+  command: "cat '{{ file_cache_path }}' | python -m json.tool"
+
+pdftotext:
+  name: pdftotext
+  os: [ 'linux' ]
+  mimetypes: [ 'application/pdf' ]
+  command: "pdftotext '{{ file_cache_path }}' -"
 
 #clamscan:
-#    name: Clam Scan
-#    os: [ 'linux' ]
-#    command: "clamscan '{{ file_cache_path }}'"
+#  name: Clam Scan
+#  os: [ 'linux' ]
+#  command: "clamscan '{{ file_cache_path }}'"
 
 #file:
-#    name: File
-#    os: [ 'linux' ]
-#    command: "file {{ file_cache_path }}"
+#  name: File
+#  os: [ 'linux' ]
+#  command: "file '{{ file_cache_path }}'"
 
 #hexdumpc:
-#    name: "hexdump -c"
-#    os: [ 'linux' ]
-#    command: "hexdump -C {{ file_cache_path }}"
+#  name: "hexdump -c"
+#  os: [ 'linux' ]
+#  command: "hexdump -C '{{ file_cache_path }}'"
 
 #strings:
-#    name: "strings bash"
-#    os: [ 'linux' ]
-#    command: "strings {{ file_cache_path }}"
+#  name: "strings bash"
+#  os: [ 'linux' ]
+#  command: "strings '{{ file_cache_path }}'"
 

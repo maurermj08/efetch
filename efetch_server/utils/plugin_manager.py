@@ -140,12 +140,6 @@ class Plugin(object):
             file_name = Template(self._file).render(evidence)
             return static_file(os.path.basename(file_name), root=os.path.dirname(file_name))
 
-        if command_output:
-            # TODO Use different formats
-            return '<p style="font-family:Courier New, Courier, monospace;">' \
-                   + command + '</p><hr><xmp>' + command_output + '</xmp>'
-
-        return
-
-
-
+        # TODO Use different formats
+        return u'<p style="font-family:Courier New, Courier, monospace;">' \
+               + unicode(command) + u'</p><hr><xmp>' + unicode(command_output, errors='ignore') + u'</xmp>'
