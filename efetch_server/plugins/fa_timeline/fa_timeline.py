@@ -63,8 +63,7 @@ class FaTimeline(IPlugin):
         if pathspec:
             must.append({ 'term': { 'pathspec.raw': pathspec}})
 
-        query_filters = helper.get_filters(request, must, must_not)
-        query_body = query_filters
+        query_body = helper.get_filters(request, must, must_not)
         query_body['from'] = rows * (page - 1)
         query_body['size'] = rows
         if sort:

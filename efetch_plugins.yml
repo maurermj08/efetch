@@ -60,6 +60,22 @@ pdftotext:
   mimetypes: [ 'application/pdf' ]
   command: "pdftotext '{{ file_cache_path }}' -"
 
+dosomethingone:
+  name: OneSecond
+  os: [ 'linux' ]
+  command: "sleep 1"
+
+dosomethingten:
+  name: TenSeconds
+  os: [ 'linux' ]
+  command: "sleep 10"
+
+dosomethingnow:
+  name: ZeroSeconds
+  cache: False
+  os: [ 'linux' ]
+  command: "sleep 0"
+
 #clamscan:
 #  name: Clam Scan
 #  os: [ 'linux' ]

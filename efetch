@@ -18,11 +18,15 @@ import os
 import sys
 from efetch_server import Efetch
 
+__version__ = '0.3.1'
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(u'-d', u'--debug',
                         help=u'Displays debug messages',
+                        action=u'store_true')
+    parser.add_argument(u'-v', u'--version', 
+                        help=u'Prints Efetch version',
                         action=u'store_true')
     parser.add_argument(u'-a', u'--address',
                         help=u'IP address for the Efetch server',
@@ -52,5 +56,7 @@ if __name__ == "__main__":
     reload(sys)
     sys.setdefaultencoding('utf-8')
     args = parser.parse_args()
+    if args.version:
+        print version
     efetch = Efetch(args.address, args.port, args.elastic, args.debug, args.cache, args.maxfilesize, args.pluginsfile)
     efetch.start()

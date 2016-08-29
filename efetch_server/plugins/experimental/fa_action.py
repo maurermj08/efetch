@@ -37,6 +37,7 @@ class FaAction(IPlugin):
         """Returns the result of this plugin to be displayed in a browser"""
         index = helper.get_request_value(request, 'index', False)
         theme = helper.get_theme(request)
+        query_string = helper.get_query_string(request)
 
         if not index:
             abort(400, 'Action plugin requires an index, but none found')
@@ -48,7 +49,24 @@ class FaAction(IPlugin):
         html = str(template.read())
         template.close()
 
+        plugins_list = []
+        for plugin in helper.plugin_manager.get_all_plugins():
+            # TODO should we use this check: if hasattr(plugin, 'action') and plugin.action:
+            display_name = helper.plugin_manager.get_plugin_by_name(plugin).display_name
+            plugins_list.append('<!-- For shorting ' + display_name + '--><option value="' + plugin + '">' +
+                                display_name + '</option>')
+        plugins_list.sort()
+
+        fields_list = []
+        mapping = helper.db_util.get_mappings(index)
+        for key in mapping[index]['mappings']['plaso_event']['properties']:
+            fields_list.append('<option value="' + key + '">' + key + '</option>')
+        fields_list.sort()
+
         html = html.replace('<!-- Theme -->', theme)
         html = html.replace('<!-- Index -->', index)
+        html = html.replace('<!-- Plugins -->', '        \n'.join(plugins_list))
+        html = html.replace('<!-- Fields -->', '        \n'.join(fields_list))
+        html = html.replace('<!-- Query -->', query_string)
 
         return html

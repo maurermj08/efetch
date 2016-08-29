@@ -35,6 +35,7 @@ from urllib import urlencode
 class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
 
+
     def __init__(self, curr_directory, output_directory, max_file_size, plugins_file, es_url):
         """Initializes the Efetch Helper"""
         self._cache_lock = threading.Lock()

@@ -1,0 +1,8 @@
+<div ng-controller="EfetchVisController" class="efetch">
+    <script>
+        console.log('HERE: ' + window.location.href);
+    </script>
+    <iframe style="height:100%;width:100%;position:absolute;"
+            src="{{getSrc(vis.params.efetchURL, vis.params.efetchPlugin, window.location)}}"
+            class="ng-scope"></iframe>
+</div>

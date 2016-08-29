@@ -75,6 +75,10 @@ class DBUtil(object):
         """Returns the source values of an Elasticsearch query without error checking"""
         return self.get_sources(self.query(query, index))
 
+    def get_mappings(self, index):
+        """Returns the mapping for the given index"""
+        return self.elasticsearch.indices.get_mapping(index)
+
     def update(self, id_value, index, update, doc_type, abort_on_error=True, repeat=1):
         """Updates evidence event in Elastic Search"""
         try:

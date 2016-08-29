@@ -1,0 +1,10 @@
+[Core]
+Name = fa_image_ocr
+Module = fa_image_ocr
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Optical character recognition (OCR) for images using pytesseract
+Copyright = 2016
