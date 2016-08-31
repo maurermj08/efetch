@@ -48,6 +48,7 @@ def _action_process(items, helper, request, action_id, plugin, index, check, _ac
                 if _actions[action_id]['current'] == _actions[action_id]['total']:
                     _actions[action_id]['status'] = 'done'
 
+
 class FaActionAjax(IPlugin):
 
     def __init__(self):
@@ -59,7 +60,6 @@ class FaActionAjax(IPlugin):
         self._thread_pool_size = max([multiprocessing.cpu_count() - 1, 1])
         self._thread_pool = ThreadPool(processes=self._thread_pool_size)
         self._max_queue_size = 100
-        self._queue = []
         self._max_size = 10000
         IPlugin.__init__(self)
 
@@ -141,6 +141,10 @@ class FaActionAjax(IPlugin):
         all = bool(helper.get_request_value(request, 'all', False))
         check = helper.get_request_value(request, 'check', True)
         action_lock = threading.Lock()
+        queue = []
+
+        print(str(helper.get_request_value(request, '_g', '()')))
+        print(str(helper.get_request_value(request, '_a', '()')))
 
         if not index:
             self._actions[action_id]['status'] = "Action plugin requires an index, but none found"
@@ -161,7 +165,7 @@ class FaActionAjax(IPlugin):
         print('     Size: ' + str(size))
 
         # Get Events
-        query_body = helper.get_filters(request)
+        query_body = helper.get_filters(request, [], [])
         if sort and not all:
             query_body['sort'] = {sort: order}
 
@@ -179,18 +183,20 @@ class FaActionAjax(IPlugin):
                 with action_lock:
                     self._actions[action_id]['status'] = 'active'
 
-                self._queue.append(item)
-                if len(self._queue) >= self._max_queue_size:
-                    self._thread_pool.apply_async(_action_process, args=(self._queue, helper, request, action_id,
+                queue.append(item)
+                if len(queue) >= self._max_queue_size:
+                    self._thread_pool.apply_async(_action_process, args=(queue, helper, request, action_id,
                                                                          plugin, index, check,
                                                                          self._actions, action_lock))
-                    self._queue = []
+                    queue = []
 
-                logging.info('QUEUE SIZE: ' + str(len(self._queue)))
+                logging.info('QUEUE SIZE: ' + str(len(queue)))
         else:
             query_body['size'] = size
             events = [helper.db_util.elasticsearch.search(index=index, doc_type='plaso_event', body=query_body)]
             self._actions[action_id]['total'] = min(events[0]['hits']['total'], int(size))
+            print(query_body)
+            print(str(events))
 
             count = 0
             for event in events:
@@ -201,16 +207,17 @@ class FaActionAjax(IPlugin):
                 for item in event['hits']['hits']:
                     count += 1
                     print('count: ' + str(count))
-                    self._queue.append(item)
-                    if len(self._queue) == self._max_queue_size:
-                        self._thread_pool.apply_async(_action_process, args=(self._queue, helper, request, action_id,
+                    queue.append(item)
+                    if len(queue) == self._max_queue_size:
+                        self._thread_pool.apply_async(_action_process, args=(queue, helper, request, action_id,
                                                                              plugin, index, check,
                                                                              self._actions, action_lock))
-                        self._queue = []
+                        queue = []
 
-                logging.info('QUEUE SIZE: ' + str(len(self._queue)))
+                logging.info('QUEUE SIZE: ' + str(len(queue)))
 
-        if len(self._queue) > 0:
-            self._thread_pool.apply_async(_action_process, args=(self._queue, helper, request, action_id, plugin,
+        # TODO: How to handle deleting/removing request from list
+
+        if len(queue) > 0:
+            self._thread_pool.apply_async(_action_process, args=(queue, helper, request, action_id, plugin,
                                                                  index, check, self._actions, action_lock))
-        self._queue = []

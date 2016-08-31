@@ -15,6 +15,7 @@
 
 import logging
 import os
+import glob
 import platform
 import yaml
 from bottle import abort, static_file
@@ -137,7 +138,7 @@ class Plugin(object):
             process.close()
 
         if self._file:
-            file_name = Template(self._file).render(evidence)
+            file_name = glob.glob(str(Template(self._file).render(evidence)))[0]
             return static_file(os.path.basename(file_name), root=os.path.dirname(file_name))
 
         # TODO Use different formats

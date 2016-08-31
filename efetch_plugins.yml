@@ -60,21 +60,29 @@ pdftotext:
   mimetypes: [ 'application/pdf' ]
   command: "pdftotext '{{ file_cache_path }}' -"
 
-dosomethingone:
-  name: OneSecond
-  os: [ 'linux' ]
-  command: "sleep 1"
+## For Testing only
+#dosomethingone:
+#  name: OneSecond
+#  popularity: 0
+#  os: [ 'linux' ]
+#  command: "sleep 1"
+#
+## For Testing only
+#dosomethingnow:
+#  name: ZeroSeconds
+#  cache: False
+#  popularity: 0
+#  os: [ 'linux' ]
+#  command: "sleep 0"
 
-dosomethingten:
-  name: TenSeconds
-  os: [ 'linux' ]
-  command: "sleep 10"
-
-dosomethingnow:
-  name: ZeroSeconds
-  cache: False
-  os: [ 'linux' ]
-  command: "sleep 0"
+#pdfocr:
+#  name: PDF OCR
+#  cache: True
+#  popularity: 4
+#  os: [ 'linux' ]
+#  mimetypes: [ 'application/pdf' ]
+#  command: "pypdfocr '{{ file_cache_path }}'"
+#  file: "{{ file_cache_dir }}*_ocr.pdf"
 
 #clamscan:
 #  name: Clam Scan

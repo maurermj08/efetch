@@ -6,7 +6,10 @@ This plugin requires the following commands to be run:
     sudo pip install pytesseract
 """
 
+import elasticsearch
 import pytesseract
+import logging
+from bottle import abort
 from yapsy.IPlugin import IPlugin
 from PIL import Image
 
@@ -40,5 +43,42 @@ class FaImageOcr(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        return '<xmp style="white-space: pre-wrap;">' \
-               + pytesseract.image_to_string(Image.open(evidence['file_cache_path'])) + '</xmp>'
+        index = helper.get_request_value(request, 'index', False)
+        image_ocr = ''
+
+        # Only needed when using elasticsearch just else just return the OCR
+        if index:
+            # If using elasticsearch get the first entry
+            query = {'query': {'term': {'pathspec.raw': evidence['pathspec']}}}
+            first_elastic_entry = helper.db_util.query_sources(query, index, 1)
+
+            # If this plugin has not been run on this entry run it on all entries
+            if 'image_ocr' not in first_elastic_entry:
+                try:
+                    image_ocr = self.get_ocr_strings(path_on_disk)
+                    update = {'image_ocr': image_ocr}
+
+                    print('scanning...')
+                    events = elasticsearch.helpers.scan(helper.db_util.elasticsearch, query,
+                                                        scroll=u'240m', size=10000)
+                    for item in events:
+                        print(str(item))
+                        print('Updating...')
+                        helper.db_util.update(item['_id'], index, update, doc_type=item['_type'])
+                except:
+                    logging.warn('Failed to update image_ocr in elasticsearch')
+            else:
+                image_ocr = first_elastic_entry['image_ocr']
+        else:
+            image_ocr = self.get_ocr_strings(path_on_disk)
+
+        return '<xmp style="white-space: pre-wrap;">' + image_ocr + '</xmp>'
+
+    def get_ocr_strings(self, path_on_disk):
+        # This is the actual OCR call
+        try:
+            return pytesseract.image_to_string(Image.open(path_on_disk))
+        except:
+            logging.warn('Failed to perform OCR on file "' + path_on_disk + '"')
+            abort(400, 'It appears that the pathspec is for a file that the Tesseract cannot perform OCR on')
+
