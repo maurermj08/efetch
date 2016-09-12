@@ -23,6 +23,8 @@ class FaTorrent(IPlugin):
         self.display_name = 'Torrent'
         self.popularity = 7
         self.cache = True
+        self.fast = False
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):

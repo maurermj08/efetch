@@ -14,6 +14,7 @@ class FaTimeline(IPlugin):
         self.cache = False
         self._default_plugin = 'analyze/'
         self.fast = True
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):

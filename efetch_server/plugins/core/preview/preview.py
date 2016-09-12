@@ -12,6 +12,8 @@ class Preview(IPlugin):
         self.display_name = 'Preview'
         self.popularity = 8
         self.cache = True
+        self.fast = False
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):

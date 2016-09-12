@@ -57,6 +57,6 @@ if __name__ == "__main__":
     sys.setdefaultencoding('utf-8')
     args = parser.parse_args()
     if args.version:
-        print version
+        print args.version
     efetch = Efetch(args.address, args.port, args.elastic, args.debug, args.cache, args.maxfilesize, args.pluginsfile)
     efetch.start()

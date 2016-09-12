@@ -13,6 +13,7 @@ class Thumbnail(IPlugin):
         self.popularity = 0
         self.cache = False
         self.fast = False
+        self.action = True
         IPlugin.__init__(self)
 
     def activate(self):

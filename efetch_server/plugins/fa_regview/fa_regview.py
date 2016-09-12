@@ -11,6 +11,8 @@ class FaRegview(IPlugin):
         self.display_name = 'Reg. View'
         self.popularity = 8
         self.cache = True
+        self.fast = False
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):

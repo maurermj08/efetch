@@ -11,6 +11,8 @@ class FaSqlite(IPlugin):
         self.display_name = 'SQLite Viewer'
         self.popularity = 9
         self.cache = True
+        self.fast = False
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):

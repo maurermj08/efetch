@@ -14,6 +14,8 @@ class FaSqliteAjax(IPlugin):
         self.display_name = 'SQLite Ajax'
         self.popularity = 0
         self.cache = True
+        self.fast = False
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):

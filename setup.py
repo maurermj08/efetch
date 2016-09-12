@@ -6,7 +6,7 @@ efetch_description = (
 
 setup(
     name=u'efetch',
-    version=u'0.6 Alpha',
+    version=u'0.3 Beta',
     descript=efetch_description,
     packages=find_packages(),
     include_package_data=True,

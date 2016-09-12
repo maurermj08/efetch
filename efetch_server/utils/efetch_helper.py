@@ -99,7 +99,9 @@ class EfetchHelper(object):
     def get_filters(self, request, must=[], must_not=[]):
         """Gets the Kibana Filter from the request"""
         return self.db_util.get_filters(self.get_request_value(request, '_a', '()'),
-                                        self.get_request_value(request, '_g', '()'), must, must_not)
+                                        self.get_request_value(request, '_g', '()'),
+                                        self.get_request_value(request, 'timefield', 'datetime'),
+                                        must, must_not)
 
     def get_mimetype(self, encoded_pathspec, file_path, repeat=2):
         """Returns the mimetype for the given file"""
@@ -350,6 +352,38 @@ class EfetchHelper(object):
                              ' at cached path ' + efetch_dictionary['file_cache_path'])
 
         return True
+
+    def action_get(self, evidence, request, display_name, function, term, update_term = False):
+        """Runs a function that takes an evidence item, updates the term in elastic, and returns the results"""
+        index = self.get_request_value(request, 'index', False)
+        value = ''
+
+        # Only needed when using elasticsearch just else just return the OCR
+        if index:
+            # If using elasticsearch get the first entry
+            query = {'query': {'term': {'pathspec.raw': evidence['pathspec']}}}
+            first_elastic_entry = self.db_util.query_sources(query, index, 1)
+
+            # If this plugin has not been run on this entry run it on all entries
+            if term not in first_elastic_entry or update_term:
+                # Not masking the exception, should be handled by plugin
+                value = function(evidence)
+
+                try:
+                    update = {term: value}
+                    events = self.db_util.scan(query, index)
+
+                    for item in events:
+                        print('UPDATING (REMOVE): ' + str(item))
+                        self.db_util.update(item['_id'], index, update, doc_type=item['_type'])
+                except:
+                    logging.warn('Failed to update value in elasticsearch')
+            else:
+                value = first_elastic_entry['value']
+        else:
+            value = function(evidence)
+
+        return value
 
     def guess_mimetype(self, extension):
         """Returns the assumed mimetype based on the extension"""

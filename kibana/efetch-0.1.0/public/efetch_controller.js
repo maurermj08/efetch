@@ -9,7 +9,8 @@ define(function (require) {
 
   module.controller('EfetchVisController', function ($scope, $location, $element, Private) {
     $scope.getSrc = function(efetch_url, plugin, args) {
-        return efetch_url + plugin + '?' + $location.absUrl().split('?')[1] + '&index=' + $scope.vis.indexPattern.title;
+        return efetch_url + plugin + '?' + $location.absUrl().split('?')[1] + '&index=' + $scope.vis.indexPattern.title
+               + '&timefield=' + $scope.vis.indexPattern.timeFieldName;
     };
   });
 });

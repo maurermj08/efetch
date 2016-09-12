@@ -13,6 +13,8 @@ class Overview(IPlugin):
         self.cache = False
         self._order = [ 'thumbnail', 'path', 'mtime', 'atime', 'ctime', 'crtime', 'file_size', 'pid', 'mimetype', 'dir',
                         'name', 'ext', 'root', 'iid']
+        self.fast = False
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):

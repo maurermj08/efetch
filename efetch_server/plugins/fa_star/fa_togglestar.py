@@ -13,7 +13,8 @@ class FaTogglestar(IPlugin):
         self.display_name = 'Toggle Bookmark'
         self.popularity = 0
         self.cache = False
-        self.fast = True
+        self.fast = False
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):

@@ -27,6 +27,9 @@
 #
 # The COMMAND and FILE options use JINJA2 templating
 #
+# There is also a "store" option that takes the variable to store the results to e.g.:
+#     store: 'strings'
+#
 # If no FILE is specified, the plugin returns the results of the command using <xmp>
 ###
 
@@ -59,6 +62,18 @@ pdftotext:
   os: [ 'linux' ]
   mimetypes: [ 'application/pdf' ]
   command: "pdftotext '{{ file_cache_path }}' -"
+
+strings:
+  name: String
+  os: [ 'linux' ]
+  store: 'strings_bash'
+  command: "strings '{{ file_cache_path }}'"
+
+file:
+  name: File
+  os: [ 'linux' ]
+  store: 'file_bash'
+  command: "file -b '{{ file_cache_path }}'"
 
 ## For Testing only
 #dosomethingone:

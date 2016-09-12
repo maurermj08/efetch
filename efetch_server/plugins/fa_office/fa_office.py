@@ -12,6 +12,8 @@ class FaOffice(IPlugin):
         self.display_name = 'Adv. Preview'
         self.popularity = 8
         self.cache = True
+        self.fast = False
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):

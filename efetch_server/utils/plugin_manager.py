@@ -83,6 +83,7 @@ class EfetchPluginManager(object):
                           plugin.get('cache', True),
                           plugin.get('popularity', 5),
                           plugin.get('fast', False),
+                          plugin.get('store', False),
                           map(str.lower, plugin.get('mimetypes', [])),
                           map(str.lower, plugin.get('extensions', [])),
                           map(str.lower, plugin.get('os', [])),
@@ -93,19 +94,18 @@ class EfetchPluginManager(object):
             return plugin.plugin_object
 
 
-
-
-
 class Plugin(object):
     """Simple dynamically created plugin object"""
 
-    def __init__(self, display_name, description, cache, popularity, fast, mimetypes,
+    def __init__(self, display_name, description, cache, popularity, fast, store, mimetypes,
                  extensions, operating_systems, command, format, file):
         self.display_name = display_name
         self.description = description
         self.popularity = popularity
         self.cache = cache
         self.fast = fast
+        self.action = bool(store)
+        self._store = store
         self._mimetypes = mimetypes
         self._extensions = extensions
         self._operating_systems = operating_systems
@@ -131,16 +131,30 @@ class Plugin(object):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
+        evidence['plugin_command'] = Template(self._command).render(evidence)
+
         if self._command:
-            command = Template(self._command).render(evidence)
-            process = os.popen(command)
-            command_output = process.read()
-            process.close()
+            if self._store:
+                output = helper.action_get(evidence, request, self.display_name, self.run_command, self._store)
+            else:
+                output = self.run_command(evidence)
 
         if self._file:
             file_name = glob.glob(str(Template(self._file).render(evidence)))[0]
             return static_file(os.path.basename(file_name), root=os.path.dirname(file_name))
 
+        # TODO - should this use case even be allowed?
+        if not self._command:
+            return ''
+
         # TODO Use different formats
         return u'<p style="font-family:Courier New, Courier, monospace;">' \
-               + unicode(command) + u'</p><hr><xmp>' + unicode(command_output, errors='ignore') + u'</xmp>'
+               + unicode(evidence['plugin_command']) + u'</p><hr><xmp>' + unicode(output, errors='ignore')\
+               + u'</xmp>'
+
+    @staticmethod
+    def run_command(evidence):
+        process = os.popen(evidence['plugin_command'])
+        command_output = process.read()
+        process.close()
+        return command_output

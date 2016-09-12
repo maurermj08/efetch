@@ -28,7 +28,7 @@ def _action_process(items, helper, request, action_id, plugin, index, check, _ac
                     _actions[action_id]['fail'] += 1
             else:
                 efetch_dictionary = helper.get_efetch_dictionary(source['pathspec'], index, plugin.cache,
-                                                                 hasattr(plugin, 'fast') and plugin.fast)
+                                                                    hasattr(plugin, 'fast') and plugin.fast)
                 efetch_dictionary['_id'] = item['_id']
                 efetch_dictionary['doc_type'] = item['_type']
                 if not check or plugin.check(efetch_dictionary, efetch_dictionary['file_cache_path']):
@@ -59,7 +59,7 @@ class FaActionAjax(IPlugin):
         self._actions = {}
         self._thread_pool_size = max([multiprocessing.cpu_count() - 1, 1])
         self._thread_pool = ThreadPool(processes=self._thread_pool_size)
-        self._max_queue_size = 100
+        self._max_queue_size = 25
         self._max_size = 10000
         IPlugin.__init__(self)
 
@@ -155,14 +155,14 @@ class FaActionAjax(IPlugin):
             self._actions[action_id]['status'] = "Failed: Could not find plugin " \
                                                  + str(self._actions[action_id]['plugin']).lower()
 
-        print('HERE: ')
-        print('     Index: ' + index)
-        print('     Plugin: ' + str(self._actions[action_id]['plugin']).lower())
-        print('     Sort: ' + str(sort))
-        print('     Order: ' + str(order))
-        print('     Run Check: ' + str(check))
-        print('     All: ' + str(all))
-        print('     Size: ' + str(size))
+        # print('HERE: ')
+        # print('     Index: ' + index)
+        # print('     Plugin: ' + str(self._actions[action_id]['plugin']).lower())
+        # print('     Sort: ' + str(sort))
+        # print('     Order: ' + str(order))
+        # print('     Run Check: ' + str(check))
+        # print('     All: ' + str(all))
+        # print('     Size: ' + str(size))
 
         # Get Events
         query_body = helper.get_filters(request, [], [])
@@ -195,28 +195,19 @@ class FaActionAjax(IPlugin):
             query_body['size'] = size
             events = [helper.db_util.elasticsearch.search(index=index, doc_type='plaso_event', body=query_body)]
             self._actions[action_id]['total'] = min(events[0]['hits']['total'], int(size))
-            print(query_body)
-            print(str(events))
 
-            count = 0
             for event in events:
                 with action_lock:
                     self._actions[action_id]['status'] = 'active'
 
                 # Run Events
                 for item in event['hits']['hits']:
-                    count += 1
-                    print('count: ' + str(count))
                     queue.append(item)
                     if len(queue) == self._max_queue_size:
                         self._thread_pool.apply_async(_action_process, args=(queue, helper, request, action_id,
                                                                              plugin, index, check,
                                                                              self._actions, action_lock))
                         queue = []
-
-                logging.info('QUEUE SIZE: ' + str(len(queue)))
-
-        # TODO: How to handle deleting/removing request from list
 
         if len(queue) > 0:
             self._thread_pool.apply_async(_action_process, args=(queue, helper, request, action_id, plugin,

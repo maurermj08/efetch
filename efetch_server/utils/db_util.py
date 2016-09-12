@@ -90,6 +90,10 @@ class DBUtil(object):
                 self.update(id, index, update, abort_on_error, repeat - 1)
             logging.warn('Failed to update "' + id_value + '" due to conflict error!')
 
+    def scan(self, query, index, scroll=u'240m', size=10000):
+        """Runs Elasticsearch.helpers.scan returning a simple iterator that yields all hits"""
+        return helpers.scan(self.elasticsearch, query, index=index, scroll=scroll, size=size)
+
     def get_query(self, a_parameter):
         """Returns the query from _a RISON"""
         try:
@@ -111,20 +115,20 @@ class DBUtil(object):
         except Exception, err:
             logging.error('Failed to parse rison: ' + a_parameter)
             traceback.print_exc()
-            return {'query_string': {'analyze_wildcard': True, 'query': '*'}}
+            return 'gray'
         if 'options' in a_parsed and 'darkTheme' in a_parsed['options'] and a_parsed['options']['darkTheme']:
             return 'black'
         else:
             return 'gray'
 
-    def get_filters(self, a_parameter, g_parameter, must=[], must_not=[]):
+    def get_filters(self, a_parameter, g_parameter, timefield, must=[], must_not=[]):
         """Returns the query from _a RISON"""
         a_parsed = rison.loads(a_parameter)
         g_parsed = rison.loads(g_parameter)
 
         if 'time' in g_parsed:
             # pprint.pprint(g_parsed)
-            must.append({'range': {'datetime': {
+            must.append({'range': {timefield: {
                 'gte': g_parsed['time']['from'],
                 'lte': g_parsed['time']['to']
             }}})

@@ -15,6 +15,8 @@ class FaHash(IPlugin):
         self.display_name = 'File Hasher'
         self.popularity = 0
         self.cache = True
+        self.fast = False
+        self.action = True
         IPlugin.__init__(self)
 
     def activate(self):
@@ -41,10 +43,12 @@ class FaHash(IPlugin):
 
         index = helper.get_request_value(request, 'index', False)
         if not index:
+            logging.warn('Hash plugin requires an index, but none found')
             abort(400, 'Hash plugin requires an index, but none found')
 
         id_value = helper.get_request_value(request, 'id', False)
         if not id_value and '_id' not in evidence:
+            logging.warn('ID required to Star Elasticsearch doc')
             abort(400, 'ID required to Star Elasticsearch doc')
         elif not id_value:
             id_value = evidence['_id']
