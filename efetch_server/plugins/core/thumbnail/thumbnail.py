@@ -12,7 +12,7 @@ class Thumbnail(IPlugin):
         self.display_name = 'Thumbnail'
         self.popularity = 0
         self.cache = False
-        self.fast = False
+        self.fast = True
         self.action = True
         IPlugin.__init__(self)
 
@@ -44,8 +44,7 @@ class Thumbnail(IPlugin):
         # If the file is an image create a thumbnail
         if evidence['mimetype'].startswith('image'):
             # Cache file
-            file_cache_path = helper.cache_file(evidence)
-
+            helper.pathspec_helper.cache_file(evidence['pathspec'])
             thumbnail_cache_path = evidence['thumbnail_cache_path']
             thumbnail_cache_dir = evidence['thumbnail_cache_dir']
 

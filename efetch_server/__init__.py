@@ -136,8 +136,8 @@ class Efetch(object):
             encoded_pathspec = self._helper.db_util.query_sources(
                 {'query': query}, index, 1)['pathspec']
 
-        efetch_dictionary = self._helper. \
-            get_efetch_dictionary(encoded_pathspec, index, plugin.cache, hasattr(plugin, 'fast') and plugin.fast)
+        efetch_dictionary = self._helper.pathspec_helper. \
+            get_evidence_item(encoded_pathspec, index, plugin.cache, hasattr(plugin, 'fast') and plugin.fast)
 
         # Return plugins frame
         return plugin.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'], request)

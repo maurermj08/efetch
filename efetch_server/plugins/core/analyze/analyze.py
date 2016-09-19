@@ -42,11 +42,6 @@ class Analyze(IPlugin):
             '<a href="/plugins/overview?' + evidence['url_query']
             + '" target="frame">Overview</a><br>')
 
-        if not evidence['mimetype']:
-            mimetype = helper.guess_mimetype(evidence['extension'])
-        else:
-            mimetype = evidence['mimetype']
-
         size = evidence.get('size', 0)
         if isinstance(size, list):
             size = size[0]
@@ -83,7 +78,7 @@ class Analyze(IPlugin):
             html = html.replace('<!-- Links -->', "\n".join(plugins))
         else:
             html = html.replace('<!-- File -->', evidence['file_name'])
-            html = html.replace('<!-- Mimetype -->', mimetype)
+            html = html.replace('<!-- Mimetype -->', evidence['mimetype'])
             html = html.replace('<!-- Size -->', str(size) + " Bytes")
             html = html.replace('<!-- Links -->', "\n".join(plugins))
 

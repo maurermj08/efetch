@@ -75,6 +75,17 @@ file:
   store: 'file_bash'
   command: "file -b '{{ file_cache_path }}'"
 
+#base64:
+#  name: Base64 Attach
+#  os: [ 'linux' ]
+#  store: 'attachment'
+#  command: "base64  '{{ file_cache_path }}'"
+
+#virus_total:
+#  name: Virus Total
+#  os: [ 'linux' ]
+#  command: "virustotal-search.py -m '{{ file_cache_path }}'"
+
 ## For Testing only
 #dosomethingone:
 #  name: OneSecond

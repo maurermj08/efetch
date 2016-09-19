@@ -48,7 +48,7 @@ class FaImageOcr(IPlugin):
                '</xmp>'
 
     @staticmethod
-    def get_ocr_strings(evidence):
+    def get_ocr_strings(evidence, helper):
         # This is the actual OCR call
         try:
             return pytesseract.image_to_string(Image.open(evidence['file_cache_path']))

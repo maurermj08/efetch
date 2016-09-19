@@ -137,7 +137,7 @@ class Plugin(object):
             if self._store:
                 output = helper.action_get(evidence, request, self.display_name, self.run_command, self._store)
             else:
-                output = self.run_command(evidence)
+                output = self.run_command(evidence, helper)
 
         if self._file:
             file_name = glob.glob(str(Template(self._file).render(evidence)))[0]
@@ -147,13 +147,22 @@ class Plugin(object):
         if not self._command:
             return ''
 
-        # TODO Use different formats
-        return u'<p style="font-family:Courier New, Courier, monospace;">' \
-               + unicode(evidence['plugin_command']) + u'</p><hr><xmp>' + unicode(output, errors='ignore')\
+        # TODO Use different formats\
+        # TODO Verify this unicode is accurate, appears to error on blank strings
+
+        try:
+            output_string = unicode(output, errors='ignore')
+        except:
+            output_string = output
+
+        results = u'<p style="font-family:Courier New, Courier, monospace;">' \
+               + unicode(evidence['plugin_command']) + u'</p><hr><xmp>' + output_string\
                + u'</xmp>'
 
+        return results
+
     @staticmethod
-    def run_command(evidence):
+    def run_command(evidence, helper):
         process = os.popen(evidence['plugin_command'])
         command_output = process.read()
         process.close()

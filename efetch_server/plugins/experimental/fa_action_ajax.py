@@ -27,8 +27,9 @@ def _action_process(items, helper, request, action_id, plugin, index, check, _ac
                 with action_lock:
                     _actions[action_id]['fail'] += 1
             else:
-                efetch_dictionary = helper.get_efetch_dictionary(source['pathspec'], index, plugin.cache,
-                                                                    hasattr(plugin, 'fast') and plugin.fast)
+                efetch_dictionary = helper.pathspec_helper.\
+                    get_evidence_item(source['pathspec'], index, plugin.cache,
+                                                            hasattr(plugin, 'fast') and plugin.fast)
                 efetch_dictionary['_id'] = item['_id']
                 efetch_dictionary['doc_type'] = item['_type']
                 if not check or plugin.check(efetch_dictionary, efetch_dictionary['file_cache_path']):

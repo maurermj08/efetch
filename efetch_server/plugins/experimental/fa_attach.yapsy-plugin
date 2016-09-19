@@ -1,0 +1,10 @@
+[Core]
+Name = fa_attach
+Module = fa_attach
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Uploads a Base64 attachment of the evidence item to Elasticsearch
+Copyright = 2016
