@@ -15,6 +15,7 @@ class FaAction(IPlugin):
         self.popularity = 0
         self.cache = False
         self.fast = True
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -52,9 +53,11 @@ class FaAction(IPlugin):
         plugins_list = []
         for plugin in helper.plugin_manager.get_all_plugins():
             # TODO should we use this check: if hasattr(plugin, 'action') and plugin.action:
-            display_name = helper.plugin_manager.get_plugin_by_name(plugin).display_name
-            plugins_list.append('<!-- For shorting ' + display_name + '--><option value="' + plugin + '">' +
-                                display_name + '</option>')
+            plugin_object = helper.plugin_manager.get_plugin_by_name(plugin)
+            display_name = plugin_object.display_name
+            if getattr(plugin_object, 'action', False):
+                plugins_list.append('<!-- For shorting ' + display_name + '--><option value="' + plugin + '">' +
+                                    display_name + '</option>')
         plugins_list.sort()
 
         fields_list = []

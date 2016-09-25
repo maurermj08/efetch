@@ -102,7 +102,7 @@ class EfetchHelper(object):
                     events = self.db_util.scan(query, index)
 
                     for item in events:
-                        print('UPDATING (REMOVE): ' + str(item))
+                        logging.debug('Updating elasticsearch item: ' + str(item))
                         self.db_util.update(item['_id'], index, update, doc_type=item['_type'])
                 except:
                     logging.warn('Failed to update value in elasticsearch')

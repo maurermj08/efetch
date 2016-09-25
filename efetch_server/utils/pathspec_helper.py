@@ -21,26 +21,34 @@ import os
 import pytsk3
 import re
 import threading
-import time
 import traceback
 from bottle import abort
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from PIL import Image
 from urllib import urlencode
+from utils.dfvfs_util import DfvfsUtil
 
 # TODO - Currently Mimetype is only accurately accessed if file is cached
 # TODO - Determine best approach for giving mimetype without slowing down everything
 class PathspecHelper(object):
     """This singleton class provides helper methods that generally all take a pathspec"""
+    # Objects for controlling caching (Only 1 file caches at a time)
     _cache_lock = threading.Lock()
-    _source_read_lock = threading.Lock()
-    _file_read_lock = threading.Lock()
-    _open_lock = threading.Lock()
-    _magic = threading.Lock()
     _caching = []
-    _reading = {}
-    _open_files = {}
+    # Objects for controlling evidence file reads (Only 1 file read at a time)
+    _file_read_lock = threading.Lock()
+    # Objects for controlling running magic on a file (Only 1 file at a time)
+    _magic = threading.Lock()
+    # Objects for controlling file entry objects
+    _open_file_entries_lock = threading.Lock()
+    _open_file_entries_count = {}
+    _open_file_entries = {}
+    # Objects for controlling opening and closing of file objects
+    _open_file_object_lock = threading.Lock()
+    _open_file_objects_count = {}
+    _open_file_objects = {}
+    # Misc
     _max_file_count = 256
     _cache_chunk_size = 32768
     _thumbnail_size = 64
@@ -90,11 +98,10 @@ class PathspecHelper(object):
     def _get_file_information(self, encoded_pathspec, pathspec):
         """Returns a dictionary of key information within a File Entry"""
         evidence_item = {}
-        self._open_file(encoded_pathspec)
-        file_entry = PathspecHelper._get_file_entry(encoded_pathspec)
+        file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
 
         if file_entry.IsFile() and pathspec.type_indicator == u'TSK':
-            file_object = PathspecHelper._open_file(encoded_pathspec, file_entry)
+            file_object = PathspecHelper._open_file_object(encoded_pathspec, file_entry)
             tsk_object = file_object._tsk_file
             file_type = tsk_object.info.meta.type
             if file_type == None:
@@ -119,7 +126,7 @@ class PathspecHelper(object):
             evidence_item['size'] = str(tsk_object.info.meta.size)
             evidence_item['uid'] = str(tsk_object.info.meta.uid)
             evidence_item['gid'] = str(tsk_object.info.meta.gid)
-            PathspecHelper._close_file(encoded_pathspec)
+            PathspecHelper._close_file_object(encoded_pathspec)
         elif file_entry.IsDirectory():
             evidence_item['meta_type'] = 'Directory'
         elif file_entry.IsFile():
@@ -127,7 +134,9 @@ class PathspecHelper(object):
             evidence_item['size'] = [0]
         else:
             evidence_item['meta_type'] = 'Unknown'
-        self._close_file(encoded_pathspec)
+
+        del file_entry
+        PathspecHelper._close_file_entry(encoded_pathspec)
 
         return evidence_item
 
@@ -154,14 +163,20 @@ class PathspecHelper(object):
         if not fast:
             evidence_item.update(self._get_file_information(encoded_pathspec, pathspec))
         else:
-            # TODO Remove:
-            file_entry = PathspecHelper._get_file_entry(encoded_pathspec)
-            if file_entry.IsDirectory():
+            # TODO Update this so it does not need to open file entry if possible:
+            file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
+
+            if not file_entry:
+                evidence_item['meta_type'] = 'None'
+            elif file_entry.IsDirectory():
                 evidence_item['meta_type'] = 'Directory'
             elif file_entry.IsFile():
                 evidence_item['meta_type'] = 'File'
             else:
                 evidence_item['meta_type'] = 'Unknown'
+
+            del file_entry
+            PathspecHelper._close_file_entry(encoded_pathspec)
 
         evidence_item['mimetype'] = 'Unknown'
 
@@ -200,7 +215,7 @@ class PathspecHelper(object):
                 repeat = repeat - 1
                 try:
                     PathspecHelper._caching.append(evidence_item['pathspec'])
-                    in_file = PathspecHelper._open_file(evidence_item['pathspec'])
+                    in_file = PathspecHelper._open_file_object(evidence_item['pathspec'])
                     out_file = open(evidence_item['file_cache_path'], "wb")
                     with PathspecHelper._file_read_lock:
                         data = in_file.read(PathspecHelper._cache_chunk_size)
@@ -208,23 +223,39 @@ class PathspecHelper(object):
                             out_file.write(data)
                             data = in_file.read(PathspecHelper._cache_chunk_size)
                         in_file.seek(0)
-                    PathspecHelper._close_file(evidence_item['pathspec'])
+                    PathspecHelper._close_file_object(evidence_item['pathspec'])
                     out_file.close()
+                    PathspecHelper._caching.remove(evidence_item['pathspec'])
                 except:
                     logging.warn('File failed to cache, attempting ' + str(repeat) + ' more times')
 
+        self.create_thumbnail(evidence_item, file_entry)
+
+        return True
+
+    def create_thumbnail(self, evidence_item, file_entry=False):
+        """Creates a thumbnail for the evidence item"""
         # If the file is an image create a thumbnail
         if evidence_item['mimetype'].startswith('image') \
                 and not os.path.isfile(evidence_item['thumbnail_cache_path']):
             if not os.path.isdir(evidence_item['thumbnail_cache_dir']):
                 os.makedirs(evidence_item['thumbnail_cache_dir'])
             try:
-                image = Image.open(evidence_item['file_cache_path'])
+                cached = os.path.isfile(evidence_item['file_cache_path'])
+                if cached:
+                    image = Image.open(evidence_item['file_cache_path'])
+                else:
+                    image = Image.open(self._open_file_object(evidence_item['pathspec'], file_entry))
+
                 image.thumbnail((PathspecHelper._thumbnail_size, PathspecHelper._thumbnail_size), Image.ANTIALIAS)
+
                 if evidence_item['mimetype'] == 'image/jpeg':
                     image.save(evidence_item['thumbnail_cache_path'], 'JPEG')
                 else:
                     image.save(evidence_item['thumbnail_cache_path'])
+
+                if not cached:
+                    self._close_file_object(evidence_item['pathspec'])
             except IOError:
                 logging.warn('IOError when trying to create thumbnail for '
                              + evidence_item['file_name'] + ' at cached path ' +
@@ -232,8 +263,6 @@ class PathspecHelper(object):
             except:
                 logging.warn('Failed to create thumbnail for ' + evidence_item['file_name'] +
                              ' at cached path ' + evidence_item['file_cache_path'])
-
-        return True
 
     def get_mimetype(self, encoded_pathspec, file_entry=None):
         """Gets the mimetype of the given pathspec"""
@@ -257,6 +286,30 @@ class PathspecHelper(object):
             else:
                 return self._my_magic.id_filename(path)
 
+    def list_directory(self, encoded_pathspec, recursive=False):
+        """Lists a directory using a pathspec or list of pathspecs"""
+        directory_list = []
+        pathspec = PathspecHelper._decode_pathspec(encoded_pathspec)
+
+        directory_list.extend(self._list_directory(
+            resolver.Resolver.OpenFileEntry(pathspec), recursive, 0))
+
+        return directory_list
+
+    def _list_directory(self, file_entry, recursive=False, depth=0):
+        """Lists a directory using a file entry"""
+        directory_list = []
+
+        if depth > 0:
+            directory_list.append(self.get_evidence_item(JsonPathSpecSerializer.WriteSerialized(file_entry.path_spec),
+                                                         fast=True))
+
+        if (recursive or depth == 0) and file_entry.IsDirectory():
+            for sub_file_entry in file_entry.sub_file_entries:
+                directory_list.extend(self._list_directory(sub_file_entry, recursive, depth + 1))
+
+        return directory_list
+
     @staticmethod
     def _decode_pathspec(encoded_pathspec):
         """Returns a Path Spec object from an encoded path spec, causes a 400 abort if the decode fails"""
@@ -271,27 +324,7 @@ class PathspecHelper(object):
             logging.debug(e.message)
             logging.debug(traceback.format_exc())
             abort(400, 'Failed to decode path spec')
-    
-    @staticmethod
-    def _get_file_entry(encoded_pathspec):
-        """Returns an open File Entry object of the given path spec, causes a 404 abort if the file is not found"""
-        try:
-            with PathspecHelper._file_read_lock:
-                try:
-                    return resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
-                except KeyError as e:
-                    print('Unknown KEY ERROR')
-                    return resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
-                except RuntimeError as r:
-                    print('Unknown RUNTIME ERROR')
-                    return resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
-        except Exception as e:
-            logging.warn('Failed to find or open file entry')
-            logging.debug(encoded_pathspec)
-            logging.debug(e.message)
-            logging.debug(traceback.format_exc())
-            abort(404, 'Failed to find or open file entry')
-    
+
     @staticmethod
     def get_inode(encoded_pathspec):
         """Returns the inode for the given pathspec"""
@@ -328,49 +361,133 @@ class PathspecHelper(object):
         regexp = '[%s]{%d,}' % (chars, min)
         pattern = re.compile(regexp)
         return pattern.findall(PathspecHelper.read_file(encoded_pathspec))
-    
+
+    @staticmethod
+    def _open_file_entry(encoded_pathspec):
+        """Returns an open File Entry object of the given path spec"""
+        if encoded_pathspec in PathspecHelper._open_file_entries:
+            with PathspecHelper._open_file_entries_lock:
+                PathspecHelper._open_file_entries_count[encoded_pathspec] += 1
+                return PathspecHelper._open_file_entries[encoded_pathspec]
+
+        try:
+            with PathspecHelper._open_file_entries_lock:
+                PathspecHelper._open_file_entries_count[encoded_pathspec] = 1
+                try:
+                    PathspecHelper._open_file_entries[encoded_pathspec] =\
+                        resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
+                except KeyError:
+                    logging.warn('Unknown KEY ERROR while opening evidence file, attempting again...')
+                    PathspecHelper._open_file_entries[encoded_pathspec] = \
+                        resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
+                except RuntimeError:
+                    logging.warn('Unknown RUNTIME ERROR while opening evidence file, attempting again...')
+                    PathspecHelper._open_file_entries[encoded_pathspec] = \
+                        resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
+                except AttributeError:
+                    logging.warn('Unknown ATTRIBUTE ERROR while opening evidence file, attempting again...')
+                    PathspecHelper._open_file_entries[encoded_pathspec] = \
+                        resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
+                return PathspecHelper._open_file_entries[encoded_pathspec]
+        except Exception as e:
+            del PathspecHelper._open_file_entries_count[encoded_pathspec]
+            logging.error('Failed second attempt to open evidence file entry')
+            logging.debug(encoded_pathspec)
+            logging.debug(e.message)
+            logging.debug(traceback.format_exc())
+            raise RuntimeError('Failed to open evidence file entry')
+
+    @staticmethod
+    def _close_file_entry(encoded_pathspec):
+        """Closes the file entry"""
+        try:
+            with PathspecHelper._open_file_entries_lock:
+                PathspecHelper._open_file_entries_count[encoded_pathspec] -= 1
+                if PathspecHelper._open_file_entries_count[encoded_pathspec] < 1:
+                    del PathspecHelper._open_file_entries[encoded_pathspec]
+        except KeyError:
+            logging.error('Attempted to close already closed file entry!')
+            # TODO: Fix what is causing this error
+            #raise RuntimeError('Attempting to close already closed file entry')
+
     @staticmethod
     def read_file(encoded_pathspec, file_entry=False):
         """Reads the file object from the specified pathspec"""
-        file = PathspecHelper._open_file(encoded_pathspec, file_entry)
+        file = PathspecHelper._open_file_object(encoded_pathspec, file_entry)
         with PathspecHelper._file_read_lock:
             data = file.read()
             file.seek(0)
-        PathspecHelper._close_file(encoded_pathspec)
+        PathspecHelper._close_file_object(encoded_pathspec)
         return data
 
-    # TODO Add specific exceptions, path not found, io error, not file
-    # TODO Need a check to see if it is a file before doing all this
     @staticmethod
-    def _open_file(encoded_pathspec, file_entry=False, sleep_time=1):
+    def _open_file_object(encoded_pathspec, file_entry=False):
         """Returns the file object from the specified pathspec"""
-        while True:
-            with PathspecHelper._open_lock:
-                if len(PathspecHelper._open_files) < PathspecHelper._max_file_count:
-                    if encoded_pathspec in PathspecHelper._reading:
-                        PathspecHelper._reading[encoded_pathspec] += 1
-                    else:
-                        PathspecHelper._reading[encoded_pathspec] = 1
+        close_file_entry = not file_entry
 
-                    if encoded_pathspec not in PathspecHelper._open_files:
-                        if not file_entry:
-                            file_entry = PathspecHelper._get_file_entry(encoded_pathspec)
-                        try:
-                            PathspecHelper._open_files[encoded_pathspec] = file_entry.GetFileObject()
-                        except:
-                            logging.warn('Failed to read file, is this pathspec a file?')
-                            abort(400, 'Failed to read file, is this pathspec a file?')
-                    return PathspecHelper._open_files[encoded_pathspec]
-            time.sleep(sleep_time)
+        with PathspecHelper._open_file_object_lock:
+            if len(PathspecHelper._open_file_objects) < PathspecHelper._max_file_count:
+                if encoded_pathspec in PathspecHelper._open_file_objects_count:
+                    PathspecHelper._open_file_objects_count[encoded_pathspec] += 1
+                else:
+                    PathspecHelper._open_file_objects_count[encoded_pathspec] = 1
+
+                if encoded_pathspec not in PathspecHelper._open_file_objects:
+                    if not file_entry:
+                        file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
+                    if not file_entry.IsFile():
+                        if close_file_entry:
+                            PathspecHelper._close_file_entry(encoded_pathspec)
+                        raise TypeError('Cannot open file object, because the pathspec is not for a file.')
+
+                    PathspecHelper._open_file_objects[encoded_pathspec] = file_entry.GetFileObject()
+
+                    if close_file_entry:
+                        PathspecHelper._close_file_entry(encoded_pathspec)
+
+                return PathspecHelper._open_file_objects[encoded_pathspec]
 
     @staticmethod
-    def _close_file(encoded_pathspec):
+    def _close_file_object(encoded_pathspec):
         """Closes the file object associated with the specified pathspec"""
-        with PathspecHelper._open_lock:
-            PathspecHelper._reading[encoded_pathspec] -= 1
-            if PathspecHelper._reading[encoded_pathspec] < 1:
-                PathspecHelper._open_files[encoded_pathspec].close()
-                del PathspecHelper._open_files[encoded_pathspec]
+        with PathspecHelper._open_file_object_lock:
+            try:
+                PathspecHelper._open_file_objects_count[encoded_pathspec] -= 1
+                if PathspecHelper._open_file_objects_count[encoded_pathspec] < 1:
+                    PathspecHelper._open_file_objects[encoded_pathspec].close()
+                    del PathspecHelper._open_file_objects[encoded_pathspec]
+            except KeyError:
+                logging.error('Attempted to close already closed file object!')
+                raise RuntimeError('Attempting to close already closed file object')
+
+    def get_parent_pathspec(self, encoded_pathspec):
+        '''Gets the parent pathspec of the provided pathspec'''
+        file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
+        parent_entry = file_entry.GetParentFileEntry()
+        if not parent_entry:
+            return False
+        else:
+            return JsonPathSpecSerializer.WriteSerialized(parent_entry.path_spec)
+
+    @staticmethod
+    def get_pathspec(pathspec_or_source):
+        """Gets the pathspec"""
+        try:
+            pathspec = DfvfsUtil.decode_pathspec(pathspec_or_source)
+        except:
+            dfvfs_util = DfvfsUtil(pathspec_or_source)
+            pathspec = dfvfs_util.base_path_specs
+
+        # TODO remove because some cases will want all possible pathspecs
+        if isinstance(pathspec, list):
+            pathspec = pathspec[0]
+
+        return pathspec
+
+    @staticmethod
+    def get_encoded_pathspec(pathspec_or_source):
+        """Gets the encoded pathspec"""
+        return JsonPathSpecSerializer.WriteSerialized(PathspecHelper.get_pathspec(pathspec_or_source))
 
     @staticmethod
     def guess_mimetype(extension):

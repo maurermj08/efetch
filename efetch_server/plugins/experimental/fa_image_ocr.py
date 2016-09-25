@@ -9,6 +9,7 @@ This plugin requires the following commands to be run:
 import elasticsearch
 import pytesseract
 import logging
+import os
 from bottle import abort
 from yapsy.IPlugin import IPlugin
 from PIL import Image
@@ -19,7 +20,7 @@ class FaImageOcr(IPlugin):
     def __init__(self):
         self.display_name = 'Image OCR'
         self.popularity = 3
-        self.cache = True
+        self.cache = False
         self.fast = False
         self.action = True
         IPlugin.__init__(self)
@@ -51,7 +52,14 @@ class FaImageOcr(IPlugin):
     def get_ocr_strings(evidence, helper):
         # This is the actual OCR call
         try:
-            return pytesseract.image_to_string(Image.open(evidence['file_cache_path']))
+            cached = os.path.isfile(evidence['file_cache_path'])
+            if cached:
+                return pytesseract.image_to_string(Image.open(evidence['file_cache_path']))
+            else:
+                strings = pytesseract.image_to_string(Image.open(
+                    helper.pathspec_helper._open_file_object(evidence['pathspec'])))
+                helper.pathspec_helper._close_file_object(evidence['pathspec'])
+                return strings
         except:
             logging.warn('Failed to perform OCR on file "' + evidence['file_cache_path'] + '"')
             abort(400, 'It appears that the pathspec is for a file that the Tesseract cannot perform OCR on')

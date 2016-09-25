@@ -9,6 +9,7 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 import threading
 import thread
+import traceback
 import uuid
 from bottle import abort
 from yapsy.IPlugin import IPlugin
@@ -26,6 +27,7 @@ def _action_process(items, helper, request, action_id, plugin, index, check, _ac
             if 'pathspec' not in source:
                 with action_lock:
                     _actions[action_id]['fail'] += 1
+                    _actions[action_id]['errors'] += source['pathspec'] + '\nNot found in Elasticsearch'
             else:
                 efetch_dictionary = helper.pathspec_helper.\
                     get_evidence_item(source['pathspec'], index, plugin.cache,
@@ -33,14 +35,14 @@ def _action_process(items, helper, request, action_id, plugin, index, check, _ac
                 efetch_dictionary['_id'] = item['_id']
                 efetch_dictionary['doc_type'] = item['_type']
                 if not check or plugin.check(efetch_dictionary, efetch_dictionary['file_cache_path']):
-
-                        plugin.get(efetch_dictionary, helper, efetch_dictionary['file_cache_path'], request)
+                    plugin.get(efetch_dictionary, helper, efetch_dictionary['file_cache_path'], request)
                 with action_lock:
                     _actions[action_id]['success'] += 1
         except Exception as e:
             with action_lock:
                 _actions[action_id]['fail'] += 1
-                _actions[action_id]['error'] += e.message + '\n\n'
+                _actions[action_id]['error'] += source['pathspec'] + '\n' +\
+                                                e.message + '\n' + traceback.format_exc() + '\n\n'
         finally:
             with action_lock:
                 _actions[action_id]['current'] += 1
@@ -57,6 +59,7 @@ class FaActionAjax(IPlugin):
         self.popularity = 0
         self.cache = False
         self.fast = True
+        self.action = False
         self._actions = {}
         self._thread_pool_size = max([multiprocessing.cpu_count() - 1, 1])
         self._thread_pool = ThreadPool(processes=self._thread_pool_size)
@@ -104,7 +107,7 @@ class FaActionAjax(IPlugin):
             pseudo_request = SimpleRequest()
             pseudo_request.query = copy.deepcopy(request.query)
             pseudo_request.forms = copy.deepcopy(request.forms)
-            thread.start_new_thread(self.action, (evidence, helper, pseudo_request, action_id))
+            thread.start_new_thread(self.start_action, (evidence, helper, pseudo_request, action_id))
         elif method == 'status':
             action_id = helper.get_request_value(request, 'action_id', '')
             if not action_id:
@@ -133,19 +136,16 @@ class FaActionAjax(IPlugin):
         return self._actions[action_id]
 
 
-    def action(self, evidence, helper, request, action_id):
+    def start_action(self, evidence, helper, request, action_id):
         """Runs a single plugin against multiple pathspecs"""
         index = helper.get_request_value(request, 'index', False)
         size = int(helper.get_request_value(request, 'size', self._max_size))
         sort = helper.get_request_value(request, 'sort', False)
         order = helper.get_request_value(request, 'order', 'asc')
         all = bool(helper.get_request_value(request, 'all', False))
-        check = helper.get_request_value(request, 'check', True)
+        check = bool(helper.get_request_value(request, 'check', True))
         action_lock = threading.Lock()
         queue = []
-
-        print(str(helper.get_request_value(request, '_g', '()')))
-        print(str(helper.get_request_value(request, '_a', '()')))
 
         if not index:
             self._actions[action_id]['status'] = "Action plugin requires an index, but none found"
@@ -155,15 +155,6 @@ class FaActionAjax(IPlugin):
         if not plugin:
             self._actions[action_id]['status'] = "Failed: Could not find plugin " \
                                                  + str(self._actions[action_id]['plugin']).lower()
-
-        # print('HERE: ')
-        # print('     Index: ' + index)
-        # print('     Plugin: ' + str(self._actions[action_id]['plugin']).lower())
-        # print('     Sort: ' + str(sort))
-        # print('     Order: ' + str(order))
-        # print('     Run Check: ' + str(check))
-        # print('     All: ' + str(all))
-        # print('     Size: ' + str(size))
 
         # Get Events
         query_body = helper.get_filters(request, [], [])
@@ -177,10 +168,7 @@ class FaActionAjax(IPlugin):
             del query_body['size']
             events = elasticsearch.helpers.scan(helper.db_util.elasticsearch, query_body,
                                                 scroll=u'240m', size=self._max_size)
-            count = 0
             for item in events:
-                count += 1
-                print('count: ' + str(count))
                 with action_lock:
                     self._actions[action_id]['status'] = 'active'
 
@@ -190,8 +178,6 @@ class FaActionAjax(IPlugin):
                                                                          plugin, index, check,
                                                                          self._actions, action_lock))
                     queue = []
-
-                logging.info('QUEUE SIZE: ' + str(len(queue)))
         else:
             query_body['size'] = size
             events = [helper.db_util.elasticsearch.search(index=index, doc_type='plaso_event', body=query_body)]

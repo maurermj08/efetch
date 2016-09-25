@@ -44,7 +44,8 @@ class Thumbnail(IPlugin):
         # If the file is an image create a thumbnail
         if evidence['mimetype'].startswith('image'):
             # Cache file
-            helper.pathspec_helper.cache_file(evidence['pathspec'])
+            # helper.pathspec_helper.cache_file(evidence['pathspec'])
+            helper.pathspec_helper.create_thumbnail(evidence)
             thumbnail_cache_path = evidence['thumbnail_cache_path']
             thumbnail_cache_dir = evidence['thumbnail_cache_dir']
 

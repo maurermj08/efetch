@@ -89,7 +89,8 @@ class EfetchPluginManager(object):
                           map(str.lower, plugin.get('os', [])),
                           plugin.get('command', False),
                           plugin.get('format', 'Text'),
-                          plugin.get('file', False))
+                          plugin.get('file', False),
+                          plugin.get('openwith', False))
         else:
             return plugin.plugin_object
 
@@ -98,7 +99,7 @@ class Plugin(object):
     """Simple dynamically created plugin object"""
 
     def __init__(self, display_name, description, cache, popularity, fast, store, mimetypes,
-                 extensions, operating_systems, command, format, file):
+                 extensions, operating_systems, command, format, file, openwith):
         self.display_name = display_name
         self.description = description
         self.popularity = popularity
@@ -112,6 +113,7 @@ class Plugin(object):
         self._command = command
         self._format = format
         self._file = file
+        self._openwith = openwith
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
@@ -140,8 +142,25 @@ class Plugin(object):
                 output = self.run_command(evidence, helper)
 
         if self._file:
-            file_name = glob.glob(str(Template(self._file).render(evidence)))[0]
-            return static_file(os.path.basename(file_name), root=os.path.dirname(file_name))
+            file_name = str(Template(self._file).render(evidence))
+            if not os.path.isdir(file_name):
+                file_name = glob.glob(file_name)
+                if isinstance(file_name, list):
+                    file_name = file_name[0]
+
+            if self._openwith:
+                # TODO Figure out if this is the best method, because it may result in duplicate caching
+                # TODO remove any reference to evidence['cache_path'] and instead always use path on disk
+                plugin = helper.plugin_manager.get_plugin_by_name(self._openwith)
+                new_pathspec = helper.pathspec_helper.get_encoded_pathspec(file_name)
+                print(new_pathspec)
+                new_evidence = helper.pathspec_helper.get_evidence_item(new_pathspec,
+                                                                        helper.get_request_value(request, 'index', '*'),
+                                                                        False,
+                                                                        hasattr(plugin, 'fast') and plugin.fast)
+                return plugin.get(new_evidence, helper, file_name, request)
+            else:
+                return static_file(os.path.basename(file_name), root=os.path.dirname(file_name))
 
         # TODO - should this use case even be allowed?
         if not self._command:
