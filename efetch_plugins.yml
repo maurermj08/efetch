@@ -33,12 +33,6 @@
 # If no FILE is specified, the plugin returns the results of the command using <xmp>
 ###
 
-ziplist:
-  name: ZIP List
-  os: [ 'linux' ]
-  mimetypes: [ 'application/zip' ]
-  command: "unzip -l '{{ file_cache_path }}'"
-
 corexml:
   name: Core.xml
   os: [ 'linux' ]
@@ -63,21 +57,8 @@ pdftotext:
   mimetypes: [ 'application/pdf' ]
   command: "pdftotext '{{ file_cache_path }}' -"
 
-strings:
-  name: String
-  os: [ 'linux' ]
-  store: 'strings_bash'
-  command: "strings '{{ file_cache_path }}'"
-
-file:
-  name: File
-  os: [ 'linux' ]
-  store: 'file_bash'
-  command: "file -b '{{ file_cache_path }}'"
-
 unzip:
   name: Unzip
-  cache: True
   popularity: 4
   os: [ 'linux' ]
   mimetypes: [ 'application/zip' ]
@@ -85,29 +66,51 @@ unzip:
   file: "{{ file_cache_path }}_unzip"
   openwith: fa_directory
 
+readpst:
+  name: Read PST
+  popularity: 4
+  os: [ 'linux' ]
+  extensions: [ 'pst' ]
+  command: "mkdir {{ file_cache_path }}_readpst; readpst -w -D -S -o '{{ file_cache_path }}_readpst' {{ file_cache_path }}"
+  file: "{{ file_cache_path }}_readpst"
+  openwith: fa_directory
+
+#strings:
+#  name: String
+#  os: [ 'linux' ]
+#  store: 'strings_bash'
+#  command: "strings '{{ file_cache_path }}'"
+
+#ziplist:
+#  name: ZIP List
+#  os: [ 'linux' ]
+#  mimetypes: [ 'application/zip' ]
+#  command: "unzip -l '{{ file_cache_path }}'"
+
+#file:
+#  name: File
+#  os: [ 'linux' ]
+#  store: 'file_bash'
+#  command: "file -b '{{ file_cache_path }}'"
+
 #virus_total:
 #  name: Virus Total
 #  os: [ 'linux' ]
 #  command: "virustotal-search.py -m '{{ file_cache_path }}'"
 
-pdfocr:
-  name: PDF OCR
-  cache: True
-  popularity: 4
-  os: [ 'linux' ]
-  mimetypes: [ 'application/pdf' ]
-  command: "pypdfocr '{{ file_cache_path }}'"
-  file: "{{ file_cache_dir }}*_ocr.pdf"
+#pdfocr:
+#  name: PDF OCR
+#  cache: True
+#  popularity: 4
+#  os: [ 'linux' ]
+#  mimetypes: [ 'application/pdf' ]
+#  command: "pypdfocr '{{ file_cache_path }}'"
+#  file: "{{ file_cache_dir }}*_ocr.pdf"
 
 #clamscan:
 #  name: Clam Scan
 #  os: [ 'linux' ]
 #  command: "clamscan '{{ file_cache_path }}'"
-
-#file:
-#  name: File
-#  os: [ 'linux' ]
-#  command: "file '{{ file_cache_path }}'"
 
 #hexdumpc:
 #  name: "hexdump -c"

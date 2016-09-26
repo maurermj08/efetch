@@ -9,8 +9,8 @@ from jinja2 import Template
 class FaDirectory(IPlugin):
 
     def __init__(self):
-        self.display_name = 'Directory'
-        self.popularity = 5
+        self.display_name = 'Navigate'
+        self.popularity = 8
         self.cache = False
         self.fast = False
         self.action = False
@@ -41,14 +41,24 @@ class FaDirectory(IPlugin):
                 <!-- {{ file_name }} -->
                 <td><img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></td>
                 <td><a href="/plugins/analyze?{{ url_query }}" target="_top">{{file_name}}</a></td>
-            <tr>
+                <td>{{ mtime }}</td>
+                <td>{{ atime }}</td>
+                <td>{{ ctime }}</td>
+                <td>{{ crtime }}</td>
+                <td>{{ size }}</td>
+            </tr>
         """)
         row_dir_template = Template("""
             <tr>
                 <!-- {{ file_name }} -->
                 <td><img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></td>
                 <td><a href="/plugins/fa_directory?{{ url_query }}">{{file_name}}</a></td>
-            <tr>
+                <td>{{ mtime }}</td>
+                <td>{{ atime }}</td>
+                <td>{{ ctime }}</td>
+                <td>{{ crtime }}</td>
+                <td>{{ size }}</td>
+            </tr>
         """)
 
         if evidence['meta_type'] == 'Directory':
@@ -85,8 +95,6 @@ class FaDirectory(IPlugin):
                                     $('#t01').DataTable({
                                             "paging": false,
                                             "info": false,
-                                            "searching": false,
-                                            "ordering": false,
                                             "orderClasses": false
                                             }
                                     );
@@ -126,7 +134,20 @@ class FaDirectory(IPlugin):
 
                 </style>
                 </head>
-                    <body>''' +\
-                       '<table id="t01" class="display">' + '\n'.join(dir_table) + '\n'.join(file_table) + '<table>' + \
+                    <body>
+                       <table id="t01" class="display">
+                            <thead>
+                            <tr>
+                                <th>Icon</th>
+                                <th>File Name</th>
+                                <th>Modified</th>
+                                <th>Accessed</th>
+                                <th>Changed</th>
+                                <th>Created</th>
+                                <th>Size</th>
+                            </tr>
+                            </thead>
+                            <tbody>'''\
+                            + '\n'.join(dir_table) + '\n'.join(file_table) + '</tbody><table>' + \
                '''  </body>
                </html>'''

@@ -26,7 +26,7 @@ class Preview(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
-        allowed_mimetype = ['application/xml', 'application/pdf']
+        allowed_mimetype = ['application/xml', 'application/pdf', 'message/rfc822']
         allowed_prefix = ['image', 'text', 'video', 'audio']
         return (str(evidence['mimetype'].split('/')[0]).lower() in allowed_prefix
                 or evidence['mimetype'] in allowed_mimetype ) and evidence['meta_type'] != 'Directory'

@@ -23,6 +23,7 @@ import re
 import threading
 import traceback
 from bottle import abort
+from dfvfs.lib import definitions
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from PIL import Image
@@ -95,50 +96,49 @@ class PathspecHelper(object):
         """Caches the file object associated with the specified pathspec"""
         return self.cache_evidence_item(self.get_evidence_item(encoded_pathspec))
 
-    def _get_file_information(self, encoded_pathspec, pathspec):
-        """Returns a dictionary of key information within a File Entry"""
+    def _get_stat_information(self, encoded_pathspec):
+        """Creates a dictionary of information about the pathspec"""
         evidence_item = {}
         file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
 
-        if file_entry.IsFile() and pathspec.type_indicator == u'TSK':
-            file_object = PathspecHelper._open_file_object(encoded_pathspec, file_entry)
-            tsk_object = file_object._tsk_file
-            file_type = tsk_object.info.meta.type
-            if file_type == None:
-                evidence_item['meta_type'] = 'None'
-            elif file_type == pytsk3.TSK_FS_META_TYPE_REG:
-                evidence_item['meta_type'] = 'File'
-            elif file_type == pytsk3.TSK_FS_META_TYPE_DIR:
-                evidence_item['meta_type'] = 'Directory'
-            elif file_type == pytsk3.TSK_FS_META_TYPE_LNK:
-                evidence_item['meta_type'] = 'Link'
-            else:
-                evidence_item['meta_type'] = str(file_type)
+        stat_object = file_entry.GetStat()
 
-            evidence_item['mtime'] = datetime.datetime.utcfromtimestamp(
-                tsk_object.info.meta.mtime).isoformat()
-            evidence_item['atime'] = datetime.datetime.utcfromtimestamp(
-                tsk_object.info.meta.atime).isoformat()
-            evidence_item['ctime'] = datetime.datetime.utcfromtimestamp(
-                tsk_object.info.meta.ctime).isoformat()
-            evidence_item['crtime'] = datetime.datetime.utcfromtimestamp(
-                tsk_object.info.meta.crtime).isoformat()
-            evidence_item['size'] = str(tsk_object.info.meta.size)
-            evidence_item['uid'] = str(tsk_object.info.meta.uid)
-            evidence_item['gid'] = str(tsk_object.info.meta.gid)
-            PathspecHelper._close_file_object(encoded_pathspec)
-        elif file_entry.IsDirectory():
-            evidence_item['meta_type'] = 'Directory'
-        elif file_entry.IsFile():
-            evidence_item['meta_type'] = 'File'
-            evidence_item['size'] = [0]
-        else:
-            evidence_item['meta_type'] = 'Unknown'
+        for attribute in [ 'size', 'mode', 'uid', 'gid']:
+            evidence_item[attribute] = str(getattr(stat_object, attribute, ''))
+
+        # TODO Take in flag from efetch -z to specify timezone
+        for attribute in ['mtime', 'atime', 'ctime', 'crtime']:
+            value = getattr(stat_object, attribute, False)
+            if value:
+                evidence_item[attribute] = datetime.datetime.utcfromtimestamp(value).isoformat()
+
+        evidence_item['inode'] = getattr(stat_object, 'ino', '')
+
+        type = getattr(stat_object, 'type', '')
+        if type:
+            if type == definitions.FILE_ENTRY_TYPE_DEVICE:
+                evidence_item['meta_type'] = 'Device'
+                evidence_item['legacy_type'] = 'b/b'
+            if type == definitions.FILE_ENTRY_TYPE_DIRECTORY:
+                evidence_item['meta_type'] = 'Directory'
+                evidence_item['legacy_type'] = 'd/d'
+            if type == definitions.FILE_ENTRY_TYPE_FILE:
+                evidence_item['meta_type'] = 'File'
+                evidence_item['legacy_type'] = 'r/r'
+            if type == definitions.FILE_ENTRY_TYPE_LINK:
+                evidence_item['meta_type'] = 'Link'
+                evidence_item['legacy_type'] = 'l/l'
+            if type == definitions.FILE_ENTRY_TYPE_SOCKET:
+                evidence_item['meta_type'] = 'Socket'
+                evidence_item['legacy_type'] = 'h/h'
+            if type == definitions.FILE_ENTRY_TYPE_PIPE:
+                evidence_item['meta_type'] = 'Pipe'
+                evidence_item['legacy_type'] = 'p/p'
 
         del file_entry
         PathspecHelper._close_file_entry(encoded_pathspec)
 
-        return evidence_item
+        return  evidence_item
 
     def get_evidence_item(self, encoded_pathspec, index='*', cache=False, fast=False):
         """Creates and returns an Efetch object from an encoded path spec"""
@@ -161,7 +161,7 @@ class PathspecHelper(object):
         evidence_item['thumbnail_cache_path'] = self.get_cache_path(encoded_pathspec, 'thumbnails')
         evidence_item['thumbnail_cache_dir'] = self.get_cache_directory(encoded_pathspec, 'thumbnails')
         if not fast:
-            evidence_item.update(self._get_file_information(encoded_pathspec, pathspec))
+            evidence_item.update(self._get_stat_information(encoded_pathspec))
         else:
             # TODO Update this so it does not need to open file entry if possible:
             file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
@@ -301,8 +301,7 @@ class PathspecHelper(object):
         directory_list = []
 
         if depth > 0:
-            directory_list.append(self.get_evidence_item(JsonPathSpecSerializer.WriteSerialized(file_entry.path_spec),
-                                                         fast=True))
+            directory_list.append(self.get_evidence_item(JsonPathSpecSerializer.WriteSerialized(file_entry.path_spec)))
 
         if (recursive or depth == 0) and file_entry.IsDirectory():
             for sub_file_entry in file_entry.sub_file_entries:
