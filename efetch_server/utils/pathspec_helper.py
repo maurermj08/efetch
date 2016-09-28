@@ -28,7 +28,7 @@ from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from PIL import Image
 from urllib import urlencode
-from utils.dfvfs_util import DfvfsUtil
+from efetch_server.utils.dfvfs_util import DfvfsUtil
 
 # TODO - Currently Mimetype is only accurately accessed if file is cached
 # TODO - Determine best approach for giving mimetype without slowing down everything
@@ -315,14 +315,14 @@ class PathspecHelper(object):
         if not encoded_pathspec:
             logging.warn('Path Spec required but none found')
             abort(400, 'Expected an encoded Path Spec, but none found')
-        try:
-            return JsonPathSpecSerializer.ReadSerialized(encoded_pathspec)
-        except Exception as e:
-            logging.warn('Failed to decode pathspec')
-            logging.debug(encoded_pathspec)
-            logging.debug(e.message)
-            logging.debug(traceback.format_exc())
-            abort(400, 'Failed to decode path spec')
+        #try:
+        return JsonPathSpecSerializer.ReadSerialized(encoded_pathspec)
+        # except Exception as e:
+        #     logging.warn('Failed to decode pathspec')
+        #     logging.debug(encoded_pathspec)
+        #     logging.debug(e.message)
+        #     logging.debug(traceback.format_exc())
+        #     abort(400, 'Failed to decode path spec')
 
     @staticmethod
     def get_inode(encoded_pathspec):
@@ -459,7 +459,32 @@ class PathspecHelper(object):
                 logging.error('Attempted to close already closed file object!')
                 raise RuntimeError('Attempting to close already closed file object')
 
-    def get_parent_pathspec(self, encoded_pathspec):
+    # TODO Proper naming
+    @staticmethod
+    def get_new_base_pathspecs(encoded_pathspec):
+        '''Gets a list of the base_pathspecs from in a pathspec'''
+        dfvfs_util = DfvfsUtil(PathspecHelper._decode_pathspec(encoded_pathspec), interactive=True, is_pathspec=True)
+        pathspec = dfvfs_util.base_path_specs
+
+        if not isinstance(pathspec, list):
+            pathspec = [pathspec]
+
+        pathspecs = []
+
+        for item in pathspec:
+            if hasattr(item.parent, 'location'):
+                file_name = item.parent.location
+            else:
+                file_name = '/'
+            new_encoded_pathspec = JsonPathSpecSerializer.WriteSerialized(item)
+            pathspecs.append({'pathspec': new_encoded_pathspec,
+                              'url_query':  urlencode({'pathspec': new_encoded_pathspec}),
+                              'file_name': file_name})
+
+        return pathspecs
+
+    @staticmethod
+    def get_parent_pathspec(encoded_pathspec):
         '''Gets the parent pathspec of the provided pathspec'''
         file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
         parent_entry = file_entry.GetParentFileEntry()

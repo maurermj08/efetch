@@ -42,7 +42,7 @@ class DfvfsUtil(object):
     display = ''
     initialized = 0
 
-    def __init__(self, source=None, settings=[u'all',u'all',u'all',u'all'], interactive=True):
+    def __init__(self, source=None, settings=[u'all',u'all',u'all',u'all'], interactive=True, is_pathspec=False):
         """Initializes the dfvfs util object."""
         super(DfvfsUtil, self).__init__()
         self._source_scanner = source_scanner.SourceScanner()
@@ -50,8 +50,10 @@ class DfvfsUtil(object):
         self.env = jinja2.Environment()
         self.env.filters['datetime'] = self.format_datetime
 
-        if source:
+        if source and not is_pathspec:
             self.base_path_specs = self.get_base_pathspecs(source, interactive)
+        elif source and is_pathspec:
+            self.base_path_specs = self.get_base_from_pathspec(source, interactive)
 
     def export_file(self, pathspec, output_path=None):
         """Outputs a pathspec to the specified path"""
@@ -293,16 +295,17 @@ class DfvfsUtil(object):
         if len(volume_identifiers) == 1:
             return volume_identifiers
 
-        try:
-            selected_volume_identifier = self._prompt_user_for_partition_identifier(
-                volume_system, volume_identifiers, interactive)
-        except KeyboardInterrupt:
-            raise RuntimeError(u'File system scan aborted.')
+        # TODO REMOVE INTERACTION
+        # try:
+        #     selected_volume_identifier = self._prompt_user_for_partition_identifier(
+        #         volume_system, volume_identifiers, interactive)
+        # except KeyboardInterrupt:
+        #     raise RuntimeError(u'File system scan aborted.')
+        #
+        # if selected_volume_identifier == u'all':
+        return volume_identifiers
 
-        if selected_volume_identifier == u'all':
-            return volume_identifiers
-
-        return [selected_volume_identifier]
+        # return [selected_volume_identifier]
 
     def _get_vss_store_identifiers(self, scan_node, interactive):
         """Determines the VSS store identifiers.
@@ -349,39 +352,39 @@ class DfvfsUtil(object):
         if not vss_stores:
             return []
 
-        if vss_stores == u'all':
-            return [u'all']
-
-        stores = []
-        for vss_store_range in vss_stores.split(u','):
-            # Determine if the range is formatted as 1..3 otherwise it indicates
-            # a single store number.
-            if u'..' in vss_store_range:
-                first_store, last_store = vss_store_range.split(u'..')
-                try:
-                    first_store = int(first_store, 10)
-                    last_store = int(last_store, 10)
-                except ValueError:
-                    raise errors.BadConfigOption(
-                        u'Invalid VSS store range: {0:s}.'.format(vss_store_range))
-
-                for store_number in range(first_store, last_store + 1):
-                    if store_number not in stores:
-                        stores.append(store_number)
-            else:
-                if vss_store_range.startswith(u'vss'):
-                    vss_store_range = vss_store_range[3:]
-
-                try:
-                    store_number = int(vss_store_range, 10)
-                except ValueError:
-                    raise errors.BadConfigOption(
-                        u'Invalid VSS store range: {0:s}.'.format(vss_store_range))
-
-                if store_number not in stores:
-                    stores.append(store_number)
-
-        return sorted(stores)
+        #if vss_stores == u'all':
+        return [u'all']
+        #
+        # stores = []
+        # for vss_store_range in vss_stores.split(u','):
+        #     # Determine if the range is formatted as 1..3 otherwise it indicates
+        #     # a single store number.
+        #     if u'..' in vss_store_range:
+        #         first_store, last_store = vss_store_range.split(u'..')
+        #         try:
+        #             first_store = int(first_store, 10)
+        #             last_store = int(last_store, 10)
+        #         except ValueError:
+        #             raise errors.BadConfigOption(
+        #                 u'Invalid VSS store range: {0:s}.'.format(vss_store_range))
+        #
+        #         for store_number in range(first_store, last_store + 1):
+        #             if store_number not in stores:
+        #                 stores.append(store_number)
+        #     else:
+        #         if vss_store_range.startswith(u'vss'):
+        #             vss_store_range = vss_store_range[3:]
+        #
+        #         try:
+        #             store_number = int(vss_store_range, 10)
+        #         except ValueError:
+        #             raise errors.BadConfigOption(
+        #                 u'Invalid VSS store range: {0:s}.'.format(vss_store_range))
+        #
+        #         if store_number not in stores:
+        #             stores.append(store_number)
+        #
+        # return sorted(stores)
 
     def _prompt_user_for_encrypted_volume_credential(
             self, scan_context, locked_scan_node, credentials):
@@ -486,45 +489,45 @@ class DfvfsUtil(object):
                     volume.identifier, volume_extent.offset,
                     self._format_human_readable_size(volume_extent.size))
 
-        while True:
-            if interactive:
-                print(
-                    u'Please specify the identifier of the partition that should be '
-                    u'processed.')
-                print(
-                    u'All partitions can be defined as: "all". Note that you '
-                    u'can abort with Ctrl^C.')
+        # while True:
+        #     if interactive:
+        #         print(
+        #             u'Please specify the identifier of the partition that should be '
+        #             u'processed.')
+        #         print(
+        #             u'All partitions can be defined as: "all". Note that you '
+        #             u'can abort with Ctrl^C.')
+        #
+        #         selected_volume_identifier = sys.stdin.readline()
+        #         self.settings.append(selected_volume_identifier.strip())
+        #         selected_volume_identifier = selected_volume_identifier.strip()
+        #     else:
+        #         if not self.settings:
+        #             self.options = sorted(volume_identifiers)
+        #             self.initialized = -1
+        #             return
+        #         else:
+        #             selected_volume_identifier = self.settings.pop(0)
+        #
+        #     if not selected_volume_identifier.startswith(u'p'):
+        #         try:
+        #             partition_number = int(selected_volume_identifier, 10)
+        #             selected_volume_identifier = u'p{0:d}'.format(partition_number)
+        #         except ValueError:
+        #             pass
+        #
+        #     if (selected_volume_identifier == u'all' or
+        #                 selected_volume_identifier in volume_identifiers):
+        #         break
+        #
+        #     if interactive:
+        #         print(u'')
+        #         print(
+        #             u'Unsupported partition identifier, please try again or abort '
+        #             u'with Ctrl^C.')
+        #         print(u'')
 
-                selected_volume_identifier = sys.stdin.readline()
-                self.settings.append(selected_volume_identifier.strip())
-                selected_volume_identifier = selected_volume_identifier.strip()
-            else:
-                if not self.settings:
-                    self.options = sorted(volume_identifiers)
-                    self.initialized = -1
-                    return
-                else:
-                    selected_volume_identifier = self.settings.pop(0)
-
-            if not selected_volume_identifier.startswith(u'p'):
-                try:
-                    partition_number = int(selected_volume_identifier, 10)
-                    selected_volume_identifier = u'p{0:d}'.format(partition_number)
-                except ValueError:
-                    pass
-
-            if (selected_volume_identifier == u'all' or
-                        selected_volume_identifier in volume_identifiers):
-                break
-
-            if interactive:
-                print(u'')
-                print(
-                    u'Unsupported partition identifier, please try again or abort '
-                    u'with Ctrl^C.')
-                print(u'')
-
-        return selected_volume_identifier
+        return u'all'
 
     def _prompt_user_for_vss_store_identifiers(
             self, volume_system, volume_identifiers, interactive):
@@ -552,91 +555,93 @@ class DfvfsUtil(object):
             except ValueError:
                 pass
 
-        print_header = True
-        while True:
-            if interactive:
-                if print_header:
-                    print(u'The following Volume Shadow Snapshots (VSS) were found:')
-                    print(u'Identifier\tVSS store identifier')
+        return range(1, volume_system.number_of_volumes + 1)
 
-                    for volume_identifier in volume_identifiers:
-                        volume = volume_system.GetVolumeByIdentifier(volume_identifier)
-                        if not volume:
-                            raise errors.SourceScannerError(
-                                u'Volume missing for identifier: {0:s}.'.format(
-                                    volume_identifier))
-
-                        vss_identifier = volume.GetAttribute(u'identifier')
-                        print(u'{0:s}\t\t{1:s}'.format(
-                            volume.identifier, vss_identifier.value))
-
-                    print(u'')
-
-                    print_header = False
-
-                print(
-                    u'Please specify the identifier(s) of the VSS that should be '
-                    u'processed:')
-                print(
-                    u'Note that a range of stores can be defined as: 3..5. Multiple '
-                    u'stores can')
-                print(
-                    u'be defined as: 1,3,5 (a list of comma separated values). Ranges '
-                    u'and lists can')
-                print(
-                    u'also be combined as: 1,3..5. The first store is 1. All stores '
-                    u'can be defined')
-                print(u'as "all". If no stores are specified none will be processed. You')
-                print(u'can abort with Ctrl^C.')
-
-                selected_vss_stores = sys.stdin.readline()
-                self.settings.append(selected_vss_stores.strip())
-            else:
-                self.display = u'The following Volume Shadow Snapshots (VSS) were found:\nTo add evidence without any snapshots use "none"\nIdentifier\tVSS store identifier\n'
-                self.options = ['none']
-
-                for volume_identifier in volume_identifiers:
-                    volume = volume_system.GetVolumeByIdentifier(volume_identifier)
-                    if not volume:
-                        raise errors.SourceScannerError(
-                            u'Volume missing for identifier: {0:s}.'.format(
-                                volume_identifier))
-
-                    vss_identifier = volume.GetAttribute(u'identifier')
-                    self.display += u'{0:s}\t\t{1:s}\n'.format(volume.identifier, vss_identifier.value)
-                    self.options.append(volume.identifier)
-                if self.settings:
-                    selected_vss_stores = self.settings.pop(0)
-                    if str(selected_vss_stores).lower() == 'none':
-                        selected_vss_stores = []
-                else:
-                    self.initialized = -1
-                    return
-
-            if not selected_vss_stores:
-                break
-
-            selected_vss_stores = selected_vss_stores.strip()
-
-            try:
-                selected_vss_stores = self._parse_vss_stores_string(selected_vss_stores)
-            except errors.BadConfigOption:
-                selected_vss_stores = []
-
-            if selected_vss_stores == [u'all']:
-                # We need to set the stores to cover all vss stores.
-                selected_vss_stores = range(1, volume_system.number_of_volumes + 1)
-
-            if not set(selected_vss_stores).difference(normalized_volume_identifiers):
-                break
-
-            print(u'')
-            print(
-                u'Unsupported VSS identifier(s), please try again or abort with '
-                u'Ctrl^C.')
-            print(u'')
-
-        return selected_vss_stores
+        # print_header = True
+        # while True:
+        #     if interactive:
+        #         if print_header:
+        #             print(u'The following Volume Shadow Snapshots (VSS) were found:')
+        #             print(u'Identifier\tVSS store identifier')
+        #
+        #             for volume_identifier in volume_identifiers:
+        #                 volume = volume_system.GetVolumeByIdentifier(volume_identifier)
+        #                 if not volume:
+        #                     raise errors.SourceScannerError(
+        #                         u'Volume missing for identifier: {0:s}.'.format(
+        #                             volume_identifier))
+        #
+        #                 vss_identifier = volume.GetAttribute(u'identifier')
+        #                 print(u'{0:s}\t\t{1:s}'.format(
+        #                     volume.identifier, vss_identifier.value))
+        #
+        #             print(u'')
+        #
+        #             print_header = False
+        #
+        #         print(
+        #             u'Please specify the identifier(s) of the VSS that should be '
+        #             u'processed:')
+        #         print(
+        #             u'Note that a range of stores can be defined as: 3..5. Multiple '
+        #             u'stores can')
+        #         print(
+        #             u'be defined as: 1,3,5 (a list of comma separated values). Ranges '
+        #             u'and lists can')
+        #         print(
+        #             u'also be combined as: 1,3..5. The first store is 1. All stores '
+        #             u'can be defined')
+        #         print(u'as "all". If no stores are specified none will be processed. You')
+        #         print(u'can abort with Ctrl^C.')
+        #
+        #         selected_vss_stores = sys.stdin.readline()
+        #         self.settings.append(selected_vss_stores.strip())
+        #     else:
+        #         self.display = u'The following Volume Shadow Snapshots (VSS) were found:\nTo add evidence without any snapshots use "none"\nIdentifier\tVSS store identifier\n'
+        #         self.options = ['none']
+        #
+        #         for volume_identifier in volume_identifiers:
+        #             volume = volume_system.GetVolumeByIdentifier(volume_identifier)
+        #             if not volume:
+        #                 raise errors.SourceScannerError(
+        #                     u'Volume missing for identifier: {0:s}.'.format(
+        #                         volume_identifier))
+        #
+        #             vss_identifier = volume.GetAttribute(u'identifier')
+        #             self.display += u'{0:s}\t\t{1:s}\n'.format(volume.identifier, vss_identifier.value)
+        #             self.options.append(volume.identifier)
+        #         if self.settings:
+        #             selected_vss_stores = self.settings.pop(0)
+        #             if str(selected_vss_stores).lower() == 'none':
+        #                 selected_vss_stores = []
+        #         else:
+        #             self.initialized = -1
+        #             return
+        #
+        #     if not selected_vss_stores:
+        #         break
+        #
+        #     selected_vss_stores = selected_vss_stores.strip()
+        #
+        #     try:
+        #         selected_vss_stores = self._parse_vss_stores_string(selected_vss_stores)
+        #     except errors.BadConfigOption:
+        #         selected_vss_stores = []
+        #
+        #     if selected_vss_stores == [u'all']:
+        #         # We need to set the stores to cover all vss stores.
+        #         selected_vss_stores = range(1, volume_system.number_of_volumes + 1)
+        #
+        #     if not set(selected_vss_stores).difference(normalized_volume_identifiers):
+        #         break
+        #
+        #     print(u'')
+        #     print(
+        #         u'Unsupported VSS identifier(s), please try again or abort with '
+        #         u'Ctrl^C.')
+        #     print(u'')
+        #
+        # return selected_vss_stores
 
     def _scan_volume(self, scan_context, volume_scan_node, base_path_specs, interactive):
         """Scans the volume scan node for volume and file systems.
@@ -753,6 +758,78 @@ class DfvfsUtil(object):
                 scan_context, scan_path_spec=sub_scan_node.path_spec)
             self._scan_volume(scan_context, sub_scan_node, base_path_specs, interactive)
 
+    def get_base_from_pathspec(self, source_pathspec, interactive):
+        """Determines the base path specifications.
+        Args:
+            source_path: the source path.
+        Returns:
+            A list of path specifications (instances of dfvfs.PathSpec).
+        Raises:
+            RuntimeError: if the source path does not exists, or if the source path
+                                        is not a file or directory, or if the format of or within
+                                        the source file is not supported.
+        """
+        self.initialized = 0
+
+        # if (not source_path.startswith(u'\\\\.\\') and
+        #         not os.path.exists(source_path)):
+        #     raise RuntimeError(
+        #         u'No such device, file or directory: {0:s}.'.format(source_path))
+
+        scan_context = source_scanner.SourceScannerContext()
+        #scan_context.OpenSourcePath(source_path) # TODO Does self.AddScanNode(source_path_spec, None)
+        scan_context.AddScanNode(source_pathspec, None)
+
+        try:
+            self._source_scanner.Scan(scan_context)
+        except (errors.BackEndError, ValueError) as exception:
+            raise RuntimeError(
+                u'Unable to scan source with error: {0:s}.'.format(exception))
+
+        if scan_context.source_type not in [
+            definitions.SOURCE_TYPE_STORAGE_MEDIA_DEVICE,
+            definitions.SOURCE_TYPE_STORAGE_MEDIA_IMAGE]:
+            scan_node = scan_context.GetRootScanNode()
+            return [scan_node.path_spec]
+
+        # Get the first node where where we need to decide what to process.
+        scan_node = scan_context.GetRootScanNode()
+        #TODO The root_path_spec is the actual os pathspec of the evidence item (or any pathspec for that matter)
+        print('HERE' + str(JsonPathSpecSerializer.WriteSerialized(scan_context._root_path_spec))) #TODO DING DING DING
+        print('')
+        while len(scan_node.sub_nodes) == 1:
+            scan_node = scan_node.sub_nodes[0]
+
+        # The source scanner found a partition table and we need to determine
+        # which partition needs to be processed.
+        if scan_node.type_indicator != definitions.TYPE_INDICATOR_TSK_PARTITION:
+            partition_identifiers = None
+        else:
+            partition_identifiers = self._get_tsk_partition_identifiers(scan_node, interactive)
+
+        if self.initialized < 0:
+            return
+
+        base_path_specs = []
+        if not partition_identifiers:
+            self._scan_volume(scan_context, scan_node, base_path_specs, interactive)
+        else:
+            for partition_identifier in partition_identifiers:
+                location = u'/{0:s}'.format(partition_identifier)
+                sub_scan_node = scan_node.GetSubNodeByLocation(location)
+                self._scan_volume(scan_context, sub_scan_node, base_path_specs, interactive)
+
+        if self.initialized < 0:
+            return
+        else:
+            self.initialized = 1
+
+        if not base_path_specs:
+            raise RuntimeError(
+                u'No supported file system found in source.')
+
+        return base_path_specs
+
     def get_base_pathspecs(self, source_path, interactive):
         """Determines the base path specifications.
         Args:
@@ -772,7 +849,7 @@ class DfvfsUtil(object):
                 u'No such device, file or directory: {0:s}.'.format(source_path))
 
         scan_context = source_scanner.SourceScannerContext()
-        scan_context.OpenSourcePath(source_path)
+        scan_context.OpenSourcePath(source_path) # TODO Does self.AddScanNode(source_path_spec, None)
 
         try:
             self._source_scanner.Scan(scan_context)
@@ -788,6 +865,9 @@ class DfvfsUtil(object):
 
         # Get the first node where where we need to decide what to process.
         scan_node = scan_context.GetRootScanNode()
+        #TODO The root_path_spec is the actual os pathspec of the evidence item (or any pathspec for that matter)
+        print('HERE' + str(JsonPathSpecSerializer.WriteSerialized(scan_context._root_path_spec))) #TODO DING DING DING
+        print('')
         while len(scan_node.sub_nodes) == 1:
             scan_node = scan_node.sub_nodes[0]
 
@@ -795,7 +875,6 @@ class DfvfsUtil(object):
         # which partition needs to be processed.
         if scan_node.type_indicator != definitions.TYPE_INDICATOR_TSK_PARTITION:
             partition_identifiers = None
-
         else:
             partition_identifiers = self._get_tsk_partition_identifiers(scan_node, interactive)
 

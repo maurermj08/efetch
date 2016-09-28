@@ -1,0 +1,10 @@
+[Core]
+Name = fa_expand
+Module = fa_expand
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Navigates a new base evidence item, i.e. raw, E01, or zip file
+Copyright = 2016

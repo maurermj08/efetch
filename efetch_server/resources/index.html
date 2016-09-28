@@ -30,15 +30,22 @@ nav ul a {
     text-decoration: none;
 }
 article {
+    height: 150px;
     margin-left: 170px;
     border-left: 1px solid gray;
     padding: 1em;
     overflow: hidden;
 }
 #analyze {
-    height: 150px;
+    height: 100px;
     width: 300px;
     padding-right: 100px;
+    margin: auto;
+}
+#center{
+    height: 50px;
+    width: 100px;
+    padding-right: 150px;
     margin: auto;
 }
 #footer {
@@ -75,10 +82,18 @@ article {
         </nav>
 
         <article>
-            <form action="/plugins/analyze" id="analyze" target="_blank">
-                <input type="text" name="pathspec" placeholder="Pathspec">
-                <input type="submit" value="Analyze">
-            </form>
+            <div id="analyze">
+                <form action="/plugins/analyze" target="_blank">
+                    <input type="text" name="pathspec" placeholder="Pathspec">
+                    <input type="submit" value="Analyze">
+                </form>
+                <form action="/plugins/fa_directory">
+                    <h2 style="padding-left:100px; color:#3A89C9">or</h2>
+                    <div style="padding-left:82px">
+                        <input type="submit" name="method" value="Browse"/>
+                    </div>
+                </form>
+            </div>
         </article>
 
         <div id=footer></div>

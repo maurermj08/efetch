@@ -11,7 +11,7 @@ class Analyze(IPlugin):
     def __init__(self):
         self.display_name = 'File Analyze'
         self.popularity = 0
-        self.cache = True
+        self.cache = False
         self.fast = False
         self.action = False
         self.ignore_loader = ['preview', 'fa_timeline']
