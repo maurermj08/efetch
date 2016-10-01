@@ -9,10 +9,11 @@ import os
 class FaSqlite(IPlugin):
     def __init__(self):
         self.display_name = 'SQLite Viewer'
-        self.popularity = 9
+        self.popularity = 7
         self.cache = True
         self.fast = False
         self.action = False
+        self.icon = 'fa-database'
         IPlugin.__init__(self)
 
     def activate(self):

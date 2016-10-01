@@ -13,6 +13,7 @@ class FaRegview(IPlugin):
         self.cache = True
         self.fast = False
         self.action = False
+        self.icon = 'fa-envelope-o'
         IPlugin.__init__(self)
 
     def activate(self):

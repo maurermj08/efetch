@@ -8,16 +8,17 @@ div.container {
     width: 100%;
 }
 html {
-    background-color: white;
     font-weight: bold;
     text-align: center;
     font-size: 14px;
-    color: #205393;
+    color: white;
+}
+body {
+    background: url(/resources/images/efetch_background.png);
 }
 header, footer {
     clear: left;
     text-align: center;
-    padding-left: 70px;
     padding-bottom: 50px;
 }
 nav {
@@ -32,7 +33,7 @@ div {
 }
 a {
     display:block;
-    color: #205393;
+    color: white;
     padding-top: 5px;
     padding-bottom: 5px;
     text-decoration: none;
@@ -49,15 +50,14 @@ nav ul a {
     text-decoration: none;
 }
 article {
-    height: 150px;
-    margin-left: 170px;
-    border-left: 1px solid gray;
+    height: 300px;
+    margin-left: 100px;
     padding: 1em;
     overflow: hidden;
 }
 input[type="submit"] {
     font-family: FontAwesome;
-    background-color: #205393;
+    background-color: black;
     color: white;
 }
 #analyze {
@@ -74,57 +74,52 @@ input[type="submit"] {
 }
 #footer {
     position: fixed;
-    bottom:-20px;
-    left: 30%;
-    margin:0;
-    width:760px;
-    height:435px;
+    width:100%;
+    height:75px;
     background-position: center;
-    background:url(/resources/fetch.png) no-repeat bottom right;
+    background-color: #444;
     background-size:100%;
     overflow: hidden;
     z-index:-1;
+    margin-bottom: 0px;
+    bottom:0px;
+    left:0px;
 }
 </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <img src="/resources/efetch_header.png" alt="Efetch" style="width:180px;height:47px;">
+            <img src="/resources/images/title.png" alt="Efetch" style="width:405px;height:73px;">
         </header>
-
-        <nav>
-          <ul>
-            <li><a href="https://github.com/maurermj08/efetch">Github</a></li>
-            <br>
-            <li><a href="https://github.com/maurermj08/efetch/wiki">Wiki</a></li>
-            <br>
-            <li><a href="https://github.com/maurermj08/efetch/issues">Issue</a></li>
-            <br>
-            <li><a href="https://diftdisk.blogspot.com">Blog</a></li>
-          </ul>
-        </nav>
         <br>
         <article>
             <div id="analyze">
-                <a href="/plugins/fa_directory?method=Browse" style="font-size:24px">
+                <a href="/plugins/fa_directory?method=Browse" style="padding-top:8px;width:272px;height:79px;font-size:28px;background:url(/resources/images/box.png);margin-left:16px">
                     <i class="fa fa-folder-open-o" aria-hidden="true"></i>
-                    Browse
+                    <br>
+                    BROWSE
                 </a>
-                <br>
-                <br>
-                OR
-                <br>
-                <br>
-                <br>
-                <form action="/plugins/analyze" target="_blank">
-                    <input type="text" name="pathspec" placeholder="Enter Pathspec">
+                <img src="/resources/images/or.png" alt="or" style="margin-top:32px; margin-bottom:32px;">
+                <form action="/plugins/analyze" target="_blank"  style="padding-top:5px;width:272px;height:79px;font-size:28px;background:url(/resources/images/box.png);margin-left:16px">
+                    PATHSPEC
+                    <br>
+                    <input type="text" name="pathspec" placeholder="Pathspec">
                     <input type="submit" class="search" value="&#xf002;" />
                 </form>
             </div>
         </article>
 
-        <div id=footer></div>
+        <div id=footer>
+            <table style="width:100%;font-size:20px;">
+                <tr>
+                    <th><a href="https://github.com/maurermj08/efetch"><i class="fa fa-github" aria-hidden="true"></i><br>GITHUB</a></th>
+                    <th><a href="https://github.com/maurermj08/efetch/wiki"><i class="fa fa-wikipedia-w" aria-hidden="true"></i><br>WIKI</a></th>
+                    <th><a href="https://github.com/maurermj08/efetch/issues"><i class="fa fa-github-alt" aria-hidden="true"></i><br>ISSUES</a></th>
+                    <th><a href="https://diftdisk.blogspot.com"><i class="fa fa-google-plus" aria-hidden="true"></i><br>BLOG</a></th>
+                </tr>
+            </table>
+        </div>
     </div>
 </body>
 </html>

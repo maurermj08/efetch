@@ -25,6 +25,7 @@ class FaTorrent(IPlugin):
         self.cache = True
         self.fast = False
         self.action = False
+        self.icon = 'fa-exchange'
         IPlugin.__init__(self)
 
     def activate(self):

@@ -16,6 +16,7 @@ class FaExif(IPlugin):
         self.cache = True
         self.fast = False
         self.action = False
+        self.icon = 'fa-file-image-o'
         IPlugin.__init__(self)
 
     def activate(self):
