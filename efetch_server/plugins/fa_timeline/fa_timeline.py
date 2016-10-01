@@ -10,11 +10,12 @@ from bottle import abort
 class FaTimeline(IPlugin):
     def __init__(self):
         self.display_name = 'Log2Timeline'
-        self.popularity = 5
+        self.popularity = 0
         self.cache = False
         self._default_plugin = 'analyze/'
         self.fast = True
         self.action = False
+        self.icon = 'fa-list'
         IPlugin.__init__(self)
 
     def activate(self):

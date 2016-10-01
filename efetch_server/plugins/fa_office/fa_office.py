@@ -14,6 +14,7 @@ class FaOffice(IPlugin):
         self.cache = True
         self.fast = False
         self.action = False
+        self.icon = 'fa-eye'
         IPlugin.__init__(self)
 
     def activate(self):
@@ -28,7 +29,7 @@ class FaOffice(IPlugin):
         """Checks if the file is compatible with this plugin"""
         allowed = ['application/mspowerpoint', 'application/vnd.ms-powerpoint', 'application/msword',
                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/x-latex',
-                   'application/application/vnd.oasis.opendocument.text',
+                   'application/application/vnd.oasis.opendocument.text', 'application/excel',
                    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
                    'application/vnd.openxmlformats-officedocument.presentationml.slide',
                    'application/vnd.openxmlformats-officedocument.presentationml.slideshow',

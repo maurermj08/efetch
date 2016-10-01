@@ -12,6 +12,7 @@ class FaStrings(IPlugin):
         self.cache = False
         self.fast = False
         self.action = False
+        self.icon = 'fa-file-text-o'
         IPlugin.__init__(self)
 
     def activate(self):

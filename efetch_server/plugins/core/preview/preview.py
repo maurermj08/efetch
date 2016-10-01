@@ -14,6 +14,7 @@ class Preview(IPlugin):
         self.cache = True
         self.fast = False
         self.action = False
+        self.icon = 'fa-eye'
         IPlugin.__init__(self)
 
     def activate(self):
@@ -37,4 +38,8 @@ class Preview(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
+        smart_redirect = helper.get_request_value(request, 'redirect', 'False').lower() in ['true', 't', 'y', 'yes']
+        if smart_redirect and not self.check(evidence, path_on_disk):
+            return helper.plugin_manager.get_plugin_by_name('analyze').get(evidence, helper, path_on_disk, request)
+
         return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk))

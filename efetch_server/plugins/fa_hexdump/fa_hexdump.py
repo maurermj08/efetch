@@ -12,6 +12,7 @@ class FaHexdump(IPlugin):
         self.cache = True
         self.fast = False
         self.action = False
+        self.icon = 'fa-file-code-o'
         IPlugin.__init__(self)
 
     def activate(self):

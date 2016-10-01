@@ -8,6 +8,8 @@
     <link rel="stylesheet" type="text/css" href="/resources/themes/default/easyui.css">
     <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
     <script type="text/javascript" src="/resources/jquery.easyui.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/resources/themes/{{ theme }}/easyui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
 
     <style>
         #nav {
@@ -38,21 +40,23 @@
         body {
             min-height: 100%;
             margin: 0px;
+            background-color: white;
         }
 
         a {
             display:block;
             color: #FFFFFF;
-            padding-left: 10px;
             padding-top: 5px;
             padding-bottom: 5px;
             text-decoration: none;
             font-weight: bold;
             text-transform: uppercase;
+            text-align: center;
+            font-size: 14px;
         }
 
         a:hover, a:active {
-            background-color: #0362B2;
+            color: rgb(153, 193, 255);
         }
 
         p {
@@ -65,7 +69,7 @@
 
         #nav {
             line-height:20px;
-            background-color:#4488E8;
+            background-color:#414244;
             height:100%;
             width:100%;
             float:left;          
@@ -86,6 +90,7 @@
             height: 100%;
             width: 100%;
             border: none;
+            background-color: white;
         }
 
     </style>
@@ -97,21 +102,20 @@
             <div data-options="region:'west',hideCollapsedContent:false,split:true" title="Plugins" style="width:200px;background-color: #4488E8;">
             <div id="nav">
                 <p><b>
-                <!-- File -->
+                {{ file_name }}
                 </b><br /></p>
                 <p align="right">
-                <!-- Mimetype -->
+                {{ mimetype }}
                 <br />
-                <!-- Size -->
+                {{ size }} Bytes
                 <br /></p>
                 <hr />
                 <br />
-                <!-- Links -->
-                <!-- Links End -->
-            </div>    
+                {{ links }}
+                </div>
             </div>
             <div data-options="region:'center',title:''">
-                <iframe name="frame" id="iframe" src="<!-- Home -->"></iframe>
+                <iframe name="frame" id="iframe" src="{{ home }}"></iframe>
             </div>
         </div>
 

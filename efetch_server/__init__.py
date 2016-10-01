@@ -124,7 +124,7 @@ class Efetch(object):
         index = self._helper.get_request_value(request, 'index', '*')
         encoded_pathspec = self._helper.get_request_value(request, 'pathspec', '')
         if not encoded_pathspec and self._helper.get_request_value(request, 'method', '') == 'Browse':
-            encoded_pathspec = self._helper.pathspec_helper.get_encoded_pathspec(self._helper.curr_dir)
+            encoded_pathspec = self._helper.pathspec_helper.get_encoded_pathspec(os.path.expanduser('~'))
 
         logging.info('Plugin called %s, with index=%s and pathspec=%s', plugin_name, index, encoded_pathspec)
         logging.debug('Query String = %s', self._helper.get_query_string(request))

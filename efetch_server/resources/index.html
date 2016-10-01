@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
 <style>
 div.container {
     width: 100%;
 }
 html {
-      background-color: #FFFFFF;
+    background-color: white;
+    font-weight: bold;
+    text-align: center;
+    font-size: 14px;
+    color: #205393;
 }
 header, footer {
-    padding: 1em;
     clear: left;
     text-align: center;
+    padding-left: 70px;
+    padding-bottom: 50px;
 }
 nav {
     float: left;
@@ -19,8 +26,20 @@ nav {
     margin: 0;
     padding: 1em;
 }
-a:link {
-    color: #3A89C9;
+div {
+  margin:40px auto;
+  width:8%;
+}
+a {
+    display:block;
+    color: #205393;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    text-decoration: none;
+}
+
+a:hover, a:active {
+    color: rgb(153, 193, 255);
 }
 nav ul {
     list-style-type: none;
@@ -36,8 +55,13 @@ article {
     padding: 1em;
     overflow: hidden;
 }
+input[type="submit"] {
+    font-family: FontAwesome;
+    background-color: #205393;
+    color: white;
+}
 #analyze {
-    height: 100px;
+    height: 120px;
     width: 300px;
     padding-right: 100px;
     margin: auto;
@@ -80,18 +104,22 @@ article {
             <li><a href="https://diftdisk.blogspot.com">Blog</a></li>
           </ul>
         </nav>
-
+        <br>
         <article>
             <div id="analyze">
+                <a href="/plugins/fa_directory?method=Browse" style="font-size:24px">
+                    <i class="fa fa-folder-open-o" aria-hidden="true"></i>
+                    Browse
+                </a>
+                <br>
+                <br>
+                OR
+                <br>
+                <br>
+                <br>
                 <form action="/plugins/analyze" target="_blank">
-                    <input type="text" name="pathspec" placeholder="Pathspec">
-                    <input type="submit" value="Analyze">
-                </form>
-                <form action="/plugins/fa_directory">
-                    <h2 style="padding-left:100px; color:#3A89C9">or</h2>
-                    <div style="padding-left:82px">
-                        <input type="submit" name="method" value="Browse"/>
-                    </div>
+                    <input type="text" name="pathspec" placeholder="Enter Pathspec">
+                    <input type="submit" class="search" value="&#xf002;" />
                 </form>
             </div>
         </article>

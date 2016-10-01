@@ -24,6 +24,7 @@ import threading
 import traceback
 from bottle import abort
 from dfvfs.lib import definitions
+from dfvfs.path import zip_path_spec
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from PIL import Image
@@ -150,6 +151,8 @@ class PathspecHelper(object):
         pathspec = PathspecHelper._decode_pathspec(encoded_pathspec)
 
         evidence_item['path'] = pathspec.location
+        if evidence_item['path'].endswith('/') or evidence_item['path'].endswith('\\'):
+            evidence_item['path'] = evidence_item['path'][:-1]
         evidence_item['type_indicator'] = pathspec.type_indicator
         if evidence_item['type_indicator'] == 'TSK':
             evidence_item['inode'] = pathspec.inode
@@ -160,6 +163,7 @@ class PathspecHelper(object):
         evidence_item['file_cache_dir'] = self.get_cache_directory(encoded_pathspec)
         evidence_item['thumbnail_cache_path'] = self.get_cache_path(encoded_pathspec, 'thumbnails')
         evidence_item['thumbnail_cache_dir'] = self.get_cache_directory(encoded_pathspec, 'thumbnails')
+
         if not fast:
             evidence_item.update(self._get_stat_information(encoded_pathspec))
         else:
@@ -178,7 +182,7 @@ class PathspecHelper(object):
             del file_entry
             PathspecHelper._close_file_entry(encoded_pathspec)
 
-        evidence_item['mimetype'] = 'Unknown'
+        evidence_item['mimetype'] = ''
 
         if cache:
             evidence_item['cached'] = self.cache_evidence_item(evidence_item)
@@ -213,21 +217,21 @@ class PathspecHelper(object):
         while not os.path.isfile(evidence_item['file_cache_path']) and repeat > 0:
             with PathspecHelper._cache_lock:
                 repeat = repeat - 1
-                try:
-                    PathspecHelper._caching.append(evidence_item['pathspec'])
-                    in_file = PathspecHelper._open_file_object(evidence_item['pathspec'])
-                    out_file = open(evidence_item['file_cache_path'], "wb")
-                    with PathspecHelper._file_read_lock:
+                #try:
+                PathspecHelper._caching.append(evidence_item['pathspec'])
+                in_file = PathspecHelper._open_file_object(evidence_item['pathspec'])
+                out_file = open(evidence_item['file_cache_path'], "wb")
+                with PathspecHelper._file_read_lock:
+                    data = in_file.read(PathspecHelper._cache_chunk_size)
+                    while data:
+                        out_file.write(data)
                         data = in_file.read(PathspecHelper._cache_chunk_size)
-                        while data:
-                            out_file.write(data)
-                            data = in_file.read(PathspecHelper._cache_chunk_size)
-                        in_file.seek(0)
-                    PathspecHelper._close_file_object(evidence_item['pathspec'])
-                    out_file.close()
-                    PathspecHelper._caching.remove(evidence_item['pathspec'])
-                except:
-                    logging.warn('File failed to cache, attempting ' + str(repeat) + ' more times')
+                    in_file.seek(0)
+                PathspecHelper._close_file_object(evidence_item['pathspec'])
+                out_file.close()
+                PathspecHelper._caching.remove(evidence_item['pathspec'])
+                #except:
+                #    logging.warn('File failed to cache, attempting ' + str(repeat) + ' more times')
 
         self.create_thumbnail(evidence_item, file_entry)
 
@@ -367,7 +371,8 @@ class PathspecHelper(object):
         if encoded_pathspec in PathspecHelper._open_file_entries:
             with PathspecHelper._open_file_entries_lock:
                 PathspecHelper._open_file_entries_count[encoded_pathspec] += 1
-                return PathspecHelper._open_file_entries[encoded_pathspec]
+                if PathspecHelper._open_file_entries[encoded_pathspec]:
+                    return PathspecHelper._open_file_entries[encoded_pathspec]
 
         try:
             with PathspecHelper._open_file_entries_lock:
@@ -387,7 +392,8 @@ class PathspecHelper(object):
                     logging.warn('Unknown ATTRIBUTE ERROR while opening evidence file, attempting again...')
                     PathspecHelper._open_file_entries[encoded_pathspec] = \
                         resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
-                return PathspecHelper._open_file_entries[encoded_pathspec]
+                if PathspecHelper._open_file_entries[encoded_pathspec]:
+                    return PathspecHelper._open_file_entries[encoded_pathspec]
         except Exception as e:
             del PathspecHelper._open_file_entries_count[encoded_pathspec]
             logging.error('Failed second attempt to open evidence file entry')
@@ -395,6 +401,8 @@ class PathspecHelper(object):
             logging.debug(e.message)
             logging.debug(traceback.format_exc())
             raise RuntimeError('Failed to open evidence file entry')
+        logging.error('Missing file entry for pathspec "' + encoded_pathspec + '"')
+        raise RuntimeError('Missing File Entry for Pathspec')
 
     @staticmethod
     def _close_file_entry(encoded_pathspec):
@@ -458,6 +466,17 @@ class PathspecHelper(object):
             except KeyError:
                 logging.error('Attempted to close already closed file object!')
                 raise RuntimeError('Attempting to close already closed file object')
+
+    @staticmethod
+    def get_zip_base_pathspec(encoded_pathspec):
+        '''Takes a zip files OS pathspec and returns the base pathspec of the Zip'''
+        pathspec = zip_path_spec.ZipPathSpec(location='/', parent=PathspecHelper._decode_pathspec(encoded_pathspec))
+        encoded_base_pathspec = JsonPathSpecSerializer.WriteSerialized(pathspec)
+        location = pathspec.location
+        if location.endswith('/') or location.endswith('\\'):
+            location = location[:-1]
+        file_name = os.path.basename(location)
+        return {'pathspec': encoded_base_pathspec, 'file_name': file_name}
 
     # TODO Proper naming
     @staticmethod
@@ -540,7 +559,7 @@ class PathspecHelper(object):
             'eml'    : 'message/rfc822',
             'eps'    : 'application/postscript',
             'etx'    : 'text/x-setext',
-            'exe'    : 'application/octet-stream',
+            'exe'    : 'application/x-dosexec',
             'gif'    : 'image/gif',
             'gtar'   : 'application/x-gtar',
             'h'      : 'text/plain',
@@ -643,4 +662,4 @@ class PathspecHelper(object):
         if extension in types_map:
             return types_map[extension]
         else:
-            return 'Unknown'
+            return ''
