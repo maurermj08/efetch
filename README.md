@@ -1,6 +1,12 @@
 # efetch
-Evidence Fetcher (efetch) fetches evidence using a dfVFS pathspec and displays it it using one of its many plugins.
+Evidence Fetcher (efetch) is a web-based file explorer and analyzer.
 
-Plugins are simple to create. They can be designed to run on files, groups of files, and/or directories. There are no restrictions on the plugins, so they do not need to be pure python. Unlike many other tools, it is NOT discouraged to have redundant, disposable, or primitive plugins.
+Efetch supports hundreds of file formats and can be easily extended with simple plugins. Below is an example of a simple efetch plugin:
+
+  clamscan:
+    name: Clam Scan
+    command: "clamscan '{{ file_cache_path }}'"
+
+Efetch is a python web server, supports RESTful calls, and is built on top of dfVFS.
 
 For more information please see: https://github.com/maurermj08/efetch/wiki
