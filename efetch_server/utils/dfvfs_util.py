@@ -777,7 +777,6 @@ class DfvfsUtil(object):
         #         u'No such device, file or directory: {0:s}.'.format(source_path))
 
         scan_context = source_scanner.SourceScannerContext()
-        #scan_context.OpenSourcePath(source_path) # TODO Does self.AddScanNode(source_path_spec, None)
         scan_context.AddScanNode(source_pathspec, None)
 
         try:
@@ -794,9 +793,6 @@ class DfvfsUtil(object):
 
         # Get the first node where where we need to decide what to process.
         scan_node = scan_context.GetRootScanNode()
-        #TODO The root_path_spec is the actual os pathspec of the evidence item (or any pathspec for that matter)
-        print('HERE' + str(JsonPathSpecSerializer.WriteSerialized(scan_context._root_path_spec))) #TODO DING DING DING
-        print('')
         while len(scan_node.sub_nodes) == 1:
             scan_node = scan_node.sub_nodes[0]
 
@@ -865,9 +861,6 @@ class DfvfsUtil(object):
 
         # Get the first node where where we need to decide what to process.
         scan_node = scan_context.GetRootScanNode()
-        #TODO The root_path_spec is the actual os pathspec of the evidence item (or any pathspec for that matter)
-        print('HERE' + str(JsonPathSpecSerializer.WriteSerialized(scan_context._root_path_spec))) #TODO DING DING DING
-        print('')
         while len(scan_node.sub_nodes) == 1:
             scan_node = scan_node.sub_nodes[0]
 

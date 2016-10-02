@@ -174,7 +174,6 @@ class PathspecHelper(object):
         if not fast:
             evidence_item.update(self._get_stat_information(encoded_pathspec))
         else:
-            # TODO Update this so it does not need to open file entry if possible:
             file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
 
             if not file_entry:
@@ -300,7 +299,7 @@ class PathspecHelper(object):
     def list_directory(self, encoded_pathspec, recursive=False, index='*'):
         """Lists a directory using a pathspec or list of pathspecs"""
         directories = self._list_directory(self._open_file_entry(encoded_pathspec), recursive, 0, index)
-        # TODO Determine why closing file_entry here seems to break everything
+        self._close_file_entry(encoded_pathspec)
         return directories
 
     def _list_directory(self, file_entry, recursive=False, depth=0, index='*'):
@@ -356,14 +355,7 @@ class PathspecHelper(object):
         if not encoded_pathspec:
             logging.warn('Path Spec required but none found')
             abort(400, 'Expected an encoded Path Spec, but none found')
-        #try:
         return JsonPathSpecSerializer.ReadSerialized(encoded_pathspec)
-        # except Exception as e:
-        #     logging.warn('Failed to decode pathspec')
-        #     logging.debug(encoded_pathspec)
-        #     logging.debug(e.message)
-        #     logging.debug(traceback.format_exc())
-        #     abort(400, 'Failed to decode path spec')
 
     @staticmethod
     def get_inode(encoded_pathspec):
@@ -449,9 +441,11 @@ class PathspecHelper(object):
         try:
             with PathspecHelper._open_file_entries_lock:
                 PathspecHelper._open_file_entries_count[encoded_pathspec] -= 1
-                if PathspecHelper._open_file_entries_count[encoded_pathspec] < 1:
-                    del PathspecHelper._open_file_entries[encoded_pathspec]
-                    del PathspecHelper._open_file_entries_locks[encoded_pathspec]
+                # TODO Determine a limit to the number of open files to store, currently
+                # TODO   there seems to be no mem issue with storing all, but logically memory could be an issue
+                # if PathspecHelper._open_file_entries_count[encoded_pathspec] < 1:
+                #     del PathspecHelper._open_file_entries[encoded_pathspec]
+                #     del PathspecHelper._open_file_entries_locks[encoded_pathspec]
         except KeyError:
             logging.error('Attempted to close already closed file entry!')
             raise RuntimeError('Attempting to close already closed file entry')
@@ -482,7 +476,12 @@ class PathspecHelper(object):
                         PathspecHelper._close_file_entry(encoded_pathspec)
                         raise TypeError('Cannot open file object, because the pathspec is not for a file.')
 
-                    PathspecHelper._open_file_objects[encoded_pathspec] = file_entry.GetFileObject()
+                    try:
+                        PathspecHelper._open_file_objects[encoded_pathspec] = file_entry.GetFileObject()
+                    except SystemError:
+                        logging.warn('System Error while trying to get file object, attempting again.')
+                        PathspecHelper._open_file_objects[encoded_pathspec] = file_entry.GetFileObject()
+
                     PathspecHelper._close_file_entry(encoded_pathspec)
 
                 return PathspecHelper._open_file_objects[encoded_pathspec]
@@ -490,15 +489,16 @@ class PathspecHelper(object):
     @staticmethod
     def _close_file_object(encoded_pathspec):
         """Closes the file object associated with the specified pathspec"""
-        #with PathspecHelper._open_file_object_lock:
-        try:
-            PathspecHelper._open_file_objects_count[encoded_pathspec] -= 1
-            if PathspecHelper._open_file_objects_count[encoded_pathspec] < 1:
-                PathspecHelper._open_file_objects[encoded_pathspec].close()
-                del PathspecHelper._open_file_objects[encoded_pathspec]
-        except KeyError:
-            logging.error('Attempted to close already closed file object!')
-            raise RuntimeError('Attempting to close already closed file object')
+        with PathspecHelper._open_file_object_lock:
+            try:
+                PathspecHelper._open_file_objects_count[encoded_pathspec] -= 1
+                if PathspecHelper._open_file_objects_count[encoded_pathspec] < 1:
+                    PathspecHelper._open_file_objects[encoded_pathspec].close()
+                    del PathspecHelper._open_file_objects[encoded_pathspec]
+                    PathspecHelper._close_file_entry(encoded_pathspec)
+            except KeyError:
+                logging.error('Attempted to close already closed file object!')
+                raise RuntimeError('Attempting to close already closed file object')
 
     @staticmethod
     def get_zip_base_pathspec(encoded_pathspec):
