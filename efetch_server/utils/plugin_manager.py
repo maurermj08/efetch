@@ -90,7 +90,8 @@ class EfetchPluginManager(object):
                           plugin.get('command', False),
                           plugin.get('format', 'Text'),
                           plugin.get('file', False),
-                          plugin.get('openwith', False))
+                          plugin.get('openwith', False),
+                          plugin.get('icon', 'fa-file-o'))
         else:
             return plugin.plugin_object
 
@@ -99,13 +100,14 @@ class Plugin(object):
     """Simple dynamically created plugin object"""
 
     def __init__(self, display_name, description, cache, popularity, fast, store, mimetypes,
-                 extensions, operating_systems, command, format, file, openwith):
+                 extensions, operating_systems, command, format, file, openwith, icon):
         self.display_name = display_name
         self.description = description
         self.popularity = popularity
         self.cache = cache
         self.fast = fast
         self.action = bool(store)
+        self.icon = icon
         self._store = store
         self._mimetypes = mimetypes
         self._extensions = extensions
@@ -114,6 +116,7 @@ class Plugin(object):
         self._format = format
         self._file = file
         self._openwith = openwith
+
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""

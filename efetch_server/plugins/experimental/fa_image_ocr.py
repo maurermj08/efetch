@@ -23,6 +23,7 @@ class FaImageOcr(IPlugin):
         self.cache = False
         self.fast = False
         self.action = True
+        self.icon = 'fa-file-image-o'
         IPlugin.__init__(self)
 
     def activate(self):

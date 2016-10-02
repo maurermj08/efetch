@@ -35,24 +35,28 @@
 
 corexml:
   name: Core.xml
+  icon: fa-file-code-o
   os: [ 'linux' ]
   extensions: [ 'pptx', 'xlsx', 'docx' ]
   command: "unzip -qc '{{ file_cache_path }}' docProps/core.xml | xmllint --format  -"
 
 cleanxml:
   name: Clean XML
+  icon: fa-file-code-o
   os: [ 'linux' ]
   mimetypes: [ 'application/xml' ]
   command: "cat '{{ file_cache_path }}' | xmllint --format --recover -"
 
 cleanjson:
   name: Clean JSON
+  icon: fa-file-text-o
   os: [ 'linux' ]
   extensions: [ 'json' ]
   command: "cat '{{ file_cache_path }}' | python -m json.tool"
 
 pdftotext:
   name: pdftotext
+  icon: fa-file-pdf-o
   os: [ 'linux' ]
   mimetypes: [ 'application/pdf' ]
   command: "pdftotext '{{ file_cache_path }}' -"
@@ -60,6 +64,7 @@ pdftotext:
 unzip:
   name: Unzip
   popularity: 4
+  icon:  fa-file-archive-o
   os: [ 'linux' ]
   mimetypes: [ 'application/zip' ]
   command: "unzip -u '{{ file_cache_path }}' -d {{ file_cache_path }}_unzip"
@@ -68,6 +73,7 @@ unzip:
 
 readpst:
   name: Read PST
+  icon: fa-envelope
   popularity: 4
   os: [ 'linux' ]
   extensions: [ 'pst' ]

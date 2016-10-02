@@ -142,7 +142,7 @@ class FaExpand(IPlugin):
                     <script src="/resources/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
                     <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
                     <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
-                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+                    <link rel="stylesheet" href="/resources/font-awesome/css/font-awesome.min.css">
                     <script type="text/javascript" src="/resources/jquery.dataTables.min.js"></script>
                     <script type="text/javascript" class="init">
                         $(document).ready(function() {
