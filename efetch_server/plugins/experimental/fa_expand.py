@@ -37,6 +37,8 @@ class FaExpand(IPlugin):
         return "text/plain"
 
     # TODO Clean and merge with navigate
+    # TODO Use mimetypes instead of extensions
+    # TODO Add missing extensions
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
         dir_table = []

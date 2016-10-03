@@ -130,21 +130,25 @@ class PathspecHelper(object):
             if type == definitions.FILE_ENTRY_TYPE_DEVICE:
                 evidence_item['meta_type'] = 'Device'
                 evidence_item['legacy_type'] = 'b/b'
-            if type == definitions.FILE_ENTRY_TYPE_DIRECTORY:
+            elif type == definitions.FILE_ENTRY_TYPE_DIRECTORY:
                 evidence_item['meta_type'] = 'Directory'
                 evidence_item['legacy_type'] = 'd/d'
-            if type == definitions.FILE_ENTRY_TYPE_FILE:
+            elif type == definitions.FILE_ENTRY_TYPE_FILE:
                 evidence_item['meta_type'] = 'File'
                 evidence_item['legacy_type'] = 'r/r'
-            if type == definitions.FILE_ENTRY_TYPE_LINK:
+            elif type == definitions.FILE_ENTRY_TYPE_LINK:
                 evidence_item['meta_type'] = 'Link'
                 evidence_item['legacy_type'] = 'l/l'
-            if type == definitions.FILE_ENTRY_TYPE_SOCKET:
+            elif type == definitions.FILE_ENTRY_TYPE_SOCKET:
                 evidence_item['meta_type'] = 'Socket'
                 evidence_item['legacy_type'] = 'h/h'
-            if type == definitions.FILE_ENTRY_TYPE_PIPE:
+            elif type == definitions.FILE_ENTRY_TYPE_PIPE:
                 evidence_item['meta_type'] = 'Pipe'
                 evidence_item['legacy_type'] = 'p/p'
+            else:
+                evidence_item['meta_type'] = 'Unknown'
+        else:
+            evidence_item['meta_type'] = 'Unknown'
 
         return  evidence_item
 
@@ -275,8 +279,8 @@ class PathspecHelper(object):
                              ' at cached path ' + evidence_item['file_cache_path'])
 
     def get_mimetype(self, encoded_pathspec, file_entry=None):
-        """Gets the mimetype of the given pathspec"""
-        data = PathspecHelper.read_file(encoded_pathspec, file_entry)
+        """Gets the mimetype of the given pathspec using first 16 MB of buffer"""
+        data = PathspecHelper.read_file(encoded_pathspec, file_entry, size=16000000)
         if not data:
             return 'Empty'
 
@@ -451,11 +455,15 @@ class PathspecHelper(object):
             raise RuntimeError('Attempting to close already closed file entry')
 
     @staticmethod
-    def read_file(encoded_pathspec, file_entry=False):
-        """Reads the file object from the specified pathspec"""
+    def read_file(encoded_pathspec, file_entry=False, size=0, seek=0):
+        """Reads the file object from the specified pathspec, always seeks back to the beginning"""
         file = PathspecHelper._open_file_object(encoded_pathspec)
         with PathspecHelper._file_read_lock:
-            data = file.read()
+            file.seek(seek)
+            if size:
+                data = file.read(size)
+            else:
+                data = file.read()
             file.seek(0)
         PathspecHelper._close_file_object(encoded_pathspec)
         return data
