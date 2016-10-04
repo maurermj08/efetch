@@ -27,6 +27,7 @@ from dfvfs.lib import definitions
 from dfvfs.path import zip_path_spec
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
+from dfvfs.analyzer.analyzer import Analyzer
 from PIL import Image
 from urllib import urlencode
 from efetch_server.utils.dfvfs_util import DfvfsUtil
@@ -136,6 +137,19 @@ class PathspecHelper(object):
             elif type == definitions.FILE_ENTRY_TYPE_FILE:
                 evidence_item['meta_type'] = 'File'
                 evidence_item['legacy_type'] = 'r/r'
+                analyze = Analyzer()
+                volume_type = analyze.GetVolumeSystemTypeIndicators(file_entry.path_spec)
+                if volume_type:
+                    evidence_item['volume_type'] = volume_type
+                storage_type = analyze.GetStorageMediaImageTypeIndicators(file_entry.path_spec)
+                if storage_type:
+                    evidence_item['storage_type'] = storage_type
+                compression_type = analyze.GetCompressedStreamTypeIndicators(file_entry.path_spec)
+                if compression_type:
+                    evidence_item['compression_type'] = compression_type
+                archive_type = analyze.GetArchiveTypeIndicators(file_entry.path_spec)
+                if archive_type:
+                    evidence_item['archive_type'] = archive_type
             elif type == definitions.FILE_ENTRY_TYPE_LINK:
                 evidence_item['meta_type'] = 'Link'
                 evidence_item['legacy_type'] = 'l/l'

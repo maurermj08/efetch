@@ -28,17 +28,14 @@ class FaExpand(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
-        allowed_extensions = ['e01','raw','001','dd','vmdk','zip']
-        return evidence['extension'].lower() in allowed_extensions
-
+        return ('volume_type' in evidence or 'storage_type' in evidence or 'compression_type' in evidence or \
+               'archive_type' in evidence) and not evidence['mimetype'].startswith('application/vnd')
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
     # TODO Clean and merge with navigate
-    # TODO Use mimetypes instead of extensions
-    # TODO Add missing extensions
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
         dir_table = []
@@ -115,8 +112,7 @@ class FaExpand(IPlugin):
             </tr>
         """)
 
-
-        if evidence['extension'].lower() == 'zip':
+        if u'archive_type' in evidence and u'ZIP' in evidence['archive_type']:
             initial_pathspec = [helper.pathspec_helper.get_zip_base_pathspec(evidence['pathspec'])]
         else:
             initial_pathspec = helper.pathspec_helper.get_new_base_pathspecs(evidence['pathspec'])
