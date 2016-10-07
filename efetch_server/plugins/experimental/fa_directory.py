@@ -40,14 +40,15 @@ class FaDirectory(IPlugin):
         row_file_template = Template("""
             <tr>
                 <!-- {{ file_name }} -->
-                <td><img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></td>
+                <td style="padding-left: 24px;"><a href="/plugins/analyze?{{ url_query }}" target="_top">
+                    <img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></a></td>
                 <td><a href="/plugins/analyze?{{ url_query }}" target="_top">{{file_name}}</a></td>
-                <td>{{ mtime }}</td>
-                <td>{{ atime }}</td>
-                <td>{{ ctime }}</td>
-                <td>{{ crtime }}</td>
+                <td>{{ mtime_no_nano }}</td>
+                <td>{{ atime_no_nano }}</td>
+                <td>{{ ctime_no_nano }}</td>
+                <td>{{ crtime_no_nano }}</td>
                 <td>{{ size }}</td>
-                <td>
+                <td style="min-width:110px">
                     <a href="/plugins/analyze?{{ url_query }}" target="_top" style="padding-right:10px">
                         <span class="fa-stack fa-md">
                             <i class="fa fa-square fa-stack-2x"></i>
@@ -72,12 +73,13 @@ class FaDirectory(IPlugin):
         row_dir_template = Template("""
             <tr>
                 <!-- {{ file_name }} -->
-                <td><img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></td>
+                <td style="padding-left: 24px;"><a href="/plugins/fa_directory?{{ url_query }}">
+                    <img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></a></td>
                 <td><a href="/plugins/fa_directory?{{ url_query }}">{{file_name}}</a></td>
-                <td>{{ mtime }}</td>
-                <td>{{ atime }}</td>
-                <td>{{ ctime }}</td>
-                <td>{{ crtime }}</td>
+                <td>{{ mtime_no_nano }}</td>
+                <td>{{ atime_no_nano }}</td>
+                <td>{{ ctime_no_nano }}</td>
+                <td>{{ crtime_no_nano }}</td>
                 <td>{{ size }}</td>
                 <td>
                     <a href="/plugins/analyze?{{ url_query }}" target="_top" style="padding-right:10px">
@@ -107,6 +109,9 @@ class FaDirectory(IPlugin):
         for item in directory_list:
             if 'file_name' not in item or not item['file_name']:
                 item['file_name'] = '-'
+            for time in ['mtime', 'atime', 'ctime', 'crtime']:
+                if time in item:
+                    item[time + '_no_nano'] = item[time].split('.')[0].replace('T', ' ')
             if item['meta_type'] == 'Directory':
                 dir_table.append(row_dir_template.render(item))
             else:

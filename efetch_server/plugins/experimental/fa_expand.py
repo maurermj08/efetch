@@ -28,9 +28,8 @@ class FaExpand(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
-        allowed_extensions = ['e01','raw','001','dd','vmdk','zip']
-        return evidence['extension'].lower() in allowed_extensions
-
+        return ('volume_type' in evidence or 'storage_type' in evidence or 'compression_type' in evidence or \
+               'archive_type' in evidence) and not evidence['mimetype'].startswith('application/vnd')
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
@@ -43,7 +42,8 @@ class FaExpand(IPlugin):
         file_table = []
         row_evidence_tempalte = Template("""
             <tr>
-                <td><img src="/resources/icons/evidence.png" style="width:32px;height:32px;"></td>
+                <td style="padding-left: 24px;"><a href="/plugins/fa_directory?{{ url_query }}">
+                    <img src="/resources/icons/evidence.png" style="width:32px;height:32px;"></a></td>
                 <td><a href="/plugins/fa_directory?{{ url_query }}">{{file_name}}</a></td>
                 <td></td>
                 <td></td>
@@ -63,14 +63,15 @@ class FaExpand(IPlugin):
         row_file_template = Template("""
             <tr>
                 <!-- {{ file_name }} -->
-                <td><img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></td>
+                <td style="padding-left: 24px;"><a href="/plugins/analyze?{{ url_query }}" target="_top">
+                    <img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></a></td>
                 <td><a href="/plugins/analyze?{{ url_query }}" target="_top">{{file_name}}</a></td>
-                <td>{{ mtime }}</td>
-                <td>{{ atime }}</td>
-                <td>{{ ctime }}</td>
-                <td>{{ crtime }}</td>
+                <td>{{ mtime_no_nano }}</td>
+                <td>{{ atime_no_nano }}</td>
+                <td>{{ ctime_no_nano }}</td>
+                <td>{{ crtime_no_nano }}</td>
                 <td>{{ size }}</td>
-                <td>
+                <td style="min-width:110px">
                     <a href="/plugins/analyze?{{ url_query }}" target="_top" style="padding-right:10px">
                         <span class="fa-stack fa-md">
                             <i class="fa fa-square fa-stack-2x"></i>
@@ -95,12 +96,13 @@ class FaExpand(IPlugin):
         row_dir_template = Template("""
             <tr>
                 <!-- {{ file_name }} -->
-                <td><img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></td>
+                <td style="padding-left: 24px;"><a href="/plugins/fa_directory?{{ url_query }}">
+                    <img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></a></td>
                 <td><a href="/plugins/fa_directory?{{ url_query }}">{{file_name}}</a></td>
-                <td>{{ mtime }}</td>
-                <td>{{ atime }}</td>
-                <td>{{ ctime }}</td>
-                <td>{{ crtime }}</td>
+                <td>{{ mtime_no_nano }}</td>
+                <td>{{ atime_no_nano }}</td>
+                <td>{{ ctime_no_nano }}</td>
+                <td>{{ crtime_no_nano }}</td>
                 <td>{{ size }}</td>
                 <td>
                     <a href="/plugins/analyze?{{ url_query }}" target="_top" style="padding-right:10px">
@@ -113,8 +115,7 @@ class FaExpand(IPlugin):
             </tr>
         """)
 
-
-        if evidence['extension'].lower() == 'zip':
+        if u'archive_type' in evidence and u'ZIP' in evidence['archive_type']:
             initial_pathspec = [helper.pathspec_helper.get_zip_base_pathspec(evidence['pathspec'])]
         else:
             initial_pathspec = helper.pathspec_helper.get_new_base_pathspecs(evidence['pathspec'])

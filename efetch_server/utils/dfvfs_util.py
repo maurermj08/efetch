@@ -777,6 +777,7 @@ class DfvfsUtil(object):
         #         u'No such device, file or directory: {0:s}.'.format(source_path))
 
         scan_context = source_scanner.SourceScannerContext()
+        #scan_context.OpenSourcePath(source_path) # TODO Does self.AddScanNode(source_path_spec, None)
         scan_context.AddScanNode(source_pathspec, None)
 
         try:
