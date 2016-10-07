@@ -114,8 +114,15 @@ class PathspecHelper(object):
         evidence_item = {}
         stat_object = file_entry.GetStat()
 
-        for attribute in [ 'size', 'mode', 'uid', 'gid']:
+        for attribute in [ 'mode', 'uid', 'gid']:
             evidence_item[attribute] = str(getattr(stat_object, attribute, ''))
+
+        try:
+            evidence_item['size'] = int(getattr(stat_object, 'size', 0))
+        except TypeError:
+            logging.warn('Evidence size not an int, setting size to 0')
+            evidence_item['size'] = 0
+
 
         # TODO Take in flag from efetch -z to specify timezone
         for attribute in ['mtime', 'atime', 'ctime', 'crtime']:
@@ -163,6 +170,7 @@ class PathspecHelper(object):
         evidence_item['type_indicator'] = pathspec.type_indicator
         if evidence_item['type_indicator'] == 'TSK':
             evidence_item['inode'] = pathspec.inode
+
         evidence_item['file_name'] = os.path.basename(evidence_item['path'])
         evidence_item['directory'] = os.path.dirname(evidence_item['path'])
         evidence_item['extension'] = os.path.splitext(evidence_item['file_name'])[1][1:].lower() or ""
