@@ -39,12 +39,7 @@ class Analyze(IPlugin):
 
         # TODO give a way to change value from 1 GB
         # Get the files actual mimetype if size is less then 1 GB
-<<<<<<< HEAD
-        if evidence['meta_type'] =='File' and not getattr(evidence, 'mimetype_known', False) and 'size' in evidence\
-                and  int(evidence['size']) < 1000000000 and int(evidence['size']) > 0:
-=======
-        if evidence['meta_type'] =='File' and not getattr(evidence, 'mimetype_known', False):
->>>>>>> ee4f5e03d062b7ab9c5c459bdc3cc3c50b19ba25
+        if evidence['meta_type'] =='File' and not evidence['mimetype_known']:
             evidence['mimetype'] = helper.pathspec_helper.get_mimetype(evidence['pathspec'])
             evidence['mimetype_known'] = True
 

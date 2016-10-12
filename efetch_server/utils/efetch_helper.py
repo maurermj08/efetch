@@ -79,6 +79,38 @@ class EfetchHelper(object):
                                         self.get_request_value(request, 'timefield', 'datetime'),
                                         must, must_not)
 
+    def get_icon(self, evidence, resource=True):
+        """Returns either an icon or thumbnail of the provided file"""
+        if resource:
+            curr_icon_dir = '/resources/icons/'
+        else:
+            curr_icon_dir = self.icon_dir
+
+        # If it is folder just return the folder icon
+        if evidence['meta_type'] == 'Directory' or unicode(evidence['file_name']).strip() == "." or unicode(
+                evidence['file_name']).strip() == "..":
+            return curr_icon_dir + '_folder.png'
+        if evidence['meta_type'] != 'File':
+            return curr_icon_dir + '_blank.png'
+
+        # If the file is an image create a thumbnail
+        if evidence['mimetype'].startswith('image') and resource:
+            return '/plugins/thumbnail?' + evidence['url_query']
+        elif evidence['mimetype'].startswith('image'):
+            self.pathspec_helper.create_thumbnail(evidence)
+
+            if os.path.isfile(evidence['thumbnail_cache_path']):
+                return evidence['thumbnail_cache_path']
+            else:
+                return curr_icon_dir + '_missing.png'
+
+        # If file is not an image return the icon associated with the files extension
+        else:
+            if not os.path.isfile(self.icon_dir + str(evidence['extension']).lower() + '.png'):
+                return curr_icon_dir + '_blank.png'
+            else:
+                return curr_icon_dir + evidence['extension'].lower() + '.png'
+
     def action_get(self, evidence, request, display_name, function, term, update_term = False):
         """Runs a function that takes an evidence item, updates the term in elastic, and returns the results"""
         index = self.get_request_value(request, 'index', False)

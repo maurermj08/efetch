@@ -41,7 +41,7 @@ class FaDirectory(IPlugin):
             <tr>
                 <!-- {{ file_name }} -->
                 <td style="padding-left: 24px;"><a href="/plugins/analyze?{{ url_query }}" target="_top">
-                    <img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></a></td>
+                    <img src="{{ icon }}" style="width:32px;height:32px;"></a></td>
                 <td><a href="/plugins/analyze?{{ url_query }}" target="_top">{{file_name}}</a></td>
                 <td>{{ mtime_no_nano }}</td>
                 <td>{{ atime_no_nano }}</td>
@@ -74,7 +74,7 @@ class FaDirectory(IPlugin):
             <tr>
                 <!-- {{ file_name }} -->
                 <td style="padding-left: 24px;"><a href="/plugins/fa_directory?{{ url_query }}">
-                    <img src="/plugins/thumbnail?{{ url_query }}" style="width:32px;height:32px;"></a></td>
+                    <img src="{{ icon }}" style="width:32px;height:32px;"></a></td>
                 <td><a href="/plugins/fa_directory?{{ url_query }}">{{file_name}}</a></td>
                 <td>{{ mtime_no_nano }}</td>
                 <td>{{ atime_no_nano }}</td>
@@ -107,6 +107,7 @@ class FaDirectory(IPlugin):
             directory_list = helper.pathspec_helper.list_directory(initial_pathspec)
 
         for item in directory_list:
+            item['icon'] = helper.get_icon(item)
             if 'file_name' not in item or not item['file_name']:
                 item['file_name'] = '-'
             for time in ['mtime', 'atime', 'ctime', 'crtime']:
@@ -130,6 +131,7 @@ class FaDirectory(IPlugin):
                 parent_pathspec['location'] = parent_pathspec['location'] + u'/'
                 parent_item = helper.pathspec_helper.get_evidence_item(json.dumps(parent_pathspec))
             parent_item['file_name'] = '..'
+            parent_item['icon'] = '/resources/icons/_folder_up.png'
             dir_table.insert(0,row_dir_template.render(parent_item))
 
         return '''

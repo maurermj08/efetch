@@ -214,33 +214,36 @@ class PathspecHelper(object):
             del file_entry
             PathspecHelper._close_file_entry(encoded_pathspec)
 
-        evidence_item['mimetype'] = ''
+        return self._append_mimetype(evidence_item, cache)
+
+    def _append_mimetype(self, evidence, cache=False):
+        evidence['mimetype'] = ''
 
         if cache:
-            evidence_item['cached'] = self.cache_evidence_item(evidence_item)
-            if evidence_item['cached']:
-                evidence_item['mimetype'] = self.get_mimetype_from_path(evidence_item['file_cache_path'])
-                evidence_item['mimetype_known'] = True
+            evidence['cached'] = self.cache_evidence_item(evidence)
+            if evidence['cached']:
+                evidence['mimetype'] = self.get_mimetype_from_path(evidence['file_cache_path'])
+                evidence['mimetype_known'] = True
             else:
-                evidence_item['mimetype'] = PathspecHelper.guess_mimetype(evidence_item['extension'])
-                evidence_item['mimetype_known'] = False
-        elif os.path.isfile(evidence_item['file_cache_path']) and \
-                not evidence_item['pathspec'] in PathspecHelper._caching:
-            evidence_item['mimetype'] = self.get_mimetype_from_path(evidence_item['file_cache_path'])
-            evidence_item['mimetype_known'] = True
-            evidence_item['cached'] = True
+                evidence['mimetype'] = PathspecHelper.guess_mimetype(evidence['extension'])
+                evidence['mimetype_known'] = False
+        elif os.path.isfile(evidence['file_cache_path']) and \
+                not evidence['pathspec'] in PathspecHelper._caching:
+            evidence['mimetype'] = self.get_mimetype_from_path(evidence['file_cache_path'])
+            evidence['mimetype_known'] = True
+            evidence['cached'] = True
         else:
-            evidence_item['mimetype'] = PathspecHelper.guess_mimetype(evidence_item['extension'])
-            evidence_item['mimetype_known'] = False
-            evidence_item['cached'] = False
+            evidence['mimetype'] = PathspecHelper.guess_mimetype(evidence['extension'])
+            evidence['mimetype_known'] = False
+            evidence['cached'] = False
 
-        return evidence_item
+        return evidence
 
     def cache_evidence_item(self, evidence_item, file_entry=False, repeat=4):
         """Caches the file object associated with the specified pathspec"""
         if evidence_item['meta_type'] != 'File':
             return False
-        if int(evidence_item['size'][0]) > self.max_file_size:
+        if int(evidence_item['size']) > self.max_file_size:
             return False
 
         if not os.path.isdir(evidence_item['file_cache_dir']):
@@ -344,7 +347,9 @@ class PathspecHelper(object):
             file_name = os.path.basename(location)
             evidence['file_name'] = file_name
             evidence.update(self._get_stat_information_from_file_entry(file_entry))
-            directory_list.append(evidence)
+            evidence['file_cache_path'] = self.get_cache_path(evidence['pathspec'])
+            evidence['extension'] = self.get_file_extension(evidence['pathspec'])
+            directory_list.append(self._append_mimetype(evidence))
 
         if (recursive or depth == 0) and file_entry.IsDirectory():
             for sub_file_entry in file_entry.sub_file_entries:
