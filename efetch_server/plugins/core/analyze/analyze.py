@@ -37,8 +37,6 @@ class Analyze(IPlugin):
     def get(self, evidence, helper, path_on_disk, request):
         """Provides a web view with all applicable plugins, defaults to most popular"""
 
-        # TODO give a way to change value from 1 GB
-        # Get the files actual mimetype if size is less then 1 GB
         if evidence['meta_type'] =='File' and not evidence['mimetype_known']:
             evidence['mimetype'] = helper.pathspec_helper.get_mimetype(evidence['pathspec'])
             evidence['mimetype_known'] = True
@@ -79,24 +77,3 @@ class Analyze(IPlugin):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         jinja2_environment = Environment(loader=FileSystemLoader(curr_dir), trim_blocks=True)
         return jinja2_environment.get_template('analyze_template.html').render(evidence)
-
-        # template = open(curr_dir + '/analyze_template.html', 'r')
-        # html = str(template.read())
-        # template.close()
-        # html = html.replace('<!-- Home -->', "/plugins/overview?" + evidence['url_query'])
-        #
-        # if evidence['meta_type'] == 'Directory':
-        #     html = html.replace('<!-- File -->', evidence['file_name'])
-        #     html = html.replace('<!-- Mimetype -->', 'Directory')
-        #     if 'file_size' in evidence:
-        #         html = html.replace('<!-- Size -->', str(evidence['size']) + " Bytes")
-        #     else:
-        #         html = html.replace('<!-- Size -->', "0 Bytes")
-        #     html = html.replace('<!-- Links -->', "\n".join(plugins))
-        # else:
-        #     html = html.replace('<!-- File -->', evidence['file_name'])
-        #     html = html.replace('<!-- Mimetype -->', evidence['mimetype'])
-        #     html = html.replace('<!-- Size -->', str(size) + " Bytes")
-        #     html = html.replace('<!-- Links -->', "\n".join(plugins))
-        #
-        # return html

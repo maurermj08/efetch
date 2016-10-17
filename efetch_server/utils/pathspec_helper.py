@@ -18,12 +18,13 @@ import hashlib
 import logging
 import magic
 import os
-import pytsk3
+import json
 import re
 import threading
 import traceback
 from bottle import abort
 from dfvfs.lib import definitions
+from dfvfs.lib.errors import AccessError
 from dfvfs.path import zip_path_spec
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
@@ -32,8 +33,6 @@ from PIL import Image
 from urllib import urlencode
 from efetch_server.utils.dfvfs_util import DfvfsUtil
 
-# TODO - Currently Mimetype is only accurately accessed if file is cached
-# TODO - Determine best approach for giving mimetype without slowing down everything
 class PathspecHelper(object):
     """This singleton class provides helper methods that generally all take a pathspec"""
     # Objects for controlling caching (Only 1 file caches at a time)
@@ -56,6 +55,8 @@ class PathspecHelper(object):
     _max_file_count = 256
     _cache_chunk_size = 32768
     _thumbnail_size = 64
+    _mimetype_chunk_size = 32768
+
     instance = None
 
     class __PathspecHelper(object):
@@ -136,8 +137,28 @@ class PathspecHelper(object):
         type = getattr(stat_object, 'type', '')
         if type:
             if type == definitions.FILE_ENTRY_TYPE_DEVICE:
+                # TODO CHANGE
                 evidence_item['meta_type'] = 'Device'
                 evidence_item['legacy_type'] = 'b/b'
+                analyze = Analyzer()
+                try:
+                    volume_type = analyze.GetVolumeSystemTypeIndicators(file_entry.path_spec)
+                    if volume_type:
+                        evidence_item['volume_type'] = volume_type
+                    storage_type = analyze.GetStorageMediaImageTypeIndicators(file_entry.path_spec)
+                    if storage_type:
+                        evidence_item['storage_type'] = storage_type
+                    compression_type = analyze.GetCompressedStreamTypeIndicators(file_entry.path_spec)
+                    if compression_type:
+                        evidence_item['compression_type'] = compression_type
+                    archive_type = analyze.GetArchiveTypeIndicators(file_entry.path_spec)
+                    if archive_type:
+                        evidence_item['archive_type'] = archive_type
+                except AccessError:
+                    logging.debug('Failed to determine volume or storage type of because access was denied')
+                except IOError:
+                    logging.debug('IOError on device')
+
             elif type == definitions.FILE_ENTRY_TYPE_DIRECTORY:
                 evidence_item['meta_type'] = 'Directory'
                 evidence_item['legacy_type'] = 'd/d'
@@ -145,18 +166,21 @@ class PathspecHelper(object):
                 evidence_item['meta_type'] = 'File'
                 evidence_item['legacy_type'] = 'r/r'
                 analyze = Analyzer()
-                volume_type = analyze.GetVolumeSystemTypeIndicators(file_entry.path_spec)
-                if volume_type:
-                    evidence_item['volume_type'] = volume_type
-                storage_type = analyze.GetStorageMediaImageTypeIndicators(file_entry.path_spec)
-                if storage_type:
-                    evidence_item['storage_type'] = storage_type
-                compression_type = analyze.GetCompressedStreamTypeIndicators(file_entry.path_spec)
-                if compression_type:
-                    evidence_item['compression_type'] = compression_type
-                archive_type = analyze.GetArchiveTypeIndicators(file_entry.path_spec)
-                if archive_type:
-                    evidence_item['archive_type'] = archive_type
+                try:
+                    volume_type = analyze.GetVolumeSystemTypeIndicators(file_entry.path_spec)
+                    if volume_type:
+                        evidence_item['volume_type'] = volume_type
+                    storage_type = analyze.GetStorageMediaImageTypeIndicators(file_entry.path_spec)
+                    if storage_type:
+                        evidence_item['storage_type'] = storage_type
+                    compression_type = analyze.GetCompressedStreamTypeIndicators(file_entry.path_spec)
+                    if compression_type:
+                        evidence_item['compression_type'] = compression_type
+                    archive_type = analyze.GetArchiveTypeIndicators(file_entry.path_spec)
+                    if archive_type:
+                        evidence_item['archive_type'] = archive_type
+                except AccessError:
+                    logging.warn('Failed to determine volume or storage type of because access was denied')
             elif type == definitions.FILE_ENTRY_TYPE_LINK:
                 evidence_item['meta_type'] = 'Link'
                 evidence_item['legacy_type'] = 'l/l'
@@ -304,8 +328,8 @@ class PathspecHelper(object):
                              ' at cached path ' + evidence_item['file_cache_path'])
 
     def get_mimetype(self, encoded_pathspec, file_entry=None):
-        """Gets the mimetype of the given pathspec using first 16 MB of buffer"""
-        data = PathspecHelper.read_file(encoded_pathspec, file_entry, size=16000000)
+        """Gets the mimetype of the given pathspec"""
+        data = PathspecHelper.read_file(encoded_pathspec, file_entry, size=self._mimetype_chunk_size)
         if not data:
             return 'Empty'
 
@@ -386,6 +410,7 @@ class PathspecHelper(object):
         if not encoded_pathspec:
             logging.warn('Path Spec required but none found')
             abort(400, 'Expected an encoded Path Spec, but none found')
+
         return JsonPathSpecSerializer.ReadSerialized(encoded_pathspec)
 
     @staticmethod
@@ -454,6 +479,18 @@ class PathspecHelper(object):
                     logging.warn('Unknown ATTRIBUTE ERROR while opening evidence file, attempting again...')
                     PathspecHelper._open_file_entries[encoded_pathspec] = \
                         resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
+                if not PathspecHelper._open_file_entries[encoded_pathspec]:
+                    # TODO There appears to be a bug in dfVFS
+                    # TODO     for compressed formats ZIP, etc.
+                    logging.warn('Attempting compression error fix...')
+                    type_indicator_list = ['ZIP', 'GZIP']
+                    pathspec_dictionary = json.loads(encoded_pathspec)
+                    # TODO add levels to repeat current_level = 0
+                    if pathspec_dictionary['type_indicator'] in type_indicator_list:
+                        pathspec_dictionary['location'] = pathspec_dictionary['location'] + u'/'
+                    new_encoded_pathspec = json.dumps(pathspec_dictionary)
+                    PathspecHelper._open_file_entries[encoded_pathspec] = \
+                        resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(new_encoded_pathspec))
                 if PathspecHelper._open_file_entries[encoded_pathspec]:
                     return PathspecHelper._open_file_entries[encoded_pathspec]
             except Exception as e:
@@ -507,9 +544,9 @@ class PathspecHelper(object):
 
                 if encoded_pathspec not in PathspecHelper._open_file_objects:
                     file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
-                    if not file_entry.IsFile():
+                    if not file_entry.IsFile() and not file_entry.IsDevice():
                         PathspecHelper._close_file_entry(encoded_pathspec)
-                        raise TypeError('Cannot open file object, because the pathspec is not for a file.')
+                        raise TypeError('Cannot open file object, because the pathspec is not for a file or device.')
 
                     try:
                         PathspecHelper._open_file_objects[encoded_pathspec] = file_entry.GetFileObject()
@@ -571,15 +608,39 @@ class PathspecHelper(object):
         return pathspecs
 
     @staticmethod
+    def get_parent_base_pathspecs(encoded_pathspec):
+        pathspec = PathspecHelper._decode_pathspec(encoded_pathspec)
+        parent = getattr(pathspec, 'parent', False)
+        if parent:
+            return parent
+
+        return False
+
+    # TODO RENAME THIS AND THE ABOVE METHOD AND ADD COMMENTS
+    @staticmethod
+    def get_parent_base_pathspecs_encoded(encoded_pathspec):
+        return JsonPathSpecSerializer.WriteSerialized(PathspecHelper.get_parent_base_pathspecs(encoded_pathspec))
+
+    @staticmethod
     def get_parent_pathspec(encoded_pathspec):
         '''Gets the parent pathspec of the provided pathspec'''
         file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
         parent_entry = file_entry.GetParentFileEntry()
         PathspecHelper._close_file_entry(encoded_pathspec)
+
         if not parent_entry:
-            return False
+            parent_path_spec = PathspecHelper.get_parent_base_pathspecs(encoded_pathspec)
         else:
-            return JsonPathSpecSerializer.WriteSerialized(parent_entry.path_spec)
+            parent_path_spec = parent_entry.path_spec
+
+        if not parent_path_spec:
+            return False
+
+        # TODO This needs more then just VSHADOW, should probably have partitions and possibly encryptions
+        while getattr(parent_path_spec, 'type_indicator', '') in ['VSHADOW']:
+            parent_path_spec = parent_path_spec.parent
+
+        return JsonPathSpecSerializer.WriteSerialized(parent_path_spec)
 
     @staticmethod
     def get_pathspec(pathspec_or_source):
@@ -623,7 +684,9 @@ class PathspecHelper(object):
             'css'    : 'text/css',
             'dll'    : 'application/octet-stream',
             'doc'    : 'application/msword',
+            'docx'   : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'dot'    : 'application/msword',
+            'dotx'   : 'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
             'dvi'    : 'application/x-dvi',
             'eml'    : 'message/rfc822',
             'eps'    : 'application/postscript',
@@ -678,6 +741,9 @@ class PathspecHelper(object):
             'ppm'    : 'image/x-portable-pixmap',
             'pps'    : 'application/vnd.ms-powerpoint',
             'ppt'    : 'application/vnd.ms-powerpoint',
+            'pptx'   : 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'potx'   : 'application/vnd.openxmlformats-officedocument.presentationml.template',
+            'ppsx'   : 'application/vnd.openxmlformats-officedocument.presentationml.slideshow',
             'ps'     : 'application/postscript',
             'pwz'    : 'application/vnd.ms-powerpoint',
             'py'     : 'text/x-python',
@@ -720,6 +786,8 @@ class PathspecHelper(object):
             'xbm'    : 'image/x-xbitmap',
             'xlb'    : 'application/vnd.ms-excel',
             'xls'    : 'application/excel',
+            'xlsx'   : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'xltx'   : 'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
             'xml'    : 'text/xml',
             'xpdl'   : 'application/xml',
             'xpm'    : 'image/x-xpixmap',

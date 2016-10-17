@@ -90,8 +90,15 @@ class EfetchHelper(object):
         if evidence['meta_type'] == 'Directory' or unicode(evidence['file_name']).strip() == "." or unicode(
                 evidence['file_name']).strip() == "..":
             return curr_icon_dir + '_folder.png'
-        if evidence['meta_type'] != 'File':
+        if evidence['meta_type'] != 'File' and evidence['meta_type'] != 'Device':
             return curr_icon_dir + '_blank.png'
+
+        if 'volume_type' in evidence or 'storage_type' in evidence or 'compression_type' in evidence\
+                or 'archive_type' in evidence:
+            if not evidence['mimetype_known']:
+                evidence['mimetype'] = self.pathspec_helper.get_mimetype(evidence['pathspec'])
+            if not evidence['mimetype'].startswith('application/vnd'):
+                return curr_icon_dir + '_evidence.png'
 
         # If the file is an image create a thumbnail
         if evidence['mimetype'].startswith('image') and resource:
@@ -104,6 +111,7 @@ class EfetchHelper(object):
             else:
                 return curr_icon_dir + '_missing.png'
 
+        # TODO if mimetype is known, perform a mimetype to extension lookup instead of using extension
         # If file is not an image return the icon associated with the files extension
         else:
             if not os.path.isfile(self.icon_dir + str(evidence['extension']).lower() + '.png'):

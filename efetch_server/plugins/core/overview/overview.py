@@ -35,13 +35,16 @@ class Overview(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
+        if evidence['meta_type'] =='File' and not evidence['mimetype_known']:
+            evidence['mimetype'] = helper.pathspec_helper.get_mimetype(evidence['pathspec'])
+            evidence['mimetype_known'] = True
 
         listing = []
 
         for item in self._order:
             if item == 'thumbnail':
-                listing.append('<tr><td>' + str(item) + '</td><td><img src="/plugins/thumbnail?'
-                               + evidence['url_query'] + '" alt="' + evidence['meta_type'] + '-'
+                listing.append('<tr><td>' + str(item) + '</td><td><img src="'
+                               + helper.get_icon(evidence) + '" alt="' + evidence['meta_type'] + '-'
                                + evidence['extension'] + '" title="' + evidence['meta_type']
                         + '-' + evidence['extension'] + '" style="height:64px;"></td></tr>')
             elif item in evidence:
@@ -51,7 +54,6 @@ class Overview(IPlugin):
             if item not in self._order:
                 listing.append('<tr><td>' + str(item) + '</td><td>' + str(evidence[item]) + '</td></tr>')
 
-        html = ""
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         template = open(curr_dir + '/overview_template.html', 'r')
         html = str(template.read())

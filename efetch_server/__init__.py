@@ -37,6 +37,7 @@ class Efetch(object):
         self._port = port
         self._helper = None
         self._app = Bottle()
+        self._debug = debug
         self._curr_directory = os.path.dirname(os.path.realpath(__file__))
         output_dir = cache_dir
 
@@ -138,8 +139,16 @@ class Efetch(object):
             encoded_pathspec = self._helper.db_util.query_sources(
                 {'query': query}, index, 1)['pathspec']
 
+
         efetch_dictionary = self._helper.pathspec_helper. \
             get_evidence_item(encoded_pathspec, index, plugin.cache, hasattr(plugin, 'fast') and plugin.fast)
 
-        # Return plugins frame
-        return plugin.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'], request)
+        # Return plugins
+        if self._debug:
+            return plugin.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'], request)
+        else:
+            try:
+                results = plugin.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'], request)
+            except:
+                results = plugin.get(efetch_dictionary, self._helper, efetch_dictionary['file_cache_path'], request)
+            return results

@@ -62,14 +62,34 @@ pdftotext:
   command: "pdftotext '{{ file_cache_path }}' -"
 
 unzip:
-  name: Unzip
+  name: Cache Unzip
   popularity: 4
   icon:  fa-file-archive-o
   os: [ 'linux' ]
   mimetypes: [ 'application/zip' ]
-  command: "unzip -u '{{ file_cache_path }}' -d {{ file_cache_path }}_unzip"
+  command: "unzip -u '{{ file_cache_path }}' -d '{{ file_cache_path }}_unzip'"
   file: "{{ file_cache_path }}_unzip"
-  openwith: fa_directory
+  openwith: directory
+
+gunzip:
+  name: Cache GZ
+  popularity: 4
+  icon:  fa-file-archive-o
+  os: [ 'linux' ]
+  mimetypes: [ 'application/gzip' ]
+  command: "gunzip -fkc '{{ file_cache_path }}' > '{{ file_cache_path }}_gunzip'"
+  file: "{{ file_cache_path }}_gunzip"
+  openwith: directory
+
+untar:
+  name: Cache Tar
+  popularity: 4
+  icon:  fa-file-archive-o
+  os: [ 'linux' ]
+  mimetypes: [ 'application/x-tar' ]
+  command: "mkdir '{{ file_cache_path }}_tar'; tar -C '{{ file_cache_path }}_tar' -xvf '{{ file_cache_path }}'"
+  file: "{{ file_cache_path }}_tar"
+  openwith: directory
 
 readpst:
   name: Read PST
@@ -79,16 +99,18 @@ readpst:
   extensions: [ 'pst' ]
   command: "mkdir {{ file_cache_path }}_readpst; readpst -w -D -S -o '{{ file_cache_path }}_readpst' {{ file_cache_path }}"
   file: "{{ file_cache_path }}_readpst"
-  openwith: fa_directory
+  openwith: directory
 
 #strings:
 #  name: String
+#  icon: fa-file-text
 #  os: [ 'linux' ]
 #  store: 'strings_bash'
 #  command: "strings '{{ file_cache_path }}'"
 
 #ziplist:
 #  name: ZIP List
+#  icon: fa-archive
 #  os: [ 'linux' ]
 #  mimetypes: [ 'application/zip' ]
 #  command: "unzip -l '{{ file_cache_path }}'"
@@ -101,11 +123,13 @@ readpst:
 
 #virus_total:
 #  name: Virus Total
+#  icon: fa-bug
 #  os: [ 'linux' ]
 #  command: "virustotal-search.py -m '{{ file_cache_path }}'"
 
 #pdfocr:
 #  name: PDF OCR
+#  icon: fa-file-pdf-o
 #  cache: True
 #  popularity: 4
 #  os: [ 'linux' ]
@@ -115,16 +139,13 @@ readpst:
 
 #clamscan:
 #  name: Clam Scan
+#  icon: fa-bug
 #  os: [ 'linux' ]
 #  command: "clamscan '{{ file_cache_path }}'"
 
 #hexdumpc:
 #  name: "hexdump -c"
+#  icon: fa-file-code-o
 #  os: [ 'linux' ]
 #  command: "hexdump -C '{{ file_cache_path }}'"
-
-#strings:
-#  name: "strings bash"
-#  os: [ 'linux' ]
-#  command: "strings '{{ file_cache_path }}'"
 
