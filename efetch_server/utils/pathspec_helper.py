@@ -25,7 +25,8 @@ import traceback
 from bottle import abort
 from dfvfs.lib import definitions
 from dfvfs.lib.errors import AccessError
-from dfvfs.path import zip_path_spec
+import dfvfs.path
+from dfvfs.path.zip_path_spec import ZipPathSpec
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from dfvfs.analyzer.analyzer import Analyzer
@@ -363,6 +364,7 @@ class PathspecHelper(object):
             evidence = {}
             pathspec = file_entry.path_spec
             evidence['pathspec'] = JsonPathSpecSerializer.WriteSerialized(pathspec)
+            print('LIST DIR: ' + evidence['pathspec'])
             evidence['url_query'] = urlencode({'pathspec': evidence['pathspec'], 'index': index})
             evidence['path'] = pathspec.location
             location = pathspec.location
@@ -573,9 +575,31 @@ class PathspecHelper(object):
                 raise RuntimeError('Attempting to close already closed file object')
 
     @staticmethod
+    def get_base_pathspecs(evidence):
+        '''Gets the base pathspec for the given evidence'''
+        decoded_pathspec = PathspecHelper._decode_pathspec(evidence['pathspec'])
+        if u'archive_type' in evidence and u'ZIP' in evidence['archive_type']:
+            pathspec = ZipPathSpec(location='/', parent=decoded_pathspec)
+        elif u'compression_type' in evidence and u'GZIP' in evidence['compression_type']:
+            pathspec = dfvfs.path.gzip_path_spec.GzipPathSpec(parent=decoded_pathspec)
+        elif u'archive_type' in evidence and u'TAR' in evidence['archive_type']:
+            pathspec = dfvfs.path.tar_path_spec.TarPathSpec(location='/', parent=decoded_pathspec)
+        else:
+            return PathspecHelper.get_new_base_pathspecs(evidence['pathspec'])
+
+        encoded_base_pathspec = JsonPathSpecSerializer.WriteSerialized(pathspec)
+        location = pathspec.location
+        if location.endswith('/') or location.endswith('\\'):
+            location = location[:-1]
+        file_name = os.path.basename(location)
+
+        print(str(encoded_base_pathspec))
+        return [{'pathspec': encoded_base_pathspec, 'file_name': file_name}]
+
+    @staticmethod
     def get_zip_base_pathspec(encoded_pathspec):
         '''Takes a zip files OS pathspec and returns the base pathspec of the Zip'''
-        pathspec = zip_path_spec.ZipPathSpec(location='/', parent=PathspecHelper._decode_pathspec(encoded_pathspec))
+        pathspec = ZipPathSpec(location='/', parent=PathspecHelper._decode_pathspec(encoded_pathspec))
         encoded_base_pathspec = JsonPathSpecSerializer.WriteSerialized(pathspec)
         location = pathspec.location
         if location.endswith('/') or location.endswith('\\'):

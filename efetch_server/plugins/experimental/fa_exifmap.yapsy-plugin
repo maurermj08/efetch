@@ -1,0 +1,10 @@
+[Core]
+Name = fa_exifmap
+Module = fa_exifmap
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Opens Exif lat long on google maps
+Copyright = 2016
