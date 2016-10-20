@@ -22,13 +22,16 @@ import json
 import re
 import threading
 import traceback
+import time
 from bottle import abort
 from dfvfs.lib import definitions
-from dfvfs.lib.errors import AccessError
+from dfvfs.lib.errors import AccessError, CacheFullError
 import dfvfs.path
 from dfvfs.path.zip_path_spec import ZipPathSpec
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
+from dfvfs.lib import definitions as dfvfs_definitions
+from dfvfs.path import factory as path_spec_factory
 from dfvfs.analyzer.analyzer import Analyzer
 from PIL import Image
 from urllib import urlencode
@@ -207,7 +210,7 @@ class PathspecHelper(object):
 
         pathspec = PathspecHelper._decode_pathspec(encoded_pathspec)
 
-        evidence_item['path'] = pathspec.location
+        evidence_item['path'] = getattr(pathspec, 'location', '')
         if evidence_item['path'].endswith('/') or evidence_item['path'].endswith('\\'):
             evidence_item['path'] = evidence_item['path'][:-1]
         evidence_item['type_indicator'] = pathspec.type_indicator
@@ -364,7 +367,6 @@ class PathspecHelper(object):
             evidence = {}
             pathspec = file_entry.path_spec
             evidence['pathspec'] = JsonPathSpecSerializer.WriteSerialized(pathspec)
-            print('LIST DIR: ' + evidence['pathspec'])
             evidence['url_query'] = urlencode({'pathspec': evidence['pathspec'], 'index': index})
             evidence['path'] = pathspec.location
             location = pathspec.location
@@ -377,7 +379,7 @@ class PathspecHelper(object):
             evidence['extension'] = self.get_file_extension(evidence['pathspec'])
             directory_list.append(self._append_mimetype(evidence))
 
-        if (recursive or depth == 0) and file_entry.IsDirectory():
+        if (recursive or depth == 0) and (file_entry.IsDirectory() or hasattr(file_entry, 'sub_file_entries')):
             for sub_file_entry in file_entry.sub_file_entries:
                 directory_list.extend(self._list_directory(sub_file_entry, recursive, depth + 1))
 
@@ -423,12 +425,15 @@ class PathspecHelper(object):
     @staticmethod
     def get_file_path(encoded_pathspec):
         """Returns the full path of the given pathspec"""
-        return PathspecHelper._decode_pathspec(encoded_pathspec).location
+        return getattr(PathspecHelper._decode_pathspec(encoded_pathspec), 'location', '')
     
     @staticmethod
     def get_file_name(encoded_pathspec):
         """Returns the file name with extension of the given pathspec"""
-        return os.path.basename(PathspecHelper.get_file_path(encoded_pathspec))
+        file_name = os.path.basename(PathspecHelper.get_file_path(encoded_pathspec))
+        if not file_name:
+            file_name = 'none'
+        return file_name
     
     @staticmethod
     def get_file_directory(encoded_pathspec):
@@ -481,6 +486,11 @@ class PathspecHelper(object):
                     logging.warn('Unknown ATTRIBUTE ERROR while opening evidence file, attempting again...')
                     PathspecHelper._open_file_entries[encoded_pathspec] = \
                         resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
+                except CacheFullError:
+                    PathspecHelper._clear_file_entry_cache()
+                    PathspecHelper._open_file_entries[encoded_pathspec] = \
+                        resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
+
                 if not PathspecHelper._open_file_entries[encoded_pathspec]:
                     # TODO There appears to be a bug in dfVFS
                     # TODO     for compressed formats ZIP, etc.
@@ -506,13 +516,30 @@ class PathspecHelper(object):
         raise RuntimeError('Missing File Entry for Pathspec')
 
     @staticmethod
+    def _clear_file_entry_cache():
+        logging.warn('File Entry cache is full, attempting to empty cache')
+        with PathspecHelper._open_file_entries_lock:
+            temp_locks = PathspecHelper._open_file_entries_locks.iteritems()
+            keys_to_delete = []
+            for key, lock in temp_locks:
+                if not lock.locked():
+                    keys_to_delete.append(key)
+            for key in keys_to_delete:
+                if key in PathspecHelper._open_file_entries_locks:
+                    del PathspecHelper._open_file_entries_locks[key]
+                if key in PathspecHelper._open_file_entries_count:
+                    del PathspecHelper._open_file_entries_count[key]
+                if key in PathspecHelper._open_file_entries:
+                    del PathspecHelper._open_file_entries[key]
+        time.sleep(0.1)
+
+    @staticmethod
     def _close_file_entry(encoded_pathspec):
         """Closes the file entry"""
         try:
             with PathspecHelper._open_file_entries_lock:
                 PathspecHelper._open_file_entries_count[encoded_pathspec] -= 1
-                # TODO Determine a limit to the number of open files to store, currently
-                # TODO   there seems to be no mem issue with storing all, but logically memory could be an issue
+                # TODO Determine a limit to the number of open files to store, currently waits until cache is full
                 # if PathspecHelper._open_file_entries_count[encoded_pathspec] < 1:
                 #     del PathspecHelper._open_file_entries[encoded_pathspec]
                 #     del PathspecHelper._open_file_entries_locks[encoded_pathspec]
@@ -579,39 +606,43 @@ class PathspecHelper(object):
         '''Gets the base pathspec for the given evidence'''
         decoded_pathspec = PathspecHelper._decode_pathspec(evidence['pathspec'])
         if u'archive_type' in evidence and u'ZIP' in evidence['archive_type']:
-            pathspec = ZipPathSpec(location='/', parent=decoded_pathspec)
+            #pathspec = ZipPathSpec(location='/', parent=decoded_pathspec)
+            pathspec = path_spec_factory.Factory.NewPathSpec(dfvfs_definitions.TYPE_INDICATOR_ZIP, location=u'/',
+                                                             parent=decoded_pathspec)
         elif u'compression_type' in evidence and u'GZIP' in evidence['compression_type']:
-            pathspec = dfvfs.path.gzip_path_spec.GzipPathSpec(parent=decoded_pathspec)
+            pathspec = path_spec_factory.Factory.NewPathSpec(dfvfs_definitions.TYPE_INDICATOR_GZIP,
+                                                             parent=decoded_pathspec)
+        elif u'compression_type' in evidence and u'BZIP2' in evidence['compression_type']:
+            pathspec = path_spec_factory.Factory.NewPathSpec(
+                dfvfs_definitions.TYPE_INDICATOR_COMPRESSED_STREAM,
+                compression_method=dfvfs_definitions.COMPRESSION_METHOD_BZIP2,
+                parent=decoded_pathspec)
         elif u'archive_type' in evidence and u'TAR' in evidence['archive_type']:
-            pathspec = dfvfs.path.tar_path_spec.TarPathSpec(location='/', parent=decoded_pathspec)
+            pathspec = dfvfs.path.tar_path_spec.TARPathSpec(location='/', parent=decoded_pathspec)
         else:
             return PathspecHelper.get_new_base_pathspecs(evidence['pathspec'])
 
         encoded_base_pathspec = JsonPathSpecSerializer.WriteSerialized(pathspec)
-        location = pathspec.location
-        if location.endswith('/') or location.endswith('\\'):
-            location = location[:-1]
-        file_name = os.path.basename(location)
+        if hasattr(pathspec, 'location'):
+            location = pathspec.location
+            if location.endswith('/') or location.endswith('\\'):
+                location = location[:-1]
+            file_name = os.path.basename(location)
+        else:
+            file_name = '/'
 
-        print(str(encoded_base_pathspec))
         return [{'pathspec': encoded_base_pathspec, 'file_name': file_name}]
-
-    @staticmethod
-    def get_zip_base_pathspec(encoded_pathspec):
-        '''Takes a zip files OS pathspec and returns the base pathspec of the Zip'''
-        pathspec = ZipPathSpec(location='/', parent=PathspecHelper._decode_pathspec(encoded_pathspec))
-        encoded_base_pathspec = JsonPathSpecSerializer.WriteSerialized(pathspec)
-        location = pathspec.location
-        if location.endswith('/') or location.endswith('\\'):
-            location = location[:-1]
-        file_name = os.path.basename(location)
-        return {'pathspec': encoded_base_pathspec, 'file_name': file_name}
 
     # TODO Proper naming
     @staticmethod
     def get_new_base_pathspecs(encoded_pathspec):
         '''Gets a list of the base_pathspecs from in a pathspec'''
-        dfvfs_util = DfvfsUtil(PathspecHelper._decode_pathspec(encoded_pathspec), interactive=True, is_pathspec=True)
+        try:
+            dfvfs_util = DfvfsUtil(PathspecHelper._decode_pathspec(encoded_pathspec), interactive=True, is_pathspec=True)
+        except CacheFullError:
+            PathspecHelper._clear_file_entry_cache()
+            dfvfs_util = DfvfsUtil(PathspecHelper._decode_pathspec(encoded_pathspec), interactive=True, is_pathspec=True)
+
         pathspec = dfvfs_util.base_path_specs
 
         if not isinstance(pathspec, list):
@@ -672,7 +703,11 @@ class PathspecHelper(object):
         try:
             pathspec = DfvfsUtil.decode_pathspec(pathspec_or_source)
         except:
-            dfvfs_util = DfvfsUtil(pathspec_or_source)
+            try:
+                dfvfs_util = DfvfsUtil(pathspec_or_source)
+            except CacheFullError:
+                PathspecHelper._clear_file_entry_cache()
+                dfvfs_util = DfvfsUtil(pathspec_or_source)
             pathspec = dfvfs_util.base_path_specs
 
         # TODO remove because some cases will want all possible pathspecs

@@ -6,6 +6,7 @@ from yapsy.IPlugin import IPlugin
 from jinja2 import Template
 import json
 import logging
+import os
 
 class Directory(IPlugin):
 
@@ -49,8 +50,6 @@ class Directory(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        print('DIRECTORY: ' + str(evidence['pathspec']))
-
         dir_table = []
         file_table = []
 
@@ -100,12 +99,16 @@ class Directory(IPlugin):
         #   2 - Folders
         #   3 - Evidence and files
 
-        if ('volume_type' in evidence or 'storage_type' in evidence or 'compression_type' in evidence or \
+        # if ('volume_type' in evidence or 'storage_type' in evidence or 'compression_type' in evidence or \
+        #        'archive_type' in evidence) and not evidence['mimetype'].startswith('application/vnd'):
+        #     if u'archive_type' in evidence and u'ZIP' in evidence['archive_type']:
+        #         initial_pathspec = [helper.pathspec_helper.get_zip_base_pathspec(evidence['pathspec'])]
+        #     else:
+        #         initial_pathspec = helper.pathspec_helper.get_new_base_pathspecs(evidence['pathspec'])
+
+        if ('volume_type' in evidence or 'storage_type' in evidence or \
                'archive_type' in evidence) and not evidence['mimetype'].startswith('application/vnd'):
-            if u'archive_type' in evidence and u'ZIP' in evidence['archive_type']:
-                initial_pathspec = [helper.pathspec_helper.get_zip_base_pathspec(evidence['pathspec'])]
-            else:
-                initial_pathspec = helper.pathspec_helper.get_new_base_pathspecs(evidence['pathspec'])
+            initial_pathspec = helper.pathspec_helper.get_base_pathspecs(evidence)
 
             if len(initial_pathspec) > 1:
                 for item in initial_pathspec:
@@ -140,6 +143,41 @@ class Directory(IPlugin):
                         if 'size' in item:
                             item['size'] = Directory.human_readable_size(int(item['size']))
                         file_table.append(row_template.render(item))
+
+            initial_pathspec = evidence['pathspec']
+        elif 'compression_type' in evidence:
+            initial_pathspec = helper.pathspec_helper.get_base_pathspecs(evidence)[0]
+            item = helper.pathspec_helper.get_evidence_item(initial_pathspec['pathspec'])
+            if 'file_name' not in item or not item['file_name']:
+                item['file_name'] = os.path.splitext(evidence['file_name'])[0]
+            item['icon'] = helper.get_icon(item)
+            if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item
+                or 'archive_type' in item) and not item['mimetype'].startswith('application/vnd'):
+                item['order'] = 3
+                item['plugin'] = self._evidence_plugin
+                item['download'] = download_template.render(item)
+                item['preview'] = preview_template.render(item)
+                item['analyze'] = analyze_template.render(item)
+                if 'size' in item:
+                    item['size'] = Directory.human_readable_size(int(item['size']))
+                file_table.append(row_template.render(item))
+            elif item['meta_type'] == 'Directory':
+                item['order'] = 2
+                item['plugin'] = self._dir_plugin
+                item['analyze'] = analyze_template.render(item)
+                if 'size' in item:
+                    item['size'] = Directory.human_readable_size(int(item['size']))
+                dir_table.append(row_template.render(item))
+            else:
+                item['order'] = 3
+                item['target'] = 'target="_top"'
+                item['plugin'] = self._file_plugin
+                item['download'] = download_template.render(item)
+                item['preview'] = preview_template.render(item)
+                item['analyze'] = analyze_template.render(item)
+                if 'size' in item:
+                    item['size'] = Directory.human_readable_size(int(item['size']))
+                file_table.append(row_template.render(item))
 
             initial_pathspec = evidence['pathspec']
         else:

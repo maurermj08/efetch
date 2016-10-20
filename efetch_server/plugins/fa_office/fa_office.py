@@ -43,7 +43,7 @@ class FaOffice(IPlugin):
                    'application/vnd.oasis.opendocument.presentation-template', 'application/vnd.sun.xml.impress',
                    'application/vnd.ms-excel', 'text/rtf']
         extensions = ['docx', 'docm', 'dotx', 'dotm', 'xlsx', 'xlsm', 'xltx', 'xltm', 'pptx', 'pptm', 'potx', 'potm',
-                      'ppsx', 'ppsm', 'sldx', 'sldm']
+                      'ppsx', 'ppsm', 'sldx', 'sldm', 'xls', 'ppt', 'doc']
 
         return (evidence['meta_type'] == 'File' and str(evidence['mimetype']).lower() in allowed) or \
                (evidence['meta_type'] == 'File' and str(evidence['extension']).lower() in extensions)
