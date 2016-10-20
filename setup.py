@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 efetch_description = (
-    u'Efetch is a plugin based web api for viewing and analyzing files using the dfVFS pathspec.'
+    u'Efetch is a web-based file explorer, viewer, and analyzer.'
 )
 
 setup(
     name=u'efetch',
-    version=u'0.3 Beta',
+    version=u'0.4 Beta',
     descript=efetch_description,
     packages=find_packages(),
     include_package_data=True,
