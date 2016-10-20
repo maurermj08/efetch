@@ -6,8 +6,10 @@ This plugin requires the following commands to be run:
     sudo pip install pytesseract
 """
 
-import elasticsearch
-import pytesseract
+try:
+    import pytesseract
+except ImportError:
+    pytesseract = None
 import logging
 import os
 from bottle import abort
@@ -37,6 +39,10 @@ class FaImageOcr(IPlugin):
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
         allowed_prefix = ['image']
+
+        if not pytesseract:
+            return False
+
         return str(evidence['mimetype'].split('/')[0]).lower() in allowed_prefix \
                and evidence['meta_type'] != 'Directory'
 
