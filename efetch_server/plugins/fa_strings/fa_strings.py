@@ -8,7 +8,7 @@ from yapsy.IPlugin import IPlugin
 class FaStrings(IPlugin):
     def __init__(self):
         self.display_name = 'Strings'
-        self.popularity = 5
+        self.popularity = 4
         self.cache = False
         self.fast = False
         self.action = False

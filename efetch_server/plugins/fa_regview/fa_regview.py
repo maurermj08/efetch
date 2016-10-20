@@ -4,6 +4,7 @@ Lazy loading registry viewer
 
 from yapsy.IPlugin import IPlugin
 import os
+from efetch_server.utils.pathspec_helper import PathspecHelper
 
 
 class FaRegview(IPlugin):
@@ -26,8 +27,9 @@ class FaRegview(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
-        allowed = ['application/octet-stream']
-        return str(evidence['mimetype']).lower() in allowed
+        allowed_mimetypes = ['application/octet-stream']
+        return str(evidence['mimetype']).lower() in allowed_mimetypes and \
+            str(PathspecHelper.read_file(evidence['pathspec'], size=4)) == 'regf'
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

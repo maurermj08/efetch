@@ -8,7 +8,7 @@ from yapsy.IPlugin import IPlugin
 class FaHexdump(IPlugin):
     def __init__(self):
         self.display_name = 'Hex View'
-        self.popularity = 5
+        self.popularity = 3
         self.cache = True
         self.fast = False
         self.action = False

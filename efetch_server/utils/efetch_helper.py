@@ -97,7 +97,9 @@ class EfetchHelper(object):
                 or 'archive_type' in evidence:
             if not evidence['mimetype_known']:
                 evidence['mimetype'] = self.pathspec_helper.get_mimetype(evidence['pathspec'])
-            if not evidence['mimetype'].startswith('application/vnd'):
+            # TODO ONLY IGNORE ZIP FILES AND VND FILES!!
+            if not evidence['mimetype'].startswith('application/vnd') and \
+                            evidence['extension'].lower() not in ['xlsx', 'docx', 'pptx']:
                 return curr_icon_dir + '_evidence.png'
 
         # If the file is an image create a thumbnail

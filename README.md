@@ -1,11 +1,11 @@
 # efetch
-Evidence Fetcher (efetch) is a web-based file explorer and analyzer. Efetch supports viewing images, office documents, registries, PST files, sqlite databases, and more. Efetch supports navigating E01, Ex01, RAW, VHD, VMDK, ZIP, and more thanks to dfVFS.
+Evidence Fetcher (efetch) is a web-based file explorer, viewer, and analyzer. Efetch supports viewing hundreds of file types including office, registry, PST, image, and SQLite files. Efetch supports navigating RAW, E01, ZIP, GZ, TAR, VMDK, VHD, QCOW, and BZ2 files thanks to dfVFS.
 
 After installation run the command **efetch** in the terminal and navigate to **localhost:8080** in a browser. Use the **expand** plugin to navigate into evidence files.
 
 ![alt tag](https://cloud.githubusercontent.com/assets/13810976/19025778/825659c6-88eb-11e6-988c-b16d28b1eae5.gif)
 
-Efetch supports hundreds of file formats and can be easily extended with simple plugins. Below is an example of a simple efetch plugin:
+Efetch can be easily extended with simple plugins by editing the /etc/efetch_plugin.yml file. Efetch automatically detects any changes to the plugin file. Below is an example of a ClamAV efetch plugin:
 
 ```
   clamscan:

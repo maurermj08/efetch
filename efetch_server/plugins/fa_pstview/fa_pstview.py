@@ -9,7 +9,7 @@ import os
 class FaPstview(IPlugin):
     def __init__(self):
         self.display_name = 'PST Viewer'
-        self.popularity = 9
+        self.popularity = 8
         self.cache = True
         self.fast = False
         self.action = False

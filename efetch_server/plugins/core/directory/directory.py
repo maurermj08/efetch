@@ -12,7 +12,7 @@ class Directory(IPlugin):
 
     def __init__(self):
         self.display_name = 'Navigate'
-        self.popularity = 8
+        self.popularity = 9
         self.cache = False
         self.fast = False
         self.action = False
@@ -151,8 +151,10 @@ class Directory(IPlugin):
             if 'file_name' not in item or not item['file_name']:
                 item['file_name'] = os.path.splitext(evidence['file_name'])[0]
             item['icon'] = helper.get_icon(item)
+            # TODO ONLY IGNORE ZIP FILES AND VND FILES!!
             if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item
-                or 'archive_type' in item) and not item['mimetype'].startswith('application/vnd'):
+                    or 'archive_type' in item) and not item['mimetype'].startswith('application/vnd') \
+                    and item['extension'].lower() not in ['xlsx', 'docx', 'pptx']:
                 item['order'] = 3
                 item['plugin'] = self._evidence_plugin
                 item['download'] = download_template.render(item)
@@ -198,9 +200,10 @@ class Directory(IPlugin):
                 for time in ['mtime', 'atime', 'ctime', 'crtime']:
                     if time in item:
                         item[time + '_no_nano'] = item[time].split('.')[0].replace('T', ' ')
-
+                # TODO ONLY IGNORE ZIP FILES AND VND FILES!!
                 if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item
-                    or 'archive_type' in item) and not item['mimetype'].startswith('application/vnd'):
+                        or 'archive_type' in item) and not item['mimetype'].startswith('application/vnd') \
+                        and item['extension'].lower() not in ['xlsx', 'docx', 'pptx']:
                     item['order'] = 3
                     item['plugin'] = self._evidence_plugin
                     item['download'] = download_template.render(item)
