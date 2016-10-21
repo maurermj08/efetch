@@ -3,8 +3,6 @@ Evidence Fetcher (efetch) is a web-based file explorer, viewer, and analyzer. Ef
 
 After installation run the command **efetch** in the terminal and navigate to **localhost:8080** in a browser.
 
-![alt tag](https://cloud.githubusercontent.com/assets/13810976/19025778/825659c6-88eb-11e6-988c-b16d28b1eae5.gif)
-
 # Install
 
 Efetch depends on the following files:
@@ -31,6 +29,35 @@ Once these dependencies are met, efetch can be installed using the python setup 
 
 ```bash
 python setup.py install
+```
+
+# Usuage
+
+After installation run the command **efetch** in the terminal and navigate to **localhost:8080** in a browser. From the home page, either browse your local file system directly using the **browse** option or enter a **pathspec**. Evidence can be navigated by simply clicking the file name or icon.
+
+![alt tag](https://cloud.githubusercontent.com/assets/13810976/19585127/e1bb1e08-9717-11e6-8fcf-069be4b4957c.gif)
+
+The **efetch** command supports the following arguments:
+```
+usage: efetch [-h] [-d] [-v] [-a ADDRESS] [-p PORT] [-e ELASTIC] [-c CACHE]
+              [-m MAXFILESIZE] [-f PLUGINSFILE]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d, --debug           Displays debug messages
+  -v, --version         Prints Efetch version
+  -a ADDRESS, --address ADDRESS
+                        IP address for the Efetch server
+  -p PORT, --port PORT  Port for the Efetch server
+  -e ELASTIC, --elastic ELASTIC
+                        Elasticsearch URL, i.e. localhost:9200
+  -c CACHE, --cache CACHE
+                        Directory to store cached files
+  -m MAXFILESIZE, --maxfilesize MAXFILESIZE
+                        Max file size to cache in Megabytes, default 1GB
+  -f PLUGINSFILE, --pluginsfile PLUGINSFILE
+                        Path to the plugins config file
+
 ```
 
 # Plugins
