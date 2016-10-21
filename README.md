@@ -29,7 +29,7 @@ Once these dependencies are met, efetch can be installed using the python setup 
 python setup.py install
 ```
 
-# Usuage
+# Usage
 
 After installation run the command **efetch** in the terminal and navigate to **localhost:8080** in a browser. From the home page, either browse your local file system directly using the **browse** option or enter a **pathspec**. Evidence can be navigated by simply clicking the file name or icon.
 

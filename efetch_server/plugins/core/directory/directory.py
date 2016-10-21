@@ -151,10 +151,9 @@ class Directory(IPlugin):
             if 'file_name' not in item or not item['file_name']:
                 item['file_name'] = os.path.splitext(evidence['file_name'])[0]
             item['icon'] = helper.get_icon(item)
-            # TODO ONLY IGNORE ZIP FILES AND VND FILES!!
-            if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item
-                    or 'archive_type' in item) and not item['mimetype'].startswith('application/vnd') \
-                    and item['extension'].lower() not in ['xlsx', 'docx', 'pptx']:
+            if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item) or \
+                    ('archive_type' in item and not item['mimetype'].startswith('application/vnd') \
+                             and item['extension'].lower() not in helper.standard_office_2007_extensions):
                 item['order'] = 3
                 item['plugin'] = self._evidence_plugin
                 item['download'] = download_template.render(item)
@@ -200,10 +199,11 @@ class Directory(IPlugin):
                 for time in ['mtime', 'atime', 'ctime', 'crtime']:
                     if time in item:
                         item[time + '_no_nano'] = item[time].split('.')[0].replace('T', ' ')
-                # TODO ONLY IGNORE ZIP FILES AND VND FILES!!
-                if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item
-                        or 'archive_type' in item) and not item['mimetype'].startswith('application/vnd') \
-                        and item['extension'].lower() not in ['xlsx', 'docx', 'pptx']:
+                # If it the evidence item is an archive, volume, storage, or compression type expand
+                # unless it is an archive type with a mimetype of application/vnd or standard office 2007 extension
+                if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item) or \
+                        ('archive_type' in item and not item['mimetype'].startswith('application/vnd') \
+                        and item['extension'].lower() not in helper.standard_office_2007_extensions):
                     item['order'] = 3
                     item['plugin'] = self._evidence_plugin
                     item['download'] = download_template.render(item)
