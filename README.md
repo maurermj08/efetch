@@ -6,14 +6,14 @@ After installation run the command **efetch** in the terminal and navigate to **
 # Install
 
 Efetch depends on the following files:
-    * python
-    * plaso
-    * setuptools (>=28.5.0)
-    * pip
-    * libpff
-    * zlib
-    * libjpeg
-    * libtff
+* python
+* plaso
+* setuptools (>=28.5.0)
+* pip
+* libpff
+* zlib
+* libjpeg
+* libtff
     
 On Ubuntu 14.04 these packages can be installed using the following command:
 
