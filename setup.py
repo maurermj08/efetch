@@ -23,6 +23,7 @@ setup(
     zip_safe=False,
     data_files=[(u'/etc', [u'efetch_plugins.yml'])],
     install_requires=frozenset([u'setuptools>=28.5.0',
+                      u'urllib3<2.0,>=1.8',
                       u'argparse>=1.2.1',
                       u'bottle>=0.12.8',
                       u'dfvfs>=20150708',
