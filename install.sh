@@ -16,19 +16,10 @@
 
 
 #Check that the script is run as root
-#if [ "$(id -u)" != "0" ]; then
-#   echo "This script must be run as root" 1>&2
-#   exit 1
-#fi
-#
-##Install Repo Dependencies
-#echo 'Installing Efetch dependencies...'
-#sudo add-apt-repository -y ppa:gift/stable
-#sudo add-apt-repository -y ppa:sift/stable
-#sudo apt-get update
-#sudo dpkg -i python-efetch*.deb
-#sudo apt-get -f install
-#echo 'Done!'
+if [ "$(id -u)" != "0" ]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
 
 echo 'Installing Efetch dependencies...'
 sudo add-apt-repository -y ppa:gift/stable

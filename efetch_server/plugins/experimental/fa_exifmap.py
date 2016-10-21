@@ -10,7 +10,7 @@ class FaExifmap(IPlugin):
 
     def __init__(self):
         self.display_name = 'Exif Map'
-        self.popularity = 3
+        self.popularity = 0 # To enable change to 4
         self.cache = True
         self.fast = False
         self.action = False
