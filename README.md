@@ -1,8 +1,6 @@
 # efetch
 Evidence Fetcher (efetch) is a web-based file explorer, viewer, and analyzer. Efetch supports viewing hundreds of file types including office, registry, PST, image, and SQLite files. Efetch supports navigating RAW, E01, ZIP, GZ, TAR, VMDK, VHD, QCOW, and BZ2 files thanks to dfVFS.
 
-After installation run the command **efetch** in the terminal and navigate to **localhost:8080** in a browser.
-
 # Install
 
 Efetch depends on the following files:
