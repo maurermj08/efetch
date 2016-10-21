@@ -35,7 +35,7 @@ sudo add-apt-repository -y ppa:gift/stable
 sudo add-apt-repository -y ppa:sift/stable
 sudo apt-get update
 sudo apt-get -y install python-plaso python-dev python-setuptools unoconv libpff libpff-python zlib1g-dev libjpeg-dev libtiff5-dev python-pip
+sudo pip install setuptools -U
 python ${PWD}/setup.py build
 python ${PWD}/setup.py install
-sudo apt-get -f install
 echo 'Done!'
