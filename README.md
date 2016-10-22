@@ -1,6 +1,14 @@
 # efetch
 Evidence Fetcher (efetch) is a web-based file explorer, viewer, and analyzer. Efetch supports viewing hundreds of file types including office, registry, PST, image, and SQLite files. Efetch supports navigating RAW, E01, ZIP, GZ, TAR, VMDK, VHD, QCOW, and BZ2 files thanks to dfVFS.
 
+# Quick Install
+
+The quick install below will install **efetch 0.4** on Ubuntu 14.04 (including SIFT 3).
+
+```
+wget --quiet -O - https://git.io/vPFgD | sudo bash -s
+```
+
 # Install
 
 Below is a list of dependencies for **efetch**:
