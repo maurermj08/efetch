@@ -125,6 +125,9 @@ class Directory(IPlugin):
                 for item in helper.pathspec_helper.list_directory(initial_pathspec[0]['pathspec']):
                     if 'file_name' not in item or not item['file_name']:
                         item['file_name'] = '-'
+                    for time in ['mtime', 'atime', 'ctime', 'crtime']:
+                        if time in item:
+                            item[time + '_no_nano'] = item[time].split('.')[0].replace('T', ' ')
                     item['icon'] = helper.get_icon(item)
                     if item['meta_type'] == 'Directory':
                         item['order'] = 2
@@ -150,6 +153,9 @@ class Directory(IPlugin):
             item = helper.pathspec_helper.get_evidence_item(initial_pathspec['pathspec'])
             if 'file_name' not in item or not item['file_name']:
                 item['file_name'] = os.path.splitext(evidence['file_name'])[0]
+            for time in ['mtime', 'atime', 'ctime', 'crtime']:
+                if time in item:
+                    item[time + '_no_nano'] = item[time].split('.')[0].replace('T', ' ')
             item['icon'] = helper.get_icon(item)
             if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item) or \
                     ('archive_type' in item and not item['mimetype'].startswith('application/vnd') \
