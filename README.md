@@ -3,7 +3,7 @@ Evidence Fetcher (efetch) is a web-based file explorer, viewer, and analyzer. Ef
 
 # Install
 
-Efetch depends on the following files:
+Below is a list of dependencies for **efetch**:
 * python
 * plaso
 * setuptools (>=28.5.0)
@@ -13,7 +13,7 @@ Efetch depends on the following files:
 * libjpeg
 * libtff
     
-On Ubuntu 14.04 these packages can be installed using the following command:
+On Ubuntu 14.04 these packages can be installed using the following commands:
 
 ```bash
 sudo add-apt-repository -y ppa:gift/stable
@@ -26,7 +26,7 @@ sudo pip install setuptools -U
 Once these dependencies are met, efetch can be installed using the python setup tools.
 
 ```bash
-python setup.py install
+sudo python setup.py install
 ```
 
 # Usage
