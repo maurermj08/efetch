@@ -34,7 +34,7 @@
 #     openwith: 'directory'
 #
 # If no FILE is specified, the plugin returns the results of the command using <xmp>
-###
+###g
 
 cleanjson:
   name: Clean JSON
