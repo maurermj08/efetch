@@ -3,7 +3,7 @@ Evidence Fetcher (efetch) is a web-based file explorer, viewer, and analyzer. Ef
 
 # Quick Install
 
-The quick install below will install **efetch** on Ubuntu 14.04 (including SIFT 3).
+The quick install below will install **efetch 0.4** on Ubuntu 14.04 (including SIFT 3).
 
 ```
 wget --quiet -O - https://git.io/vPFgD | sudo bash -s
