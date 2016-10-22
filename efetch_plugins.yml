@@ -34,7 +34,7 @@
 #     openwith: 'directory'
 #
 # If no FILE is specified, the plugin returns the results of the command using <xmp>
-###g
+###
 
 cleanjson:
   name: Clean JSON
@@ -88,7 +88,6 @@ cleanjson:
 #  name: String
 #  icon: fa-file-text
 #  os: [ 'linux' ]
-#  store: 'strings_bash'
 #  command: "strings '{{ file_cache_path }}'"
 
 #ziplist:
@@ -101,7 +100,6 @@ cleanjson:
 #file:
 #  name: File
 #  os: [ 'linux' ]
-#  store: 'file_bash'
 #  command: "file -b '{{ file_cache_path }}'"
 
 #virus_total:
