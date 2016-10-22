@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #Check that the script is run as root
 if [ "$(id -u)" != "0" ]; then
@@ -27,6 +28,6 @@ sudo add-apt-repository -y ppa:sift/stable
 sudo apt-get update
 sudo apt-get -y install python-plaso python-dev python-setuptools unoconv libpff libpff-python zlib1g-dev libjpeg-dev libtiff5-dev python-pip
 sudo pip install setuptools -U
-python ${PWD}/setup.py build
-python ${PWD}/setup.py install
+python $DIR/setup.py build
+python $DIR/setup.py install
 echo 'Done!'
