@@ -13,8 +13,8 @@
 #       os:                             # Defaults to all, list of supported operating systems (Windows and Linux)
 #           - linux
 #       mimetypes:                      # Defaults to all, list of supported mimetypes
-#			- application/mspowerpoint
-#			- application/vnd.ms-works
+#			      - application/mspowerpoint
+#			      - application/vnd.ms-works
 #           ...
 #           - text/rtf
 #       extensions:                     # Defaults to all, list of supported file extensions
@@ -30,22 +30,11 @@
 # There is also a "store" option that takes the variable to store the results to e.g.:
 #     store: 'strings'
 #
+# There is also a "openwith" option that opens the specified "file" with a given plugin
+#     openwith: 'directory'
+#
 # If no FILE is specified, the plugin returns the results of the command using <xmp>
 ###
-
-corexml:
-  name: Core.xml
-  icon: fa-file-code-o
-  os: [ 'linux' ]
-  extensions: [ 'pptx', 'xlsx', 'docx' ]
-  command: "unzip -qc '{{ file_cache_path }}' docProps/core.xml | xmllint --format  -"
-
-cleanxml:
-  name: Clean XML
-  icon: fa-file-code-o
-  os: [ 'linux' ]
-  mimetypes: [ 'application/xml' ]
-  command: "cat '{{ file_cache_path }}' | xmllint --format --recover -"
 
 cleanjson:
   name: Clean JSON
@@ -54,52 +43,46 @@ cleanjson:
   extensions: [ 'json' ]
   command: "cat '{{ file_cache_path }}' | python -m json.tool"
 
-pdftotext:
-  name: pdftotext
-  icon: fa-file-pdf-o
-  os: [ 'linux' ]
-  mimetypes: [ 'application/pdf' ]
-  command: "pdftotext '{{ file_cache_path }}' -"
+#corexml:
+#  name: Core.xml
+#  icon: fa-file-code-o
+#  os: [ 'linux' ]
+#  extensions: [ 'pptx', 'xlsx', 'docx' ]
+#  command: "unzip -qc '{{ file_cache_path }}' docProps/core.xml | xmllint --format  -"
 
-unzip:
-  name: Cache Unzip
-  popularity: 4
-  icon:  fa-file-archive-o
-  os: [ 'linux' ]
-  mimetypes: [ 'application/zip' ]
-  command: "unzip -u '{{ file_cache_path }}' -d '{{ file_cache_path }}_unzip'"
-  file: "{{ file_cache_path }}_unzip"
-  openwith: directory
+#cleanxml:
+#  name: Clean XML
+#  icon: fa-file-code-o
+#  os: [ 'linux' ]
+#  mimetypes: [ 'application/xml' ]
+#  command: "cat '{{ file_cache_path }}' | xmllint --format --recover -"
 
-gunzip:
-  name: Cache GZ
-  popularity: 4
-  icon:  fa-file-archive-o
-  os: [ 'linux' ]
-  mimetypes: [ 'application/gzip' ]
-  command: "gunzip -fkc '{{ file_cache_path }}' > '{{ file_cache_path }}_gunzip'"
-  file: "{{ file_cache_path }}_gunzip"
-  openwith: directory
+#pdftotext:
+#  name: pdftotext
+#  icon: fa-file-pdf-o
+#  os: [ 'linux' ]
+#  mimetypes: [ 'application/pdf' ]
+#  command: "pdftotext '{{ file_cache_path }}' -"
 
-untar:
-  name: Cache Tar
-  popularity: 4
-  icon:  fa-file-archive-o
-  os: [ 'linux' ]
-  mimetypes: [ 'application/x-tar' ]
-  command: "mkdir '{{ file_cache_path }}_tar'; tar -C '{{ file_cache_path }}_tar' -xvf '{{ file_cache_path }}'"
-  file: "{{ file_cache_path }}_tar"
-  openwith: directory
+#readpst:
+#  name: Read PST
+#  icon: fa-envelope
+#  popularity: 4
+#  os: [ 'linux' ]
+#  extensions: [ 'pst' ]
+#  command: "mkdir {{ file_cache_path }}_readpst; readpst -w -D -S -o '{{ file_cache_path }}_readpst' {{ file_cache_path }}"
+#  file: "{{ file_cache_path }}_readpst"
+#  openwith: directory
 
-readpst:
-  name: Read PST
-  icon: fa-envelope
-  popularity: 4
-  os: [ 'linux' ]
-  extensions: [ 'pst' ]
-  command: "mkdir {{ file_cache_path }}_readpst; readpst -w -D -S -o '{{ file_cache_path }}_readpst' {{ file_cache_path }}"
-  file: "{{ file_cache_path }}_readpst"
-  openwith: directory
+#unzip:
+#  name: Cache Unzip
+#  popularity: 4
+#  icon:  fa-file-archive-o
+#  os: [ 'linux' ]
+#  mimetypes: [ 'application/zip' ]
+#  command: "unzip -u '{{ file_cache_path }}' -d '{{ file_cache_path }}_unzip'"
+#  file: "{{ file_cache_path }}_unzip"
+#  openwith: directory
 
 #strings:
 #  name: String
@@ -142,10 +125,3 @@ readpst:
 #  icon: fa-bug
 #  os: [ 'linux' ]
 #  command: "clamscan '{{ file_cache_path }}'"
-
-#hexdumpc:
-#  name: "hexdump -c"
-#  icon: fa-file-code-o
-#  os: [ 'linux' ]
-#  command: "hexdump -C '{{ file_cache_path }}'"
-
