@@ -27,11 +27,11 @@ On Ubuntu 14.04 these packages can be installed using the following commands:
 sudo add-apt-repository -y ppa:gift/stable
 sudo add-apt-repository -y ppa:sift/stable
 sudo apt-get update
-sudo apt-get install python-plaso python-dev python-setuptools unoconv libpff libpff-python zlib1g-dev libjpeg-dev libtiff5-dev python-pip
+sudo apt-get install -y python-plaso python-dev python-setuptools unoconv libpff libpff-python zlib1g-dev libjpeg-dev libtiff5-dev python-pip
 sudo pip install setuptools -U
 ```
 
-Once these dependencies are met, efetch can be installed using the python setup tools.
+Once these dependencies are met, efetch can be installed using the python setup tools. Download the **efetch** repository and run setup.py:
 
 ```bash
 sudo python setup.py install
