@@ -61,6 +61,8 @@ class PathspecHelper(object):
     _thumbnail_size = 64
     _mimetype_chunk_size = 32768
 
+    _automatically_traverse = ['VSHADOW', 'TSK_PARTITION', 'EWF']
+
     instance = None
 
     class __PathspecHelper(object):
@@ -228,19 +230,24 @@ class PathspecHelper(object):
         if not fast:
             evidence_item.update(self._get_stat_information(encoded_pathspec))
         else:
-            file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
+            try:
+                file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
 
-            if not file_entry:
-                evidence_item['meta_type'] = 'None'
-            elif file_entry.IsDirectory():
-                evidence_item['meta_type'] = 'Directory'
-            elif file_entry.IsFile():
-                evidence_item['meta_type'] = 'File'
-            else:
+                if not file_entry:
+                    evidence_item['meta_type'] = 'None'
+                elif file_entry.IsDirectory():
+                    evidence_item['meta_type'] = 'Directory'
+                elif file_entry.IsFile():
+                    evidence_item['meta_type'] = 'File'
+                else:
+                    evidence_item['meta_type'] = 'Unknown'
+
+                del file_entry
+
+                PathspecHelper._close_file_entry(encoded_pathspec)
+            except RuntimeError:
+                logging.warn('Failed to open file_entry for evidence')
                 evidence_item['meta_type'] = 'Unknown'
-
-            del file_entry
-            PathspecHelper._close_file_entry(encoded_pathspec)
 
         return self._append_mimetype(evidence_item, cache)
 
@@ -353,7 +360,7 @@ class PathspecHelper(object):
             else:
                 return self._my_magic.id_filename(path)
 
-    def list_directory(self, encoded_pathspec, recursive=False, index='*'):
+    def list_directory(self, encoded_pathspec, recursive=False, index='*', auto_skip=True):
         """Lists a directory using a pathspec or list of pathspecs"""
         directories = self._list_directory(self._open_file_entry(encoded_pathspec), recursive, 0, index)
         self._close_file_entry(encoded_pathspec)
@@ -662,6 +669,7 @@ class PathspecHelper(object):
 
         return pathspecs
 
+    # TODO, FIRST MOVE UP BY LOCATION i.e.: /tmp/test/file.txt > /tmp/test > /tmp > / > pathspec['parent']
     @staticmethod
     def get_parent_base_pathspecs(encoded_pathspec):
         pathspec = PathspecHelper._decode_pathspec(encoded_pathspec)
@@ -691,9 +699,10 @@ class PathspecHelper(object):
         if not parent_path_spec:
             return False
 
-        # TODO This needs more then just VSHADOW, should probably have partitions and possibly encryptions
-        while getattr(parent_path_spec, 'type_indicator', '') in ['VSHADOW']:
-            parent_path_spec = parent_path_spec.parent
+        # TODO FOR EXPANDABLE EVIDENCE IF NO CHILDREN, AUTOMATICALLY MOVE UP A DIRECTORY
+        # # TODO This needs more then just VSHADOW, should probably have partitions and possibly encryptions
+        while getattr(parent_path_spec, 'type_indicator', '') in PathspecHelper._automatically_traverse:
+           parent_path_spec = parent_path_spec.parent
 
         return JsonPathSpecSerializer.WriteSerialized(parent_path_spec)
 

@@ -82,6 +82,44 @@ class EfetchHelper(object):
                                         self.get_request_value(request, 'timefield', 'datetime'),
                                         must, must_not)
 
+    def is_expandable_evidence(self, evidence):
+        """Returns True if evidence should be expandable and false if not"""
+        # Separated for cleanliness, ordering matters here
+
+        # Partitions and volume shadows are expandable
+        if 'type_indicator' in evidence and evidence['type_indicator'] in ['TSK_PARTITION', 'VSHADOW']:
+            return True
+
+        # Volumes are expandable
+        if 'volume_type' in evidence:
+            return True
+
+        # Most Storage types are expandable
+        if 'storage_type' in evidence:
+            # Not E02-E0N files
+            if evidence['extension'].lower().startswith('e0') and evidence['extension'].lower() != 'e01':
+                return False
+            # All other storage types are expandable
+            return True
+
+        # Compression types are expandable
+        if 'compression_type' in evidence:
+            return True
+
+        # Most archive types are expandable
+        if 'archive_type' in evidence:
+            # Not files with office 2007 mimetypes
+            if evidence['mimetype'].startswith('application/vnd'):
+                return False
+            # Not files with office 2007 extensions
+            if evidence['extension'].lower() in self.standard_office_2007_extensions:
+                return False
+            # All other archives are expandable
+            return True
+
+        # Everything else is not expandable
+        return False
+
     def get_icon(self, evidence, resource=True):
         """Returns either an icon or thumbnail of the provided file"""
         if resource:
@@ -89,23 +127,22 @@ class EfetchHelper(object):
         else:
             curr_icon_dir = self.icon_dir
 
+        if 'volume_type' in evidence or 'storage_type' in evidence or 'compression_type' in evidence \
+                or 'archive_type' in evidence:
+            if not evidence['mimetype_known']:
+                evidence['mimetype'] = self.pathspec_helper.get_mimetype(evidence['pathspec'])
+        if self.is_expandable_evidence(evidence):
+            return curr_icon_dir + '_evidence.png'
+
+        if not 'meta_type' in evidence:
+            return curr_icon_dir + '_blank.png'
+
         # If it is folder just return the folder icon
         if evidence['meta_type'] == 'Directory' or unicode(evidence['file_name']).strip() == "." or unicode(
                 evidence['file_name']).strip() == "..":
             return curr_icon_dir + '_folder.png'
         if evidence['meta_type'] != 'File' and evidence['meta_type'] != 'Device':
             return curr_icon_dir + '_blank.png'
-
-        if 'volume_type' in evidence or 'storage_type' in evidence or 'compression_type' in evidence\
-                or 'archive_type' in evidence:
-            if not evidence['mimetype_known']:
-                evidence['mimetype'] = self.pathspec_helper.get_mimetype(evidence['pathspec'])
-            # If it the evidence item is an archive, volume, storage, or compression type expand
-            # unless it is an archive type with a mimetype of application/vnd or standard office 2007 extension
-            if ('volume_type' in evidence or 'storage_type' in evidence or 'compression_type' in evidence) or \
-                    ('archive_type' in evidence and not evidence['mimetype'].startswith('application/vnd') \
-                    and evidence['extension'].lower() not in self.standard_office_2007_extensions):
-                return curr_icon_dir + '_evidence.png'
 
         # If the file is an image create a thumbnail
         if evidence['mimetype'].startswith('image') and resource:

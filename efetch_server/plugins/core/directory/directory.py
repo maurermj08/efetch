@@ -53,6 +53,7 @@ class Directory(IPlugin):
         dir_table = []
         file_table = []
 
+        # Templates
         row_template = Template("""
             <tr>
                 <!-- {{ file_name }} -->
@@ -106,155 +107,121 @@ class Directory(IPlugin):
         #     else:
         #         initial_pathspec = helper.pathspec_helper.get_new_base_pathspecs(evidence['pathspec'])
 
-        if ('volume_type' in evidence or 'storage_type' in evidence or \
-               'archive_type' in evidence) and not evidence['mimetype'].startswith('application/vnd'):
-            initial_pathspec = helper.pathspec_helper.get_base_pathspecs(evidence)
+        # Forces volumes and partitions to be seen as expandable evidence
+        force_expand = False
 
-            if len(initial_pathspec) > 1:
-                for item in initial_pathspec:
-                    item['icon'] = '/resources/icons/_evidence.png'
-                    item['order'] = 3
-                    item['plugin'] = self._evidence_plugin
-                    item['download'] = download_template.render(item)
-                    item['preview'] = preview_template.render(item)
-                    item['analyze'] = analyze_template.render(item)
-                    if 'size' in item:
-                        item['size'] = Directory.human_readable_size(int(item['size']))
-                    file_table.append(row_template.render(item))
+        # Moves the directory view up to the next expandable/directory pathspec
+        #  and if the next one is '/' move up twice to the volume/partition root
+        if not helper.is_expandable_evidence(evidence) and evidence['meta_type'] != 'Directory':
+            evidence_parent = helper.pathspec_helper.get_parent_pathspec(evidence['pathspec'])
+            evidence = helper.pathspec_helper.get_evidence_item(evidence_parent)
+            return self.get(evidence, helper, path_on_disk, request)
+
+        # Compressed files, only have 1 item
+        if 'compression_type' in evidence:
+            item_pathspec = helper.pathspec_helper.get_base_pathspecs(evidence)[0]['pathspec']
+            items = [helper.pathspec_helper.get_evidence_item(item_pathspec)]
+            initial_pathspec = evidence['pathspec']
+        # Evidence
+        elif helper.is_expandable_evidence(evidence):
+            items = helper.pathspec_helper.get_base_pathspecs(evidence)
+
+            # If moving up and only one item is there, go up (Prevents loop from next option)
+            if len(items) == 1 and helper.get_request_value(request, 'up', False):
+                evidence_parent = helper.pathspec_helper.get_parent_pathspec(evidence['pathspec'])
+                try:
+                    evidence = helper.pathspec_helper.get_evidence_item(evidence_parent)
+                except RuntimeError:
+                    # Manually move up to the parent if getting the evidence item fails
+                    logging.warn('Failed to get parent pathspec evidence item, manually moving up another pathspec')
+                    evidence_parent = json.loads(evidence_parent)['parent']
+                    evidence = helper.pathspec_helper.get_evidence_item(json.dumps(evidence_parent))
+                return self.get(evidence, helper, path_on_disk, request)
+            # If only one item (volume/partition/etc) go ahead and expand it
+            elif len(items) == 1:
+                items = helper.pathspec_helper.list_directory(items[0]['pathspec'])
             else:
-                for item in helper.pathspec_helper.list_directory(initial_pathspec[0]['pathspec']):
-                    if 'file_name' not in item or not item['file_name']:
-                        item['file_name'] = '-'
-                    for time in ['mtime', 'atime', 'ctime', 'crtime']:
-                        if time in item:
-                            item[time + '_no_nano'] = item[time].split('.')[0].replace('T', ' ')
-                    item['icon'] = helper.get_icon(item)
-                    if item['meta_type'] == 'Directory':
-                        item['order'] = 2
-                        item['plugin'] = self._dir_plugin
-                        item['analyze'] = analyze_template.render(item)
-                        if 'size' in item:
-                            item['size'] = Directory.human_readable_size(int(item['size']))
-                        dir_table.append(row_template.render(item))
-                    else:
-                        item['order'] = 3
-                        item['target'] = 'target="_top"'
-                        item['plugin'] = self._file_plugin
-                        item['download'] = download_template.render(item)
-                        item['preview'] = preview_template.render(item)
-                        item['analyze'] = analyze_template.render(item)
-                        if 'size' in item:
-                            item['size'] = Directory.human_readable_size(int(item['size']))
-                        file_table.append(row_template.render(item))
+                force_expand = True
 
             initial_pathspec = evidence['pathspec']
-        elif 'compression_type' in evidence:
-            initial_pathspec = helper.pathspec_helper.get_base_pathspecs(evidence)[0]
-            item = helper.pathspec_helper.get_evidence_item(initial_pathspec['pathspec'])
+        # Directories
+        else:
+            initial_pathspec = evidence['pathspec']
+
+            while initial_pathspec and not getattr(helper.pathspec_helper._decode_pathspec(initial_pathspec), 'location', False):
+                initial_pathspec = helper.pathspec_helper.get_parent_base_pathspecs_encoded(initial_pathspec)
+
+            items = helper.pathspec_helper.list_directory(initial_pathspec)
+
+        # Gets the List of sub items to display
+        for item in items:
+            # Compressed files do not have file_names, and get the parent name minus the last extension
+            if 'compression_type' in evidence:
+                if 'file_name' not in item or not item['file_name']:
+                    item['file_name'] = os.path.splitext(evidence['file_name'])[0]
+            # If the file does not have a file name set it to '-' for the link
             if 'file_name' not in item or not item['file_name']:
-                item['file_name'] = os.path.splitext(evidence['file_name'])[0]
+                item['file_name'] = '-'
+
+            # Remove nanoseconds for readability, values will be available on the overview page
             for time in ['mtime', 'atime', 'ctime', 'crtime']:
                 if time in item:
                     item[time + '_no_nano'] = item[time].split('.')[0].replace('T', ' ')
-            item['icon'] = helper.get_icon(item)
-            if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item) or \
-                    ('archive_type' in item and not item['mimetype'].startswith('application/vnd') \
-                             and item['extension'].lower() not in helper.standard_office_2007_extensions):
+
+            # Make human readable size
+            if 'size' in item:
+                item['size'] = Directory.human_readable_size(int(item['size']))
+
+            # Get the icon here to limit the number of calls
+            if not force_expand:
+                item['icon'] = helper.get_icon(item)
+            else:
+                item['icon'] = '/resources/icons/_evidence.png'
+
+            # Render analyze link
+            item['analyze'] = analyze_template.render(item)
+
+            # Expandable evidence
+            if helper.is_expandable_evidence(item) or force_expand:
                 item['order'] = 3
                 item['plugin'] = self._evidence_plugin
                 item['download'] = download_template.render(item)
                 item['preview'] = preview_template.render(item)
-                item['analyze'] = analyze_template.render(item)
-                if 'size' in item:
-                    item['size'] = Directory.human_readable_size(int(item['size']))
                 file_table.append(row_template.render(item))
+            # Directories
             elif item['meta_type'] == 'Directory':
                 item['order'] = 2
                 item['plugin'] = self._dir_plugin
-                item['analyze'] = analyze_template.render(item)
-                if 'size' in item:
-                    item['size'] = Directory.human_readable_size(int(item['size']))
                 dir_table.append(row_template.render(item))
+            # Files/Other
             else:
                 item['order'] = 3
                 item['target'] = 'target="_top"'
                 item['plugin'] = self._file_plugin
                 item['download'] = download_template.render(item)
                 item['preview'] = preview_template.render(item)
-                item['analyze'] = analyze_template.render(item)
-                if 'size' in item:
-                    item['size'] = Directory.human_readable_size(int(item['size']))
                 file_table.append(row_template.render(item))
 
-            initial_pathspec = evidence['pathspec']
-        else:
-            if evidence['meta_type'] == 'Directory':
-                initial_pathspec = evidence['pathspec']
-            else:
-                initial_pathspec = helper.pathspec_helper.get_parent_pathspec(evidence['pathspec'])
-
-            while initial_pathspec and not getattr(helper.pathspec_helper._decode_pathspec(initial_pathspec), 'location', False):
-                initial_pathspec = helper.pathspec_helper.get_parent_base_pathspecs_encoded(initial_pathspec)
-
-            directory_list = helper.pathspec_helper.list_directory(initial_pathspec)
-
-            for item in directory_list:
-                item['icon'] = helper.get_icon(item)
-                if 'file_name' not in item or not item['file_name']:
-                    item['file_name'] = '-'
-                for time in ['mtime', 'atime', 'ctime', 'crtime']:
-                    if time in item:
-                        item[time + '_no_nano'] = item[time].split('.')[0].replace('T', ' ')
-                # If it the evidence item is an archive, volume, storage, or compression type expand
-                # unless it is an archive type with a mimetype of application/vnd or standard office 2007 extension
-                if ('volume_type' in item or 'storage_type' in item or 'compression_type' in item) or \
-                        ('archive_type' in item and not item['mimetype'].startswith('application/vnd') \
-                        and item['extension'].lower() not in helper.standard_office_2007_extensions):
-                    item['order'] = 3
-                    item['plugin'] = self._evidence_plugin
-                    item['download'] = download_template.render(item)
-                    item['preview'] = preview_template.render(item)
-                    item['analyze'] = analyze_template.render(item)
-                    if 'size' in item:
-                        item['size'] = Directory.human_readable_size(int(item['size']))
-                    file_table.append(row_template.render(item))
-                elif item['meta_type'] == 'Directory':
-                    item['order'] = 2
-                    item['plugin'] = self._dir_plugin
-                    item['analyze'] = analyze_template.render(item)
-                    if 'size' in item:
-                        item['size'] = Directory.human_readable_size(int(item['size']))
-                    dir_table.append(row_template.render(item))
-                else:
-                    item['order'] = 3
-                    item['target'] = 'target="_top"'
-                    item['plugin'] = self._file_plugin
-                    item['download'] = download_template.render(item)
-                    item['preview'] = preview_template.render(item)
-                    item['analyze'] = analyze_template.render(item)
-                    if 'size' in item:
-                        item['size'] = Directory.human_readable_size(int(item['size']))
-                    file_table.append(row_template.render(item))
-
+        # Presorts the tables
         dir_table.sort()
         file_table.sort()
 
+        # Gets the up directory option ".."
         parent_pathspec = helper.pathspec_helper.get_parent_pathspec(initial_pathspec)
-
         if parent_pathspec:
             try:
-                parent_item = helper.pathspec_helper.get_evidence_item(parent_pathspec, fast=True)
-            # TODO - Buggy fix, need to actually move up gracefully through pathspec
-            except:
+                parent_item = helper.pathspec_helper.get_evidence_item(parent_pathspec)
+            # Manually move up to the parent if getting the evidence item fails
+            except RuntimeError:
                 logging.warn('Failed to get parent pathspec evidence item, manually moving up another pathspec')
                 parent_pathspec = json.loads(parent_pathspec)['parent']
-                parent_item = helper.pathspec_helper.get_evidence_item(json.dumps(parent_pathspec), fast=True)
-
+                parent_item = helper.pathspec_helper.get_evidence_item(json.dumps(parent_pathspec))
         if parent_pathspec and parent_item:
             parent_item['file_name'] = '..'
             parent_item['icon'] = '/resources/icons/_folder_up.png'
             parent_item['order'] = 1
             parent_item['plugin'] = self._dir_plugin
+            parent_item['url_query'] = parent_item['url_query'] + '&up=True'
             dir_table.insert(0, row_template.render(parent_item))
 
         return '''
