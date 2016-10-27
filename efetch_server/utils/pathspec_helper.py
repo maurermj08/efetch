@@ -545,7 +545,7 @@ class PathspecHelper(object):
         try:
             with PathspecHelper._open_file_entries_lock:
                 PathspecHelper._open_file_entries_count[encoded_pathspec] -= 1
-                # TODO Determine a limit to the number of open files to store, currently waits until cache is full
+                # currently waiting until cache is full is more stable than the following code:
                 # if PathspecHelper._open_file_entries_count[encoded_pathspec] < 1:
                 #     del PathspecHelper._open_file_entries[encoded_pathspec]
                 #     del PathspecHelper._open_file_entries_locks[encoded_pathspec]
@@ -654,11 +654,20 @@ class PathspecHelper(object):
 
         pathspecs = []
 
+        previous_partition = ''
+
         for item in pathspec:
             if hasattr(item.parent, 'location'):
                 file_name = item.parent.location
             else:
                 file_name = '/'
+
+            # Adds the partition name in front of the shadow volume
+            if getattr(item.parent, 'type_indicator', '') == 'TSK_PARTITION':
+                previous_partition = item.parent.location
+            elif getattr(item.parent, 'type_indicator', '') == 'VSHADOW':
+                file_name = previous_partition + file_name
+
             new_encoded_pathspec = JsonPathSpecSerializer.WriteSerialized(item)
             pathspecs.append({'pathspec': new_encoded_pathspec,
                               'url_query':  urlencode({'pathspec': new_encoded_pathspec}),
@@ -701,29 +710,28 @@ class PathspecHelper(object):
 
         return JsonPathSpecSerializer.WriteSerialized(parent_path_spec)
 
-    # @staticmethod
-    # def get_pathspec(pathspec_or_source):
-    #     """Gets the pathspec"""
-    #     try:
-    #         pathspec = DfvfsUtil.decode_pathspec(pathspec_or_source)
-    #     except:
-    #         try:
-    #             dfvfs_util = DfvfsUtil(pathspec_or_source)
-    #         except CacheFullError:
-    #             PathspecHelper._clear_file_entry_cache()
-    #             dfvfs_util = DfvfsUtil(pathspec_or_source)
-    #         pathspec = dfvfs_util.base_path_specs
-    #
-    #     # TODO remove because some cases will want all possible pathspecs
-    #     if isinstance(pathspec, list):
-    #         pathspec = pathspec[0]
-    #
-    #     return pathspec
-    #
-    # @staticmethod
-    # def get_encoded_pathspec(pathspec_or_source):
-    #     """Gets the encoded pathspec"""
-    #     return JsonPathSpecSerializer.WriteSerialized(PathspecHelper.get_pathspec(pathspec_or_source))
+    @staticmethod
+    def get_pathspec(pathspec_or_source):
+        """Gets the pathspec, only gets the first one so limit use"""
+        try:
+            pathspec = DfvfsUtil.decode_pathspec(pathspec_or_source)
+        except:
+            try:
+                dfvfs_util = DfvfsUtil(pathspec_or_source)
+            except CacheFullError:
+                PathspecHelper._clear_file_entry_cache()
+                dfvfs_util = DfvfsUtil(pathspec_or_source)
+            pathspec = dfvfs_util.base_path_specs
+
+        if isinstance(pathspec, list):
+            pathspec = pathspec[0]
+
+        return pathspec
+
+    @staticmethod
+    def get_encoded_pathspec(pathspec_or_source):
+        """Gets the encoded pathspec"""
+        return JsonPathSpecSerializer.WriteSerialized(PathspecHelper.get_pathspec(pathspec_or_source))
 
     @staticmethod
     def guess_mimetype(extension):
