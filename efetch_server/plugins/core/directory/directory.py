@@ -119,12 +119,12 @@ class Directory(IPlugin):
 
         # Compressed files, only have 1 item
         if 'compression_type' in evidence:
-            item_pathspec = helper.pathspec_helper.get_base_pathspecs(evidence)[0]['pathspec']
+            item_pathspec = helper.pathspec_helper.list_base_pathspecs(evidence)[0]['pathspec']
             items = [helper.pathspec_helper.get_evidence_item(item_pathspec)]
             initial_pathspec = evidence['pathspec']
         # Evidence
         elif helper.is_expandable_evidence(evidence):
-            items = helper.pathspec_helper.get_base_pathspecs(evidence)
+            items = helper.pathspec_helper.list_base_pathspecs(evidence)
 
             # If moving up and only one item is there, go up (Prevents loop from next option)
             if len(items) == 1 and helper.get_request_value(request, 'up', False):
@@ -149,7 +149,7 @@ class Directory(IPlugin):
             initial_pathspec = evidence['pathspec']
 
             while initial_pathspec and not getattr(helper.pathspec_helper._decode_pathspec(initial_pathspec), 'location', False):
-                initial_pathspec = helper.pathspec_helper.get_parent_base_pathspecs_encoded(initial_pathspec)
+                initial_pathspec = helper.pathspec_helper.get_encoded_parent_base_pathspec_manually(initial_pathspec)
 
             items = helper.pathspec_helper.list_directory(initial_pathspec)
 

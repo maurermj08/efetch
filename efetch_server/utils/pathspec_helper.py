@@ -27,7 +27,6 @@ from bottle import abort
 from dfvfs.lib import definitions
 from dfvfs.lib.errors import AccessError, CacheFullError
 import dfvfs.path
-from dfvfs.path.zip_path_spec import ZipPathSpec
 from dfvfs.resolver import resolver
 from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from dfvfs.lib import definitions as dfvfs_definitions
@@ -609,11 +608,10 @@ class PathspecHelper(object):
                 raise RuntimeError('Attempting to close already closed file object')
 
     @staticmethod
-    def get_base_pathspecs(evidence):
+    def list_base_pathspecs(evidence):
         '''Gets the base pathspec for the given evidence'''
         decoded_pathspec = PathspecHelper._decode_pathspec(evidence['pathspec'])
         if u'archive_type' in evidence and u'ZIP' in evidence['archive_type']:
-            #pathspec = ZipPathSpec(location='/', parent=decoded_pathspec)
             pathspec = path_spec_factory.Factory.NewPathSpec(dfvfs_definitions.TYPE_INDICATOR_ZIP, location=u'/',
                                                              parent=decoded_pathspec)
         elif u'compression_type' in evidence and u'GZIP' in evidence['compression_type']:
@@ -627,7 +625,7 @@ class PathspecHelper(object):
         elif u'archive_type' in evidence and u'TAR' in evidence['archive_type']:
             pathspec = dfvfs.path.tar_path_spec.TARPathSpec(location='/', parent=decoded_pathspec)
         else:
-            return PathspecHelper.get_new_base_pathspecs(evidence['pathspec'])
+            return PathspecHelper._list_new_base_pathspecs(evidence['pathspec'])
 
         encoded_base_pathspec = JsonPathSpecSerializer.WriteSerialized(pathspec)
         if hasattr(pathspec, 'location'):
@@ -640,10 +638,9 @@ class PathspecHelper(object):
 
         return [{'pathspec': encoded_base_pathspec, 'file_name': file_name}]
 
-    # TODO Proper naming
     @staticmethod
-    def get_new_base_pathspecs(encoded_pathspec):
-        '''Gets a list of the base_pathspecs from in a pathspec'''
+    def _list_new_base_pathspecs(encoded_pathspec):
+        '''Gets a list of the base_pathspecs from in a pathspec using dfvfs_utils'''
         try:
             dfvfs_util = DfvfsUtil(PathspecHelper._decode_pathspec(encoded_pathspec), interactive=True, is_pathspec=True)
         except CacheFullError:
@@ -669,9 +666,9 @@ class PathspecHelper(object):
 
         return pathspecs
 
-    # TODO, FIRST MOVE UP BY LOCATION i.e.: /tmp/test/file.txt > /tmp/test > /tmp > / > pathspec['parent']
     @staticmethod
-    def get_parent_base_pathspecs(encoded_pathspec):
+    def get_parent_pathspec_manually(encoded_pathspec):
+        """Returns the decoded parent pathspec, by decoding and getting the 'parent' attribute"""
         pathspec = PathspecHelper._decode_pathspec(encoded_pathspec)
         parent = getattr(pathspec, 'parent', False)
         if parent:
@@ -679,10 +676,10 @@ class PathspecHelper(object):
 
         return False
 
-    # TODO RENAME THIS AND THE ABOVE METHOD AND ADD COMMENTS
     @staticmethod
-    def get_parent_base_pathspecs_encoded(encoded_pathspec):
-        return JsonPathSpecSerializer.WriteSerialized(PathspecHelper.get_parent_base_pathspecs(encoded_pathspec))
+    def get_encoded_parent_base_pathspec_manually(encoded_pathspec):
+        """Returns the encoded parent pathspec, by decoding and getting the 'parent' attribute"""
+        return JsonPathSpecSerializer.WriteSerialized(PathspecHelper.get_parent_pathspec_manually(encoded_pathspec))
 
     @staticmethod
     def get_parent_pathspec(encoded_pathspec):
@@ -692,43 +689,41 @@ class PathspecHelper(object):
         PathspecHelper._close_file_entry(encoded_pathspec)
 
         if not parent_entry:
-            parent_path_spec = PathspecHelper.get_parent_base_pathspecs(encoded_pathspec)
+            parent_path_spec = PathspecHelper.get_parent_pathspec_manually(encoded_pathspec)
         else:
             parent_path_spec = parent_entry.path_spec
 
         if not parent_path_spec:
             return False
 
-        # TODO FOR EXPANDABLE EVIDENCE IF NO CHILDREN, AUTOMATICALLY MOVE UP A DIRECTORY
-        # # TODO This needs more then just VSHADOW, should probably have partitions and possibly encryptions
         while getattr(parent_path_spec, 'type_indicator', '') in PathspecHelper._automatically_traverse:
            parent_path_spec = parent_path_spec.parent
 
         return JsonPathSpecSerializer.WriteSerialized(parent_path_spec)
 
-    @staticmethod
-    def get_pathspec(pathspec_or_source):
-        """Gets the pathspec"""
-        try:
-            pathspec = DfvfsUtil.decode_pathspec(pathspec_or_source)
-        except:
-            try:
-                dfvfs_util = DfvfsUtil(pathspec_or_source)
-            except CacheFullError:
-                PathspecHelper._clear_file_entry_cache()
-                dfvfs_util = DfvfsUtil(pathspec_or_source)
-            pathspec = dfvfs_util.base_path_specs
-
-        # TODO remove because some cases will want all possible pathspecs
-        if isinstance(pathspec, list):
-            pathspec = pathspec[0]
-
-        return pathspec
-
-    @staticmethod
-    def get_encoded_pathspec(pathspec_or_source):
-        """Gets the encoded pathspec"""
-        return JsonPathSpecSerializer.WriteSerialized(PathspecHelper.get_pathspec(pathspec_or_source))
+    # @staticmethod
+    # def get_pathspec(pathspec_or_source):
+    #     """Gets the pathspec"""
+    #     try:
+    #         pathspec = DfvfsUtil.decode_pathspec(pathspec_or_source)
+    #     except:
+    #         try:
+    #             dfvfs_util = DfvfsUtil(pathspec_or_source)
+    #         except CacheFullError:
+    #             PathspecHelper._clear_file_entry_cache()
+    #             dfvfs_util = DfvfsUtil(pathspec_or_source)
+    #         pathspec = dfvfs_util.base_path_specs
+    #
+    #     # TODO remove because some cases will want all possible pathspecs
+    #     if isinstance(pathspec, list):
+    #         pathspec = pathspec[0]
+    #
+    #     return pathspec
+    #
+    # @staticmethod
+    # def get_encoded_pathspec(pathspec_or_source):
+    #     """Gets the encoded pathspec"""
+    #     return JsonPathSpecSerializer.WriteSerialized(PathspecHelper.get_pathspec(pathspec_or_source))
 
     @staticmethod
     def guess_mimetype(extension):

@@ -43,12 +43,12 @@ cleanjson:
   extensions: [ 'json' ]
   command: "cat '{{ file_cache_path }}' | python -m json.tool"
 
-#corexml:
-#  name: Core.xml
-#  icon: fa-file-code-o
-#  os: [ 'linux' ]
-#  extensions: [ 'pptx', 'xlsx', 'docx' ]
-#  command: "unzip -qc '{{ file_cache_path }}' docProps/core.xml | xmllint --format  -"
+corexml:
+  name: Core.xml
+  icon: fa-file-code-o
+  os: [ 'linux' ]
+  extensions: [ 'pptx', 'xlsx', 'docx' ]
+  command: "unzip -qc '{{ file_cache_path }}' docProps/core.xml | xmllint --format  -"
 
 #cleanxml:
 #  name: Clean XML
