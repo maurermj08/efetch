@@ -57,12 +57,12 @@ corexml:
 #  mimetypes: [ 'application/xml' ]
 #  command: "cat '{{ file_cache_path }}' | xmllint --format --recover -"
 
-#pdftotext:
-#  name: pdftotext
-#  icon: fa-file-pdf-o
-#  os: [ 'linux' ]
-#  mimetypes: [ 'application/pdf' ]
-#  command: "pdftotext '{{ file_cache_path }}' -"
+pdftotext:
+  name: pdftotext
+  icon: fa-file-pdf-o
+  os: [ 'linux' ]
+  mimetypes: [ 'application/pdf' ]
+  command: "pdftotext '{{ file_cache_path }}' -"
 
 #readpst:
 #  name: Read PST
