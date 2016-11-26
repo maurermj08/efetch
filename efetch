@@ -16,11 +16,11 @@
 import argparse
 import os
 import sys
-from efetch_server import Efetch
+from efetch_server import efetch_app
 
-__version__ = '0.3.1'
+__version__ = u'0.5.0'
 
-if __name__ == "__main__":
+if __name__ == u'__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(u'-d', u'--debug',
                         help=u'Displays debug messages',
@@ -54,9 +54,11 @@ if __name__ == "__main__":
                         default=os.path.sep + u'etc' + os.path.sep + u'efetch_plugins.yml')
 
     reload(sys)
-    sys.setdefaultencoding('utf-8')
+    sys.setdefaultencoding(u'utf-8')
     args = parser.parse_args()
+
     if args.version:
         print args.version
-    efetch = Efetch(args.address, args.port, args.elastic, args.debug, args.cache, args.maxfilesize, args.pluginsfile)
-    efetch.start()
+
+    efetch_app.create_app(args.elastic, args.cache, args.maxfilesize, args.pluginsfile, args.debug)\
+        .run(host=args.address, port=args.port, debug=args.debug)

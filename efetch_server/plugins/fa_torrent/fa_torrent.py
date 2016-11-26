@@ -54,11 +54,11 @@ class FaTorrent(IPlugin):
         <!DOCTYPE html>
         <html>
         <head>
-                <script src="/resources/jquery-1.11.3.min.js"></script>
-                <script src="/resources/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
-                <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
-                <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
-                <script type="text/javascript" src="/resources/jquery.dataTables.min.js"></script>
+                <script src="/static/jquery-1.11.3.min.js"></script>
+                <script src="/static/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
+                <link rel="stylesheet" type="text/css" href="/static/themes/icon.css">
+                <link rel="stylesheet" type="text/css" href="/static/themes/jquery.dataTables.min.css">
+                <script type="text/javascript" src="/static/jquery.dataTables.min.js"></script>
                 <script type="text/javascript" class="init">
                     $(document).ready(function() {
                             $('#t01').DataTable({

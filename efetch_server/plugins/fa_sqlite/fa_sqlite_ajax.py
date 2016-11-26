@@ -3,7 +3,7 @@ AJAX for SQLite Viewer plugin
 """
 
 from yapsy.IPlugin import IPlugin
-from bottle import route, run, static_file, response, post, abort
+from flask import Response, jsonify
 import json
 import logging
 import sqlite3
@@ -36,18 +36,22 @@ class FaSqliteAjax(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        method = request.query['method']
+        method = helper.get_request_value(request, 'method')
 
         if not method:
-            abort(400, 'No method specified')
+            # TODO CHANGE ERROR
+            logging.error('Method required')
+            raise IOError
         elif method == "base":
             return self.base_tree(path_on_disk)
         elif method == "children":
-            return self.get_children(request, path_on_disk)
+            return self.get_children(request, helper, path_on_disk)
         elif method == "values":
-            return self.values(request, path_on_disk)
+            return self.values(request, helper, path_on_disk)
 
-        return abort(400, 'Unknown method')
+        # TODO CHANGE ERROR
+        logging.error('Unknown method "' + method + '" provided')
+        raise IOError
 
     def base_tree(self, path_on_disk):
         connection = sqlite3.connect(path_on_disk)
@@ -58,7 +62,9 @@ class FaSqliteAjax(IPlugin):
             cursor.execute("SELECT * FROM sqlite_master WHERE type='table';")
             cursor.fetchone()
         except:
-            abort(500, 'File does not have a SQLite Master table. The file might be corrupt or not a SQLite file.')
+            logging.error('File does not have a SQLite Master table. The file might be corrupt or not a SQLite file.')
+            # TODO UPDATE ERROR
+            raise IOError
 
         # Master Table
         base_tree.append({'title': u'Master Table (1)',
@@ -102,13 +108,13 @@ class FaSqliteAjax(IPlugin):
                           'folder': True,
                           'lazy': True
                           })
-        response.content_type = 'application/json'
 
         connection.close()
-        return json.dumps(base_tree)
+        # TODO REPLACE WITH DICTIONARY AND JSONIFY, SEE: http://stackoverflow.com/questions/12435297/how-do-i-jsonify-a-list-in-flask
+        return Response(json.dumps(base_tree), mimetype='application/json')
 
-    def get_children(self, request, path_on_disk):
-        key = unicode(request.query['key'])
+    def get_children(self, request, helper, path_on_disk):
+        key = unicode(helper.get_request_value(request, 'key'))
         children = []
 
         if key == u'master':
@@ -125,8 +131,8 @@ class FaSqliteAjax(IPlugin):
                                  'lazy': False
                                })
 
-        response.content_type = 'application/json'
-        return json.dumps(children)
+        # TODO REPLACE WITH DICTIONARY AND JSONIFY, SEE: http://stackoverflow.com/questions/12435297/how-do-i-jsonify-a-list-in-flask
+        return Response(json.dumps(children), mimetype='application/json')
 
     def get_tables(self, key, path_on_disk):
         connection = sqlite3.connect(path_on_disk)
@@ -136,7 +142,8 @@ class FaSqliteAjax(IPlugin):
         try:
             table_list = cursor.execute("SELECT name FROM sqlite_master WHERE type='" + key + "';")
         except:
-            abort(500, 'Failed to parse type %s from the sqlite_master table.', key)
+            logging.error('Failed to parse type ' + key + ' from the sqlite_master table.')
+            raise IOError('Failed to parse sqlite master table')
 
         for table in table_list:
             tables.append(unicode(table[0]))
@@ -144,17 +151,17 @@ class FaSqliteAjax(IPlugin):
         connection.close()
         return tables
 
-    def values(self, request, path_on_disk):
-        key = unicode(request.query['key'])
+    def values(self, request, helper, path_on_disk):
+        key = unicode(helper.get_request_value(request, 'key'))
 
         connection = sqlite3.connect(path_on_disk)
         cursor = connection.cursor()
-        response.content_type = 'application/json'
 
         try:
             cursor.execute("pragma table_info('" + key + "')")
         except:
-            abort(500, 'Could not find table %s', key)
+            logging.error('Could not find table ' + key)
+            raise IOError('Could not find table ' + key)
 
         rows = cursor.fetchall()
 
@@ -179,4 +186,4 @@ class FaSqliteAjax(IPlugin):
         table.append(u'</table>')
 
         connection.close()
-        return {'table': '\n'.join(table)}
+        return jsonify({'table': '\n'.join(table)})

@@ -29,7 +29,7 @@ class EfetchHelper(object):
         """Initializes the Efetch Helper"""
         # Setup directory references
         self.curr_dir = curr_directory
-        self.resource_dir = self.curr_dir + os.path.sep + u'resources' + os.path.sep
+        self.resource_dir = self.curr_dir + os.path.sep + u'static' + os.path.sep
         self.icon_dir = self.resource_dir + u'icons' + os.path.sep
         self.output_dir = output_directory
         self.max_file_size = max_file_size
@@ -40,8 +40,8 @@ class EfetchHelper(object):
 
         # Create plugin manager and begin polling for changes to plugins
         self.plugin_manager = EfetchPluginManager(plugins_file, self.curr_dir)
-        self.poll = Poll(self.plugin_manager)
-        self.poll.start()
+        #self.poll = Poll(self.plugin_manager)
+        #self.poll.start()
 
         self.standard_office_2007_extensions = ['xlsx', 'docx', 'pptx', 'dotx', 'docm', 'doct', 'xlsm', 'xltx', 'xltm',
                                                  'pptx', 'pptm', 'potx', 'ppam', 'ppsx', 'ppsm', 'sldx', 'sldm']
@@ -54,10 +54,10 @@ class EfetchHelper(object):
 
     def get_request_value(self, request, variable_name, default=None):
         """Gets the value of a variable in either a GET or POST request"""
-        if variable_name in request.query:
-            return request.query[variable_name]
-        elif request.forms.get(variable_name):
-            return request.forms.get(variable_name)
+        if variable_name in request.args:
+            return request.args[variable_name]
+        elif request.form.get(variable_name):
+            return request.form.get(variable_name)
         return default
 
     def get_query_string(self, request, default_query=''):
@@ -123,7 +123,7 @@ class EfetchHelper(object):
     def get_icon(self, evidence, resource=True):
         """Returns either an icon or thumbnail of the provided file"""
         if resource:
-            curr_icon_dir = '/resources/icons/'
+            curr_icon_dir = '/static/icons/'
         else:
             curr_icon_dir = self.icon_dir
 

@@ -3,7 +3,7 @@ AJAX for Registry Viewer plugin
 """
 
 from yapsy.IPlugin import IPlugin
-from bottle import route, run, static_file, response, post, request, abort
+from flask import Response
 from Registry import Registry
 import binascii
 import json
@@ -35,39 +35,43 @@ class FaRegviewAjax(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        method = request.query['method']
-
+        method = helper.get_request_value(request, 'method')
         if not method:
-            abort(400, 'No method specified')
+            # TODO CHANGE ERROR
+            logging.error('Method required for Regview AJAX')
+            raise IOError
         elif method == "base":
             return self.base_tree(path_on_disk)
         elif method == "children":
-            return self.get_children(request, path_on_disk)
+            return self.get_children(request, helper, path_on_disk)
         elif method == "values":
-            return self.values(request, path_on_disk)
+            return self.values(request, helper, path_on_disk)
 
-        return abort(400, 'Unknown method')
+        # TODO CHANGE ERROR
+        logging.error('Unknown method "' + method + '" provided to Regview AJAX')
+        raise IOError
 
     def base_tree(self, path_on_disk):
         data = self.get_sub_keys("", path_on_disk)
-        response.content_type = 'application/json'
-        return json.dumps(data)
+        # TODO REPLACE WITH DICTIONARY AND JSONIFY, SEE: http://stackoverflow.com/questions/12435297/how-do-i-jsonify-a-list-in-flask
+        return Response(json.dumps(data), mimetype='application/json')
 
-    def get_children(self, request, path_on_disk):
-        node_id = request.query['node_id']
-        response.content_type = 'application/json'
+    def get_children(self, request, helper, path_on_disk):
+        node_id = helper.get_request_value(request, 'node_id')
         if not node_id:
             return "[]"
         data = self.get_sub_keys(node_id, path_on_disk)
-        return json.dumps(data)
+        # TODO REPLACE WITH DICTIONARY AND JSONIFY, SEE: http://stackoverflow.com/questions/12435297/how-do-i-jsonify-a-list-in-flask
+        return Response(json.dumps(data), mimetype='application/json')
 
-    def values(self, request, path_on_disk):
-        node_id = request.query['node_id']
-        response.content_type = 'application/json'
+    def values(self, request, helper, path_on_disk):
+        node_id = helper.get_request_value(request, 'node_id')
+        #response.content_type = 'application/json'
         if not node_id:
             return "[]"
         data = get_values(node_id, path_on_disk)
-        return json.dumps(data)
+        # TODO REPLACE WITH DICTIONARY AND JSONIFY, SEE: http://stackoverflow.com/questions/12435297/how-do-i-jsonify-a-list-in-flask
+        return Response(json.dumps(data), mimetype='application/json')
 
     def get_sub_keys(self, key, path_on_disk):
         registry = get_registry(path_on_disk)

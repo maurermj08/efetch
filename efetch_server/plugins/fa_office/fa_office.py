@@ -3,7 +3,7 @@ Converts office documents to PDF and displays them
 """
 
 from yapsy.IPlugin import IPlugin
-from bottle import static_file
+from flask import send_from_directory
 import os
 
 
@@ -57,4 +57,4 @@ class FaOffice(IPlugin):
         newname = os.path.splitext(path_on_disk)[0] + ".pdf"
         if not os.path.isfile(newname):
             os.system("unoconv -f pdf -o '" + newname + "' '" + path_on_disk + "'")
-        return static_file(os.path.basename(newname), root=os.path.dirname(newname))
+        return send_from_directory(os.path.dirname(newname), os.path.basename(newname))

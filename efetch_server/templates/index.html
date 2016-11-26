@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-        <link rel="stylesheet" href="/resources/font-awesome/css/font-awesome.min.css">
+        <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
 
 <style>
 div.container {
@@ -14,7 +14,7 @@ html {
     color: white;
 }
 body {
-    background: url(/resources/images/efetch_background.png);
+    background: url(/static/images/efetch_background.png);
     background-repeat: no-repeat;
     background-position: center;
     background-size: 150%;
@@ -94,18 +94,18 @@ input[type="submit"] {
 <body>
     <div class="container">
         <header>
-            <img src="/resources/images/title.png" alt="Efetch" style="width:405px;height:73px;">
+            <img src="/static/images/title.png" alt="Efetch" style="width:405px;height:73px;">
         </header>
         <br>
         <article>
             <div id="analyze">
-                <a href="/plugins/directory?method=Browse" style="padding-top:8px;width:272px;height:79px;font-size:28px;background:url(/resources/images/box.png);margin-left:16px">
+                <a href="/plugins/directory" style="padding-top:8px;width:272px;height:79px;font-size:28px;background:url(/static/images/box.png);margin-left:16px">
                     <i class="fa fa-folder-open-o" aria-hidden="true"></i>
                     <br>
                     BROWSE
                 </a>
-                <img src="/resources/images/or.png" alt="or" style="margin-top:32px; margin-bottom:32px;">
-                <form action="/plugins/analyze" target="_blank"  style="padding-top:5px;width:272px;height:79px;font-size:28px;background:url(/resources/images/box.png);margin-left:16px">
+                <img src="/static/images/or.png" alt="or" style="margin-top:32px; margin-bottom:32px;">
+                <form action="/plugins/analyze" target="_blank"  style="padding-top:5px;width:272px;height:79px;font-size:28px;background:url(/static/images/box.png);margin-left:16px">
                     PATHSPEC
                     <br>
                     <input type="text" name="pathspec" placeholder="Pathspec" style="width:60%">

@@ -63,7 +63,7 @@ class FaHash(IPlugin):
             doc_type = evidence['doc_type']
 
         try:
-            hash_type = request.query['type']
+            hash_type = helper.get_request_value(request, 'type')
             if hash_type not in hashers.keys():
                 hash_type = 'md5'
         except:

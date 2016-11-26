@@ -71,9 +71,9 @@ class FaTogglestar(IPlugin):
 
         if starred:
             helper.db_util.update(id_value, index, {'star': True}, doc_type=doc_type)
-            data['img'] = '/resources/images/bookmarked.png'
+            data['img'] = '/static/images/bookmarked.png'
         else:
             helper.db_util.update(id_value, index, {'star': False}, doc_type=doc_type)
-            data['img'] = '/resources/images/notbookmarked.png'
+            data['img'] = '/static/images/notbookmarked.png'
 
         return json.dumps(data)

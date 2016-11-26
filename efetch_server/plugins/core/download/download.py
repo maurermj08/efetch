@@ -3,7 +3,7 @@ A simple plugin that starts a download of the file
 """
 
 from yapsy.IPlugin import IPlugin
-from bottle import static_file
+from flask import send_from_directory
 import os
 
 
@@ -35,5 +35,5 @@ class Download(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk),
-                           download=os.path.basename(path_on_disk))
+        return send_from_directory(os.path.dirname(path_on_disk), os.path.basename(path_on_disk),
+                                   as_attachment=True)

@@ -3,7 +3,7 @@ This plugin returns common files that can be opened in a browser i.e. images and
 """
 
 from yapsy.IPlugin import IPlugin
-from bottle import static_file
+from flask import send_from_directory
 import os
 
 
@@ -42,4 +42,4 @@ class Preview(IPlugin):
         if smart_redirect and not self.check(evidence, path_on_disk):
             return helper.plugin_manager.get_plugin_by_name('analyze').get(evidence, helper, path_on_disk, request)
 
-        return static_file(os.path.basename(path_on_disk), root=os.path.dirname(path_on_disk))
+        return send_from_directory(os.path.dirname(path_on_disk), os.path.basename(path_on_disk))

@@ -18,8 +18,8 @@ import os
 import glob
 import platform
 import yaml
-from bottle import abort, static_file
 from jinja2 import Template
+from flask import send_from_directory
 from yapsy.PluginManager import PluginManager
 
 
@@ -75,7 +75,6 @@ class EfetchPluginManager(object):
         plugin = self.plugin_manager.getPluginByName(str(name).lower())
         if not plugin and name not in self.config_file_plugins:
             logging.warn(u'Request made for unknown plugin "' + name + u'"')
-            abort(404, u'Could not find plugin "' + name + u'"')
         elif not plugin:
             plugin = self.config_file_plugins[name]
             return Plugin(plugin.get('name', 'None'),
@@ -163,7 +162,7 @@ class Plugin(object):
                                                                         hasattr(plugin, 'fast') and plugin.fast)
                 return plugin.get(new_evidence, helper, file_name, request)
             else:
-                return static_file(os.path.basename(file_name), root=os.path.dirname(file_name))
+                return send_from_directory(os.path.dirname(file_name), os.path.basename(file_name))
 
         # TODO - should this use case even be allowed?
         if not self._command:

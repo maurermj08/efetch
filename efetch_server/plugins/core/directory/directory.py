@@ -176,7 +176,7 @@ class Directory(IPlugin):
             if not force_expand:
                 item['icon'] = helper.get_icon(item)
             else:
-                item['icon'] = '/resources/icons/_evidence.png'
+                item['icon'] = '/static/icons/_evidence.png'
 
             # Render analyze link
             item['analyze'] = analyze_template.render(item)
@@ -218,7 +218,7 @@ class Directory(IPlugin):
                 parent_item = helper.pathspec_helper.get_evidence_item(json.dumps(parent_pathspec))
         if parent_pathspec and parent_item:
             parent_item['file_name'] = '..'
-            parent_item['icon'] = '/resources/icons/_folder_up.png'
+            parent_item['icon'] = '/static/icons/_folder_up.png'
             parent_item['order'] = 1
             parent_item['plugin'] = self._dir_plugin
             parent_item['url_query'] = parent_item['url_query'] + '&up=True'
@@ -228,12 +228,12 @@ class Directory(IPlugin):
                 <!DOCTYPE html>
                 <html>
                 <head>
-                        <script src="/resources/jquery-1.11.3.min.js"></script>
-                        <script src="/resources/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
-                        <link rel="stylesheet" type="text/css" href="/resources/themes/icon.css">
-                        <link rel="stylesheet" type="text/css" href="/resources/themes/jquery.dataTables.min.css">
-                        <link rel="stylesheet" href="/resources/font-awesome/css/font-awesome.min.css">
-                        <script type="text/javascript" src="/resources/jquery.dataTables.min.js"></script>
+                        <script src="/static/jquery-1.11.3.min.js"></script>
+                        <script src="/static/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
+                        <link rel="stylesheet" type="text/css" href="/static/themes/icon.css">
+                        <link rel="stylesheet" type="text/css" href="/static/themes/jquery.dataTables.min.css">
+                        <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
+                        <script type="text/javascript" src="/static/jquery.dataTables.min.js"></script>
                         <script type="text/javascript" class="init">
                             jQuery.extend( jQuery.fn.dataTableExt.oSort, {
                                 "alt-string-pre": function ( a ) {

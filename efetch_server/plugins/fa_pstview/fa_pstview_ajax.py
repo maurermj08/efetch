@@ -3,7 +3,7 @@ AJAX for PST Viewer plugin
 """
 
 from yapsy.IPlugin import IPlugin
-from bottle import route, run, static_file, response, post, abort
+from flask import Response, jsonify
 import json
 import logging
 import pypff
@@ -34,35 +34,39 @@ class FaPstviewAjax(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        method = request.query['method']
+        method = helper.get_request_value(request, 'method')
 
         if not method:
-            abort(400, 'No method specified')
+            # TODO CHANGE ERROR
+            logging.error('Method required')
+            raise IOError
         elif method == "base":
             return self.base_tree(path_on_disk)
         elif method == "children":
-            return self.get_children(request, path_on_disk)
+            return self.get_children(request, helper, path_on_disk)
         elif method == "values":
-            return self.values(request, path_on_disk)
+            return self.values(request, helper, path_on_disk)
 
-        return abort(400, 'Unknown method')
+        # TODO CHANGE ERROR
+        logging.error('Unknown method "' + method + '" provided')
+        raise IOError
+
 
     def base_tree(self, path_on_disk):
         data = self.get_sub_messages("", path_on_disk)
-        response.content_type = 'application/json'
-        return json.dumps(data)
+        # TODO REPLACE WITH DICTIONARY AND JSONIFY, SEE: http://stackoverflow.com/questions/12435297/how-do-i-jsonify-a-list-in-flask
+        return Response(json.dumps(data), mimetype='application/json')
 
-    def get_children(self, request, path_on_disk):
-        path = unicode(request.query['key'])
+    def get_children(self, request, helper, path_on_disk):
+        path = unicode(helper.get_request_value(request, 'key'))
         if path.endswith('/'):
             path = path[:-1]
-        response.content_type = 'application/json'
         data = self.get_sub_messages(path, path_on_disk)
-        return json.dumps(data)
+        # TODO REPLACE WITH DICTIONARY AND JSONIFY, SEE: http://stackoverflow.com/questions/12435297/how-do-i-jsonify-a-list-in-flask
+        return Response(json.dumps(data), mimetype='application/json')
 
-    def values(self, request, path_on_disk):
-        path,key = unicode(request.query['key']).rsplit('/', 1)
-        response.content_type = 'application/json'
+    def values(self, request, helper, path_on_disk):
+        path,key = unicode(helper.get_request_value(request, 'key')).rsplit('/', 1)
         if not key:
             #No key means it is a folder and currently no support for displaying folder information
             return
@@ -71,8 +75,8 @@ class FaPstviewAjax(IPlugin):
         pst = get_pst(path_on_disk)
         msg = self.get_directory(path, pst).get_sub_message(key)
 
-        return {'subject': msg.get_subject().encode("UTF-8"),
-                'message': msg.get_plain_text_body().encode("UTF-8")}
+        return jsonify({'subject': msg.get_subject().encode("UTF-8"),
+                'message': msg.get_plain_text_body().encode("UTF-8")})
 
     def get_directory(self, path, pst):
         if pst.get_root_folder().get_display_name():

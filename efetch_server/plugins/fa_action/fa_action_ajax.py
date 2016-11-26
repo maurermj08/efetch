@@ -105,8 +105,8 @@ class FaActionAjax(IPlugin):
                                         'error': '',
                                         'total': 0}
             pseudo_request = SimpleRequest()
-            pseudo_request.query = copy.deepcopy(request.query)
-            pseudo_request.forms = copy.deepcopy(request.forms)
+            pseudo_request.args = copy.deepcopy(request.args)
+            pseudo_request.form = copy.deepcopy(request.form)
             thread.start_new_thread(self.start_action, (evidence, helper, pseudo_request, action_id))
         elif method == 'status':
             action_id = helper.get_request_value(request, 'action_id', '')

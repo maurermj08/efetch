@@ -1,19 +1,19 @@
 """
-Returns a thumbnail or icon of the specified file
+Creates a timeline using Log2timeline
 """
 
 from yapsy.IPlugin import IPlugin
-from flask import send_from_directory
-import os
 
 
-class Thumbnail(IPlugin):
+
+class FaPlaso(IPlugin):
+
     def __init__(self):
-        self.display_name = 'Thumbnail'
-        self.popularity = 0
+        self.display_name = 'Create Timeline'
+        self.popularity = 5
         self.cache = False
-        self.fast = True
-        self.action = True
+        self.fast = False
+        self.action = False
         IPlugin.__init__(self)
 
     def activate(self):
@@ -33,7 +33,9 @@ class Thumbnail(IPlugin):
         return "text/plain"
 
     def get(self, evidence, helper, path_on_disk, request):
-        """Returns either an icon or thumbnail of the provided file"""
-        # If it is folder just return the folder icon
-        directory, file_name = os.path.split(helper.get_icon(evidence, False))
-        return(send_from_directory(file_name, directory, mimetype='image/png'))
+        """Returns the result of this plugin to be displayed in a browser"""
+        #https://github.com/log2timeline/plaso/blob/508eb361b7f484d083e9069bba8a9c6b5cce1c03/plaso/multi_processing/task_engine.py
+
+        # Need to call ProcessSources
+
+        return '<xmp style="white-space: pre-wrap;">TODO</xmp>'
