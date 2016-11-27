@@ -12,7 +12,6 @@ except ImportError:
     pytesseract = None
 import logging
 import os
-from bottle import abort
 from yapsy.IPlugin import IPlugin
 from PIL import Image
 
@@ -68,6 +67,7 @@ class FaImageOcr(IPlugin):
                 helper.pathspec_helper._close_file_object(evidence['pathspec'])
                 return strings
         except:
+            # TODO Should I really mask the error?
             logging.warn('Failed to perform OCR on file "' + evidence['file_cache_path'] + '"')
-            abort(400, 'It appears that the pathspec is for a file that the Tesseract cannot perform OCR on')
+            RuntimeError('It appears that the pathspec is for a file that the Tesseract cannot perform OCR on')
 

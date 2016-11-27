@@ -23,7 +23,6 @@ import re
 import threading
 import traceback
 import time
-from bottle import abort
 from dfvfs.lib import definitions
 from dfvfs.lib.errors import AccessError, CacheFullError
 import dfvfs.path
@@ -419,7 +418,7 @@ class PathspecHelper(object):
         """Returns a Path Spec object from an encoded path spec, causes a 400 abort if the decode fails"""
         if not encoded_pathspec:
             logging.warn('Path Spec required but none found')
-            abort(400, 'Expected an encoded Path Spec, but none found')
+            raise KeyError('Could not find pathspec in request')
 
         return JsonPathSpecSerializer.ReadSerialized(encoded_pathspec)
 
@@ -457,11 +456,11 @@ class PathspecHelper(object):
         return hashlib.sha1(encoded_pathspec).hexdigest()
 
     @staticmethod
-    def get_file_strings(encoded_pathspec, min=4):
+    def get_file_strings(encoded_pathspec, minimum_characters=4, size=0, seek=0):
         chars = r"A-Za-z0-9/\-:.,_$%'()[\]<> "
-        regexp = '[%s]{%d,}' % (chars, min)
+        regexp = '[%s]{%d,}' % (chars, minimum_characters)
         pattern = re.compile(regexp)
-        return pattern.findall(PathspecHelper.read_file(encoded_pathspec))
+        return pattern.findall(PathspecHelper.read_file(encoded_pathspec, size=size, seek=seek))
 
     @staticmethod
     def _open_file_entry(encoded_pathspec):

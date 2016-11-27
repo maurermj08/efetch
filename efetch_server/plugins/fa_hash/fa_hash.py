@@ -7,9 +7,9 @@ import hashlib
 import datetime
 import logging
 import os
-from bottle import abort
 
 
+# TODO THIS WHOLE PLUGIN NEEDS REWRITTEN
 class FaHash(IPlugin):
     def __init__(self):
         self.display_name = 'File Hasher'
@@ -41,23 +41,20 @@ class FaHash(IPlugin):
         hashers = {'md5': hashlib.md5(), 'sha1': hashlib.sha1(), 'sha224': hashlib.sha224(), 'sha256': hashlib.sha256(),
                    'sha384': hashlib.sha384(), 'sha512': hashlib.sha512()}
 
-        index = helper.get_request_value(request, 'index', False)
-        if not index:
-            logging.warn('Hash plugin requires an index, but none found')
-            abort(400, 'Hash plugin requires an index, but none found')
+        index = helper.get_request_value(request, 'index', False, raise_key_error=True)
 
         id_value = helper.get_request_value(request, 'id', False)
         if not id_value and '_id' not in evidence:
-            logging.warn('ID required to Star Elasticsearch doc')
-            abort(400, 'ID required to Star Elasticsearch doc')
+            logging.error('ID required to hash Elasticsearch doc')
+            raise ValueError('Valid ID required to hash Elasticsearch doc')
         elif not id_value:
             id_value = evidence['_id']
 
         if 'doc_type' not in evidence:
             event = helper.db_util.query_id(id_value, index)
             if not event:
-                logging.warn('Toggle Start failed to find event with ID "' + id_value + '"')
-                abort(400, 'Failed to find event wit ID "' + id_value + '"')
+                logging.error('Failed to find event in Elasticsearch')
+                raise KeyError('Event not found in query')
             doc_type = event['_type']
         else:
             doc_type = evidence['doc_type']

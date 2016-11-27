@@ -7,7 +7,7 @@ from flask import Response, jsonify
 import json
 import logging
 import sqlite3
-import sys
+
 
 class FaSqliteAjax(IPlugin):
     def __init__(self):
@@ -36,35 +36,25 @@ class FaSqliteAjax(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        method = helper.get_request_value(request, 'method')
+        method = helper.get_request_value(request, 'method', raise_key_error=True)
 
-        if not method:
-            # TODO CHANGE ERROR
-            logging.error('Method required')
-            raise IOError
-        elif method == "base":
+        if method == "base":
             return self.base_tree(path_on_disk)
         elif method == "children":
             return self.get_children(request, helper, path_on_disk)
         elif method == "values":
             return self.values(request, helper, path_on_disk)
 
-        # TODO CHANGE ERROR
         logging.error('Unknown method "' + method + '" provided')
-        raise IOError
+        raise ValueError('Method "' + method + '" is not valid')
 
     def base_tree(self, path_on_disk):
         connection = sqlite3.connect(path_on_disk)
         cursor = connection.cursor()
         base_tree = []
 
-        try:
-            cursor.execute("SELECT * FROM sqlite_master WHERE type='table';")
-            cursor.fetchone()
-        except:
-            logging.error('File does not have a SQLite Master table. The file might be corrupt or not a SQLite file.')
-            # TODO UPDATE ERROR
-            raise IOError
+        cursor.execute("SELECT * FROM sqlite_master WHERE type='table';")
+        cursor.fetchone()
 
         # Master Table
         base_tree.append({'title': u'Master Table (1)',
@@ -138,12 +128,7 @@ class FaSqliteAjax(IPlugin):
         connection = sqlite3.connect(path_on_disk)
         cursor = connection.cursor()
         tables = []
-
-        try:
-            table_list = cursor.execute("SELECT name FROM sqlite_master WHERE type='" + key + "';")
-        except:
-            logging.error('Failed to parse type ' + key + ' from the sqlite_master table.')
-            raise IOError('Failed to parse sqlite master table')
+        table_list = cursor.execute("SELECT name FROM sqlite_master WHERE type='" + key + "';")
 
         for table in table_list:
             tables.append(unicode(table[0]))
@@ -156,12 +141,7 @@ class FaSqliteAjax(IPlugin):
 
         connection = sqlite3.connect(path_on_disk)
         cursor = connection.cursor()
-
-        try:
-            cursor.execute("pragma table_info('" + key + "')")
-        except:
-            logging.error('Could not find table ' + key)
-            raise IOError('Could not find table ' + key)
+        cursor.execute("pragma table_info('" + key + "')")
 
         rows = cursor.fetchall()
 

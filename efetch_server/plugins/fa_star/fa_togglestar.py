@@ -2,10 +2,10 @@
 Toggles the bookmark of a single evidence item
 """
 
-from yapsy.IPlugin import IPlugin
-from bottle import abort
 import logging
-import json
+from flask import jsonify
+from yapsy.IPlugin import IPlugin
+
 
 class FaTogglestar(IPlugin):
 
@@ -35,20 +35,15 @@ class FaTogglestar(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        index = helper.get_request_value(request, 'index', False)
-        if not index:
-            abort(400, 'Index required to Star Elasticsearch doc')
+        index = helper.get_request_value(request, 'index', False, raise_key_error=True)
+        uuid_value = helper.get_request_value(request, 'id', False, raise_key_error=True)
 
-        uuid_value = helper.get_request_value(request, 'id', False)
-        if not uuid_value and '_id' not in evidence:
-            abort(400, 'ID required to Star Elasticsearch doc')
-        elif not uuid_value:
+        if not uuid_value:
             uuid_value = evidence['_id']
 
-        starred = False
         data = {'img_id':uuid_value}
-
         event = helper.db_util.query_uuid(uuid_value, index)
+
         if '_index' in event:
             index = event['_index']
         if '_id' in event:
@@ -58,8 +53,9 @@ class FaTogglestar(IPlugin):
             id_value = uuid_value
 
         if not event:
-            logging.warn('Toggle Start failed to find event with ID "' + uuid_value + '"')
-            abort(400, 'Failed to find event wit ID "' + uuid_value + '"')
+            logging.error('Toggle Start failed to find event with ID "' + uuid_value + '"')
+            raise ValueError('Failed to find event wit ID "' + uuid_value + '"')
+
         doc_type = event['_type']
         source = event['_source']
 
@@ -67,7 +63,7 @@ class FaTogglestar(IPlugin):
             starred = 'star' not in source or not source['star']
         except:
             logging.warn('Failed to star event, id "' + uuid_value + '" not found')
-            abort(404, 'Could not find event')
+            raise KeyError('Could not find event id "' + uuid_value + '"')
 
         if starred:
             helper.db_util.update(id_value, index, {'star': True}, doc_type=doc_type)
@@ -76,4 +72,4 @@ class FaTogglestar(IPlugin):
             helper.db_util.update(id_value, index, {'star': False}, doc_type=doc_type)
             data['img'] = '/static/images/notbookmarked.png'
 
-        return json.dumps(data)
+        return jsonify.dumps(data)

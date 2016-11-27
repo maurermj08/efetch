@@ -52,12 +52,16 @@ class EfetchHelper(object):
         else:
             self.db_util = DBUtil(es_url)
 
-    def get_request_value(self, request, variable_name, default=None):
+    def get_request_value(self, request, variable_name, default=None, raise_key_error=False):
         """Gets the value of a variable in either a GET or POST request"""
         if variable_name in request.args:
             return request.args[variable_name]
-        elif request.form.get(variable_name):
-            return request.form.get(variable_name)
+        elif variable_name in request.form:
+            return request.form[variable_name]
+        elif raise_key_error:
+            logging.error('Required variable "' + variable_name + '" missing from request')
+            raise KeyError('This request requires variable "' + variable_name + '"')
+
         return default
 
     def get_query_string(self, request, default_query=''):

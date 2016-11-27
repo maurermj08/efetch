@@ -11,7 +11,6 @@ import threading
 import thread
 import traceback
 import uuid
-from bottle import abort
 from yapsy.IPlugin import IPlugin
 
 
@@ -85,16 +84,11 @@ class FaActionAjax(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        method = helper.get_request_value(request, 'method', '')
-
-        if not method:
-            abort(400, 'Method parameter required, but none found')
+        method = helper.get_request_value(request, 'method', '', raise_key_error=True)
 
         if method == 'start':
             action_id = uuid.uuid4().hex
-            plugin = helper.get_request_value(request, 'plugin', '')
-            if not plugin:
-                abort(400, 'Method START requires a plugin, but none found')
+            plugin = helper.get_request_value(request, 'plugin', '', raise_key_error=True)
             self._actions[action_id] = {'action_id': action_id,
                                         'status': 'starting',
                                         'plugin': plugin,
@@ -113,7 +107,7 @@ class FaActionAjax(IPlugin):
             if not action_id:
                 return self._actions
             if action_id not in self._actions:
-                abort(404, 'No action "' + str(action_id) + '" found')
+                raise KeyError('No action "' + str(action_id) + '" found in actions')
         elif method == 'active_status':
             active_status = {}
             active_status['rows'] = []
@@ -131,10 +125,10 @@ class FaActionAjax(IPlugin):
             done_status['total'] = len(done_status['rows'])
             return done_status
         else:
-            abort(404, 'No method "' + method + '"')
+            logging.error('Call made for unknown method for Action AJAX "' + method + '"')
+            raise ValueError('Method "' + method + '" is not valid')
 
         return self._actions[action_id]
-
 
     def start_action(self, evidence, helper, request, action_id):
         """Runs a single plugin against multiple pathspecs"""

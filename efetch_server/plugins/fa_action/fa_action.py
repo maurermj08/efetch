@@ -2,10 +2,8 @@
 Runs a single plugin against multiple path specs from an Elasticsearch query
 """
 
-from yapsy.IPlugin import IPlugin
-import logging
 import os
-from bottle import abort
+from yapsy.IPlugin import IPlugin
 
 
 class FaAction(IPlugin):
@@ -36,17 +34,12 @@ class FaAction(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        index = helper.get_request_value(request, 'index', False)
+        index = helper.get_request_value(request, 'index', False, raise_key_error=True)
         theme = helper.get_theme(request)
         query_string = helper.get_query_string(request)
-
-        if not index:
-            abort(400, 'Action plugin requires an index, but none found')
-
         curr_dir = os.path.dirname(os.path.realpath(__file__))
 
         template = open(curr_dir + '/action_template.html', 'r')
-
         html = str(template.read())
         template.close()
 

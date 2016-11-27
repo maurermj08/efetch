@@ -36,4 +36,4 @@ class Thumbnail(IPlugin):
         """Returns either an icon or thumbnail of the provided file"""
         # If it is folder just return the folder icon
         directory, file_name = os.path.split(helper.get_icon(evidence, False))
-        return(send_from_directory(file_name, directory, mimetype='image/png'))
+        return(send_from_directory(directory, file_name, mimetype='image/png'))

@@ -5,7 +5,7 @@ Gets all Log2Timeline entries for the current file
 from yapsy.IPlugin import IPlugin
 import os
 import logging
-from bottle import abort
+
 
 class FaTimeline(IPlugin):
     def __init__(self):
@@ -40,9 +40,7 @@ class FaTimeline(IPlugin):
             width = [40, 15, 30, 140, 20]):
         """Returns the result of this plugin to be displayed in a browser"""
 
-        index = helper.get_request_value(request, 'index', False)
-        if not index:
-            abort(400, 'Timeline plugin requires an index, but none found')
+        index = helper.get_request_value(request, 'index', False, raise_key_error=True)
 
         # This value is the UUID to the event or file
         uuid = helper.get_request_value(request, 'id', False)
