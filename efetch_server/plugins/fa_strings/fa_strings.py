@@ -60,6 +60,10 @@ TEMPLATE = """
             tr:nth-child(even) {
                 background-color: #f1f1f1;
             }
+
+            xmp {
+                margin: 0px;
+            }
         </style>
     </head>
     <body>
