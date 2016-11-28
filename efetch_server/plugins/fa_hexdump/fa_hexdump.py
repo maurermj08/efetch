@@ -83,7 +83,7 @@ class FaHexdump(IPlugin):
     def __init__(self):
         self.display_name = 'Hex View'
         self.popularity = 3
-        self.cache = True
+        self.cache = False
         self.fast = False
         self.action = False
         self.icon = 'fa-file-code-o'
