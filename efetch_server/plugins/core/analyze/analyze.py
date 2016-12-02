@@ -3,9 +3,120 @@ Basic UI for browsing and analyzing files
 """
 
 from yapsy.IPlugin import IPlugin
-from jinja2 import Environment, FileSystemLoader
-import os
+from flask import render_template_string
 import logging
+
+
+TEMPLATE = """
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <link rel="stylesheet" type="text/css" href="/static/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/static/themes/{{ theme }}/easyui.css">
+    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
+    <meta http-equiv="content-type" content="text/html; charset=us-ascii" />
+    <script src="/static/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="/static/jquery.easyui.min.js"></script>
+
+    <style>
+        #nav {
+            line-height:30px;
+            height:100%;
+            width:400px;
+            float:left;
+            padding:0px;
+        }
+        .panel-body {
+            font-size: inherit; !important
+        }
+        .layout-button-left {
+            padding-left: 0px; !important
+        }
+        html{
+            height: 100%;
+        }
+        body {
+            min-height: 100%;
+            margin: 0px;
+            background-color: white;
+        }
+        a {
+            display:block;
+            color: #FFFFFF;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            font-size: 14px;
+        }
+        a:hover, a:active {
+            color: rgb(153, 193, 255);
+        }
+        p {
+            line-height:20px;
+            color: #FFFFFF;
+            padding-left: 1px;
+            text-decoration: initial;
+            margin:0
+        }
+        #nav {
+            line-height:20px;
+            background-color:#414244;
+            height:100%;
+            width:100%;
+            float:left;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #iframe {
+            top: 0px;
+            right: 0px;
+            height: 100%;
+            width: 100%;
+            border: none;
+            background-color: white;
+        }
+
+    </style>
+    <title>Analyze</title>
+</head>
+
+<body>
+        <div class="easyui-layout" style="width:100%;height:100%;">
+            <div data-options="region:'west',hideCollapsedContent:false,split:true" title="Plugins" style="width:200px;background-color: #414244;">
+            <div id="nav">
+                <p><b>
+                    {{ evidence.file_name }}
+                </b><br /></p>
+                <p align="right">
+                    {{ evidence.mimetype }}
+                <br />
+                    {{ evidence.size }} Bytes
+                <br /></p>
+                <hr />
+                <br />
+                <a href="/plugins/overview?{{ evidence.url_query }}" target="frame">
+                    <i class="fa fa-info-circle" style="font-size:24px;padding-bottom:5px"></i><br>Information
+                </a>
+                <br>
+                    {% for plugin in plugins %}
+                        <a href="/plugins/{{ plugin.name }}?{{ evidence.url_query }}" target="frame">
+                            <i class="fa {{ plugin.icon }}" style="font-size:24px;padding-bottom:5px"></i><br>
+                            {{ plugin.display_name }}
+                        </a><br>
+                    {% endfor %}
+                </div>
+            </div>
+            <div data-options="region:'center',title:''">
+                <iframe name="frame" id="iframe" src="/plugins/overview?{{ evidence.url_query }}"></iframe>
+            </div>
+        </div>
+</body>
+</html>
+"""
 
 
 class Analyze(IPlugin):
@@ -43,10 +154,6 @@ class Analyze(IPlugin):
 
         # Add Directoy link
         plugins = []
-        plugins.append(
-            '<a href="/plugins/overview?' + evidence['url_query']
-            + '" target="frame"><i class="fa fa-info-circle" style="font-size:24px;padding-bottom:5px"></i>'
-              '<br>Information</a><br>')
 
         size = evidence.get('size', 0)
         if isinstance(size, list):
@@ -62,18 +169,16 @@ class Analyze(IPlugin):
                             plugin.check(evidence, evidence['file_cache_path']) and \
                             (not plugin.cache or int(size) <= helper.max_file_size):
                         logging.debug("Check matched, adding plugin " + plugin.display_name)
-                        plugin_icon = getattr(plugin, 'icon', 'fa-file-o')
-                        icon = '<i class="fa ' + plugin_icon + '" style="font-size:24px;padding-bottom:5px"></i>'
-                        plugins.append('<a href="/plugins/' + plugin_name + '?' + evidence['url_query']
-                                       + '" target="frame">' + icon + '<br>' + plugin.display_name + '</a><br>')
+                        plugins.append({
+                           'icon': getattr(plugin, 'icon', 'fa-file-o'),
+                           'name': plugin_name,
+                           'display_name': getattr(plugin, 'display_name', plugin_name)
+                        })
                     else:
-                        logging.debug("Check did not match, NOT adding plugin " + plugin.display_name)
+                        logging.debug("Check did not match, NOT adding plugin " + plugin_name)
 
-        evidence['theme'] = 'black'
-        evidence['links'] = '\n'.join(plugins)
-        evidence['home'] = '/plugins/overview?' + evidence['url_query']
+        theme = 'black'
+        home = '/plugins/overview?' + evidence['url_query']
 
         # Modifies HTML
-        curr_dir = os.path.dirname(os.path.realpath(__file__))
-        jinja2_environment = Environment(loader=FileSystemLoader(curr_dir), trim_blocks=True)
-        return jinja2_environment.get_template('analyze_template.html').render(evidence)
+        return render_template_string(TEMPLATE, evidence=evidence, theme=theme, plugins=plugins, home=home)

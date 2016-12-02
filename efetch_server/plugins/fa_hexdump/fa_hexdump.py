@@ -79,6 +79,8 @@ TEMPLATE = """
     </body>
 </html>
 """
+
+
 class FaHexdump(IPlugin):
     def __init__(self):
         self.display_name = 'Hex View'

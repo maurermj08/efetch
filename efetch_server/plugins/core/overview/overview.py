@@ -2,17 +2,74 @@
 Gets an overview of the file without using cache
 """
 
+from collections import OrderedDict
+from flask import render_template_string
 from yapsy.IPlugin import IPlugin
-import os
 
+
+TEMPLATE = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+        table {
+            overflow-y: scroll;
+            width: 100%;
+        }
+        table, th, td {
+            border: 0px;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px;
+        }
+        table#t01 tr:nth-child(even) {
+            background-color: #fff;
+        }
+        table#t01 tr:nth-child(odd) {
+           background-color:#eee;
+        }
+        table#t01 th {
+            background-color: #444;
+            color: white;
+        }
+        html{
+            height: 100%;
+        }
+
+        body {
+            min-height: 100%;
+            margin: 0px;
+        }
+
+    </style>
+    </head>
+        <body>
+            <table id="t01" class="display">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for key, value in evidence %}
+                        <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </body>
+    </html>
+"""
 
 class Overview(IPlugin):
     def __init__(self):
         self.display_name = 'Overview'
         self.popularity = 10
         self.cache = False
-        self._order = [ 'thumbnail', 'path', 'mtime', 'atime', 'ctime', 'crtime', 'file_size', 'pid', 'mimetype', 'dir',
-                        'name', 'ext', 'root', 'iid']
+        self._key_order = ['thumbnail', 'path', 'mtime', 'atime', 'ctime', 'crtime', 'file_size', 'pid', 'mimetype',
+                           'dir', 'name', 'ext', 'root', 'iid']
         self.fast = False
         self.action = False
         IPlugin.__init__(self)
@@ -35,30 +92,23 @@ class Overview(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
+
+        # Get the file mimetype if it is currently unknown
         if evidence['meta_type'] =='File' and not evidence['mimetype_known']:
             evidence['mimetype'] = helper.pathspec_helper.get_mimetype(evidence['pathspec'])
             evidence['mimetype_known'] = True
 
-        listing = []
+        # Thumbnail
+        evidence['thumbnail'] = '<img src="' + helper.get_icon(evidence) + '" alt="' + evidence['meta_type'] + '-'+ \
+                                evidence['extension'] + '" title="' + evidence['meta_type']+ '-' + \
+                                evidence['extension'] + '" style="height:64px;">'
 
-        for item in self._order:
-            if item == 'thumbnail':
-                listing.append('<tr><td>' + str(item) + '</td><td><img src="'
-                               + helper.get_icon(evidence) + '" alt="' + evidence['meta_type'] + '-'
-                               + evidence['extension'] + '" title="' + evidence['meta_type']
-                        + '-' + evidence['extension'] + '" style="height:64px;"></td></tr>')
-            elif item in evidence:
-                listing.append('<tr><td>' + str(item) + '</td><td>' + str(evidence[item]) + '</td></tr>')
+        # Add missing keys to key_order
+        for key in evidence:
+            if not key in self._key_order:
+                self._key_order.append(key)
 
-        for item in sorted(evidence):
-            if item not in self._order:
-                listing.append('<tr><td>' + str(item) + '</td><td>' + str(evidence[item]) + '</td></tr>')
+        # Order the evidence
+        ordered_evidence = OrderedDict(sorted(evidence.items(), key=lambda i:self._key_order.index(i[0])))
 
-        curr_dir = os.path.dirname(os.path.realpath(__file__))
-        template = open(curr_dir + '/overview_template.html', 'r')
-        html = str(template.read())
-        template.close()
-
-        html = html.replace('<!-- Table -->', '\n'.join(listing))
-
-        return html
+        return render_template_string(TEMPLATE, evidence=ordered_evidence.items())

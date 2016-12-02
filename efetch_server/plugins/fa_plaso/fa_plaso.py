@@ -26,7 +26,7 @@ class FaPlaso(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
-        return True
+        return False
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""
