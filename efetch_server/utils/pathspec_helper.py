@@ -358,13 +358,13 @@ class PathspecHelper(object):
             else:
                 return self._my_magic.id_filename(path)
 
-    def list_directory(self, encoded_pathspec, recursive=False, index='*', auto_skip=True):
+    def list_directory(self, encoded_pathspec, recursive=False, index='*', auto_skip=True, offset=0, size=None):
         """Lists a directory using a pathspec or list of pathspecs"""
-        directories = self._list_directory(self._open_file_entry(encoded_pathspec), recursive, 0, index)
+        directories = self._list_directory(self._open_file_entry(encoded_pathspec), recursive, 0, index, offset, size)
         self._close_file_entry(encoded_pathspec)
         return directories
 
-    def _list_directory(self, file_entry, recursive=False, depth=0, index='*'):
+    def _list_directory(self, file_entry, recursive=False, depth=0, index='*', offset=0, size=None):
         """Lists a directory using a file entry"""
         directory_list = []
 
@@ -385,8 +385,15 @@ class PathspecHelper(object):
             directory_list.append(self._append_mimetype(evidence))
 
         if (recursive or depth == 0) and (file_entry.IsDirectory() or hasattr(file_entry, 'sub_file_entries')):
+            count = 0
             for sub_file_entry in file_entry.sub_file_entries:
+                if offset > 0:
+                    offset -= 1
+                    continue
                 directory_list.extend(self._list_directory(sub_file_entry, recursive, depth + 1))
+                count += 1
+                if count == size:
+                    break
 
         return directory_list
 

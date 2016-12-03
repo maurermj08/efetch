@@ -3,12 +3,13 @@ Simple directory tree view
 """
 
 from yapsy.IPlugin import IPlugin
-from flask import render_template_string
+from flask import render_template_string, jsonify
 import json
 import logging
 import os
 
 
+LISTING_INTERVAL = 256
 TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -61,6 +62,9 @@ TEMPLATE = """
                             "info": false,
                             "orderClasses": false,
                             "searching": false,
+                            "language": {
+                                "emptyTable": "Loading..."
+                            },
                             "columnDefs": [
                                     { type: 'alt-string', targets: 0 },
                                     { type: 'file-size', targets: 6 }
@@ -68,6 +72,77 @@ TEMPLATE = """
                             }
                     );
             } );
+
+            var directory_index = 0
+            var directory_done = false;
+
+            function get_items() {
+                $.ajax({
+                      url: "/plugins/directory?pathspec={{ pathspec | urlencode }}&up={{ up }}&directory_index=" + directory_index,
+                      success: function (data) {
+                          list = JSON.parse(data)
+                          for (var i in list.rows){
+                            var analyze = ''
+                            var download = ''
+                            var preview = ''
+
+                            if (list.rows[i].analyze) {
+                                analyze =
+                                    '<a href="/plugins/analyze?' +  list.rows[i].url_query + '" target="_top" style="padding-right:10px">' +
+                                    '    <span class="fa-stack fa-md">' +
+                                    '        <i class="fa fa-square fa-stack-2x"></i>' +
+                                    '        <i class="fa fa-info-circle fa-stack-1x fa-inverse"></i>' +
+                                    '    </span>' +
+                                    '</a>'
+                            }
+                            if (list.rows[i].preview) {
+                                preview =
+                                    '<a href="/plugins/preview?' + list.rows[i].url_query + '&redirect=True" target="_blank" style="padding-right:10px">' +
+                                    '    <span class="fa-stack fa-md">' +
+                                    '        <i class="fa fa-square fa-stack-2x"></i>' +
+                                    '        <i class="fa fa-eye fa-stack-1x fa-inverse"></i>' +
+                                    '    </span>' +
+                                    '</a>'
+                            }
+                            if (list.rows[i].download) {
+                                download =
+                                    '<a href="/plugins/download?' + list.rows[i].url_query + '">' +
+                                    '    <span class="fa-stack fa-md">' +
+                                    '        <i class="fa fa-square fa-stack-2x"></i>' +
+                                    '        <i class="fa fa-download fa-stack-1x fa-inverse"></i>' +
+                                    '    </span>' +
+                                    '</a> '
+                            }
+                            $('#t01').DataTable().row.add($(
+                                '<tr>' +
+                                    '<!-- ' + list.rows[i].file_name + ' -->' +
+                                    '<td style="padding-left: 24px;"><a href="/plugins/' + list.rows[i].plugin + '?' + list.rows[i].url_query + '" ' + list.rows[i].target + '>' +
+                                    '    <img src="' + list.rows[i].icon + '" style="width:32px;height:32px;"' +
+                                    '    alt="' + list.rows[i].order + ' ' + list.rows[i].file_name + '"></a></td>' +
+                                    '<td><a href="/plugins/' + list.rows[i].plugin + '?' + list.rows[i].url_query + '" ' + list.rows[i].target + '>' + list.rows[i].file_name + '</a></td>' +
+                                    '<td>' + list.rows[i].mtime_no_nano + '</td>' +
+                                    '<td>' + list.rows[i].atime_no_nano + '</td>' +
+                                    '<td>' + list.rows[i].ctime_no_nano + '</td>' +
+                                    '<td>' + list.rows[i].crtime_no_nano + '</td>' +
+                                    '<td>' + list.rows[i].size + '</td>' +
+                                    '<td>' + analyze + preview + download +
+                                    '</td></tr>'
+                            )[0]).draw();
+                          }
+                          directory_index = list.directory_index;
+                          directory_done = list.directory_done;
+                      },
+                      dataType: 'html'
+                });
+            }
+
+            $(window).scroll(function(){
+                if ($(window).scrollTop() == $(document).height()-$(window).height() && !(directory_done)){
+                    get_items();
+                }
+            });
+
+            window.onload = get_items();
         </script>
 <style>
     table.dataTable thead th {
@@ -153,49 +228,7 @@ TEMPLATE = """
                 <th>Options</th>
             </tr>
             </thead>
-            <tbody>
-                {% for row in directory_list %}
-                    <tr>
-                        <!-- {{ row.file_name }} -->
-                        <td style="padding-left: 24px;"><a href="/plugins/{{ row.plugin }}?{{ row.url_query }}" {{ row.target }}>
-                            <img src="{{ row.icon }}" style="width:32px;height:32px;"
-                            alt="{{ row.order }} {{ row.file_name }}"></a></td>
-                        <td><a href="/plugins/{{ row.plugin }}?{{ row.url_query }}" {{ row.target }}>{{ row.file_name }}</a></td>
-                        <td>{{ row.mtime_no_nano }}</td>
-                        <td>{{ row.atime_no_nano }}</td>
-                        <td>{{ row.ctime_no_nano }}</td>
-                        <td>{{ row.crtime_no_nano }}</td>
-                        <td>{{ row.size }}</td>
-                        <td>
-                            {% if row.analyze %}
-                                <a href="/plugins/analyze?{{ row.url_query }}" target="_top" style="padding-right:10px">
-                                    <span class="fa-stack fa-md">
-                                        <i class="fa fa-square fa-stack-2x"></i>
-                                        <i class="fa fa-info-circle fa-stack-1x fa-inverse"></i>
-                                    </span>
-                                </a>
-                            {% endif %}
-                            {% if row.download %}
-                                <a href="/plugins/download?{{ row.url_query }}">
-                                    <span class="fa-stack fa-md">
-                                        <i class="fa fa-square fa-stack-2x"></i>
-                                        <i class="fa fa-download fa-stack-1x fa-inverse"></i>
-                                    </span>
-                                </a>
-                            {% endif %}
-                            {% if row.preview %}
-                                <a href="/plugins/preview?{{ row.url_query }}&redirect=True" target="_blank" style="padding-right:10px">
-                                    <span class="fa-stack fa-md">
-                                        <i class="fa fa-square fa-stack-2x"></i>
-                                        <i class="fa fa-eye fa-stack-1x fa-inverse"></i>
-                                    </span>
-                                </a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        <table>
+        </table>
     </body>
 </html>
 """
@@ -242,6 +275,15 @@ class Directory(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
+        directory_index = helper.get_request_value(request, 'directory_index', None)
+        up = helper.get_request_value(request, 'up', False)
+
+        # Initial call, just return the Template; else AJAX
+        if directory_index is None:
+            return render_template_string(TEMPLATE, pathspec=evidence['pathspec'], up=up)
+        else:
+            directory_index = int(directory_index)
+
         directory_list = []
 
         # ORDER:
@@ -276,7 +318,7 @@ class Directory(IPlugin):
             items = helper.pathspec_helper.list_base_pathspecs(evidence)
 
             # If moving up and only one item is there, go up (Prevents loop from next option)
-            if len(items) == 1 and helper.get_request_value(request, 'up', False):
+            if len(items) == 1 and up:
                 evidence_parent = helper.pathspec_helper.get_parent_pathspec(evidence['pathspec'])
                 try:
                     evidence = helper.pathspec_helper.get_evidence_item(evidence_parent)
@@ -288,7 +330,8 @@ class Directory(IPlugin):
                 return self.get(evidence, helper, path_on_disk, request)
             # If only one item (volume/partition/etc) go ahead and expand it
             elif len(items) == 1:
-                items = helper.pathspec_helper.list_directory(items[0]['pathspec'])
+                items = helper.pathspec_helper.list_directory(items[0]['pathspec'],
+                                                              offset=directory_index, size=LISTING_INTERVAL)
             else:
                 force_expand = True
 
@@ -300,7 +343,8 @@ class Directory(IPlugin):
             while initial_pathspec and not getattr(helper.pathspec_helper._decode_pathspec(initial_pathspec), 'location', False):
                 initial_pathspec = helper.pathspec_helper.get_encoded_parent_base_pathspec_manually(initial_pathspec)
 
-            items = helper.pathspec_helper.list_directory(initial_pathspec)
+            items = helper.pathspec_helper.list_directory(initial_pathspec, offset=directory_index,
+                                                          size=LISTING_INTERVAL)
 
         # Gets the List of sub items to display
         for item in items:
@@ -316,6 +360,8 @@ class Directory(IPlugin):
             for time in ['mtime', 'atime', 'ctime', 'crtime']:
                 if time in item:
                     item[time + '_no_nano'] = item[time].split('.')[0].replace('T', ' ')
+                else:
+                    item[time + '_no_nano'] = ''
 
             # Make human readable size
             if 'size' in item:
@@ -348,27 +394,38 @@ class Directory(IPlugin):
                 item['download'] = True
                 item['preview'] = True
 
+            if not 'size' in item:
+                item['size'] = ''
+
             directory_list.append(item)
 
-        # Gets the up directory option ".."
-        parent_pathspec = helper.pathspec_helper.get_parent_pathspec(initial_pathspec)
-        if parent_pathspec:
-            try:
-                parent_item = helper.pathspec_helper.get_evidence_item(parent_pathspec)
-            # Manually move up to the parent if getting the evidence item fails
-            except RuntimeError:
-                logging.warn('Failed to get parent pathspec evidence item, manually moving up another pathspec')
-                parent_pathspec = json.loads(parent_pathspec)['parent']
-                parent_item = helper.pathspec_helper.get_evidence_item(json.dumps(parent_pathspec))
-        if parent_pathspec and parent_item:
-            parent_item['file_name'] = '..'
-            parent_item['icon'] = '/static/icons/_folder_up.png'
-            parent_item['order'] = 1
-            parent_item['plugin'] = self._dir_plugin
-            parent_item['url_query'] = parent_item['url_query'] + '&up=True'
-            # Make human readable size
-            if 'size' in parent_item:
-                parent_item['size'] = Directory.human_readable_size(int(parent_item['size']))
-            directory_list.append(parent_item)
+        # Gets the up directory option ".." if it is the first listing
+        if directory_index == 0:
+            parent_pathspec = helper.pathspec_helper.get_parent_pathspec(initial_pathspec)
+            if parent_pathspec:
+                try:
+                    parent_item = helper.pathspec_helper.get_evidence_item(parent_pathspec)
+                # Manually move up to the parent if getting the evidence item fails
+                except RuntimeError:
+                    logging.warn('Failed to get parent pathspec evidence item, manually moving up another pathspec')
+                    parent_pathspec = json.loads(parent_pathspec)['parent']
+                    parent_item = helper.pathspec_helper.get_evidence_item(json.dumps(parent_pathspec))
+            if parent_pathspec and parent_item:
+                parent_item['file_name'] = '..'
+                parent_item['icon'] = '/static/icons/_folder_up.png'
+                parent_item['order'] = 1
+                parent_item['plugin'] = self._dir_plugin
+                parent_item['url_query'] = parent_item['url_query'] + '&up=True'
+                for time in ['mtime', 'atime', 'ctime', 'crtime']:
+                    parent_item[time + '_no_nano'] = ''
+                # Make human readable size
+                if 'size' in parent_item:
+                    parent_item['size'] = Directory.human_readable_size(int(parent_item['size']))
+                directory_list.append(parent_item)
 
-        return render_template_string(TEMPLATE, directory_list=directory_list)
+        # If there is nothing left to list, set directory_done to True
+        directory_done = len(directory_list) == 0
+        directory_index = directory_index + LISTING_INTERVAL
+
+        # TODO directory_done will tell it to stop trying to load when it goes to the bottom
+        return jsonify({'rows': directory_list, 'directory_index': directory_index, 'directory_done': directory_done})
