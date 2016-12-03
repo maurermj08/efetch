@@ -3,10 +3,203 @@ Simple directory tree view
 """
 
 from yapsy.IPlugin import IPlugin
-from jinja2 import Template
+from flask import render_template_string
 import json
 import logging
 import os
+
+
+TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+        <link rel="stylesheet" type="text/css" href="/static/themes/jquery.dataTables.min.css">
+        <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
+        <script src="/static/jquery-1.11.3.min.js"></script>
+        <script src="/static/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
+        <script type="text/javascript" src="/static/jquery.dataTables.min.js"></script>
+        <script type="text/javascript" class="init">
+            jQuery.extend( jQuery.fn.dataTableExt.oSort, {
+                "alt-string-pre": function ( a ) {
+                    return a.match(/alt="(.*?)"/)[1].toLowerCase();
+                },
+
+                "alt-string-asc": function( a, b ) {
+                    return ((a < b) ? -1 : ((a > b) ? 1 : 0));
+                },
+
+                "alt-string-desc": function(a,b) {
+                    return ((a < b) ? 1 : ((a > b) ? -1 : 0));
+                }
+            } );
+            jQuery.fn.dataTable.ext.type.order['file-size-pre'] = function ( data ) {
+                var matches = data.match( /^(\d+(?:\.\d+)?)\s*([a-z]+)/i );
+                var multipliers = {
+                    b:  1,
+                    kb: 1000,
+                    kib: 1024,
+                    mb: 1000000,
+                    mib: 1048576,
+                    gb: 1000000000,
+                    gib: 1073741824,
+                    tb: 1000000000000,
+                    tib: 1099511627776,
+                    pb: 1000000000000000,
+                    pib: 1125899906842624
+                };
+
+                if (matches) {
+                    var multiplier = multipliers[matches[2].toLowerCase()];
+                    return parseFloat( matches[1] ) * multiplier;
+                } else {
+                    return -1;
+                };
+            };
+            $(document).ready(function() {
+                    $('#t01').DataTable({
+                            "paging": false,
+                            "info": false,
+                            "orderClasses": false,
+                            "searching": false,
+                            "columnDefs": [
+                                    { type: 'alt-string', targets: 0 },
+                                    { type: 'file-size', targets: 6 }
+                                ]
+                            }
+                    );
+            } );
+        </script>
+<style>
+    table.dataTable thead th {
+        position: relative;
+        background-image: none !important;
+    }
+    table.dataTable thead th.sorting:after,
+    table.dataTable thead th.sorting_asc:after,
+    table.dataTable thead th.sorting_desc:after {
+        position: absolute;
+        top: 12px;
+        right: 8px;
+        display: block;
+        font-family: FontAwesome;
+    }
+    table.dataTable thead th.sorting:after {
+        content: "\\f0dc";
+        color: #ddd;
+        font-size: 0.8em;
+        padding-top: 0.12em;
+    }
+    table.dataTable thead th.sorting_asc:after {
+        content: "\\f0de";
+    }
+    table.dataTable thead th.sorting_desc:after {
+        content: "\\f0dd";
+    }
+    table {
+        overflow-y: scroll;
+        width: 100%;
+    }
+    table, th, td {
+        border: 0px;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 5px;
+        text-align: left;
+    }
+    table#t01 tr:nth-child(even) {
+        background-color: #fff;
+    }
+    table#t01 tr:nth-child(odd) {
+       background-color:#eee;
+    }
+    table#t01 th {
+        background-color: #444;
+        color: white;
+    }
+    html{
+        height: 100%;
+    }
+    body {
+        min-height: 100%;
+        margin: 0px;
+    }
+    a {
+        text-decoration: none;
+    }
+    a:link {
+        color: #0c006b;
+    }
+    a:visited {
+        color: #0c006b;
+    }
+    a:hover {
+        color: rgb(153, 193, 255);
+    }
+
+</style>
+</head>
+    <body>
+       <table id="t01" class="display">
+            <thead>
+            <tr>
+                <th>Icon</th>
+                <th>File Name</th>
+                <th>Modified</th>
+                <th>Accessed</th>
+                <th>Changed</th>
+                <th>Created</th>
+                <th>Size</th>
+                <th>Options</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for row in directory_list %}
+                    <tr>
+                        <!-- {{ row.file_name }} -->
+                        <td style="padding-left: 24px;"><a href="/plugins/{{ row.plugin }}?{{ row.url_query }}" {{ row.target }}>
+                            <img src="{{ row.icon }}" style="width:32px;height:32px;"
+                            alt="{{ row.order }} {{ row.file_name }}"></a></td>
+                        <td><a href="/plugins/{{ row.plugin }}?{{ row.url_query }}" {{ row.target }}>{{ row.file_name }}</a></td>
+                        <td>{{ row.mtime_no_nano }}</td>
+                        <td>{{ row.atime_no_nano }}</td>
+                        <td>{{ row.ctime_no_nano }}</td>
+                        <td>{{ row.crtime_no_nano }}</td>
+                        <td>{{ row.size }}</td>
+                        <td>
+                            {% if row.analyze %}
+                                <a href="/plugins/analyze?{{ row.url_query }}" target="_top" style="padding-right:10px">
+                                    <span class="fa-stack fa-md">
+                                        <i class="fa fa-square fa-stack-2x"></i>
+                                        <i class="fa fa-info-circle fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            {% endif %}
+                            {% if row.download %}
+                                <a href="/plugins/download?{{ row.url_query }}">
+                                    <span class="fa-stack fa-md">
+                                        <i class="fa fa-square fa-stack-2x"></i>
+                                        <i class="fa fa-download fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            {% endif %}
+                            {% if row.preview %}
+                                <a href="/plugins/preview?{{ row.url_query }}&redirect=True" target="_blank" style="padding-right:10px">
+                                    <span class="fa-stack fa-md">
+                                        <i class="fa fa-square fa-stack-2x"></i>
+                                        <i class="fa fa-eye fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        <table>
+    </body>
+</html>
+"""
+
 
 class Directory(IPlugin):
 
@@ -17,7 +210,6 @@ class Directory(IPlugin):
         self.fast = False
         self.action = False
         self.icon = 'fa-folder-o'
-
         self._file_plugin = 'analyze'
         self._dir_plugin = 'directory'
         self._evidence_plugin = 'directory'
@@ -50,50 +242,7 @@ class Directory(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        dir_table = []
-        file_table = []
-
-        # Templates
-        row_template = Template("""
-            <tr>
-                <!-- {{ file_name }} -->
-                <td style="padding-left: 24px;"><a href="/plugins/{{ plugin }}?{{ url_query }}" {{ target }}>
-                    <img src="{{ icon }}" style="width:32px;height:32px;"
-                    alt="{{ order }} {{ file_name }}"></a></td>
-                <td><a href="/plugins/{{ plugin }}?{{ url_query }}" {{ target }}>{{file_name}}</a></td>
-                <td>{{ mtime_no_nano }}</td>
-                <td>{{ atime_no_nano }}</td>
-                <td>{{ ctime_no_nano }}</td>
-                <td>{{ crtime_no_nano }}</td>
-                <td>{{ size }}</td>
-                <td>
-                    {{ analyze }}
-                    {{ preview }}
-                    {{ download }}
-                </td>
-            </tr>
-        """)
-        analyze_template = Template("""
-                    <a href="/plugins/analyze?{{ url_query }}" target="_top" style="padding-right:10px">
-                        <span class="fa-stack fa-md">
-                            <i class="fa fa-square fa-stack-2x"></i>
-                            <i class="fa fa-info-circle fa-stack-1x fa-inverse"></i>
-                        </span>
-                    </a>""")
-        download_template = Template("""
-                    <a href="/plugins/download?{{ url_query }}">
-                        <span class="fa-stack fa-md">
-                            <i class="fa fa-square fa-stack-2x"></i>
-                            <i class="fa fa-download fa-stack-1x fa-inverse"></i>
-                        </span>
-                    </a>""")
-        preview_template = Template("""
-                    <a href="/plugins/preview?{{ url_query }}&redirect=True" target="_blank" style="padding-right:10px">
-                        <span class="fa-stack fa-md">
-                            <i class="fa fa-square fa-stack-2x"></i>
-                            <i class="fa fa-eye fa-stack-1x fa-inverse"></i>
-                        </span>
-                    </a>""")
+        directory_list = []
 
         # ORDER:
         #   1 - Up
@@ -178,33 +327,28 @@ class Directory(IPlugin):
             else:
                 item['icon'] = '/static/icons/_evidence.png'
 
-            # Render analyze link
-            item['analyze'] = analyze_template.render(item)
+            # Always render analyze link
+            item['analyze'] = True
 
             # Expandable evidence
             if helper.is_expandable_evidence(item) or force_expand:
                 item['order'] = 3
                 item['plugin'] = self._evidence_plugin
-                item['download'] = download_template.render(item)
-                item['preview'] = preview_template.render(item)
-                file_table.append(row_template.render(item))
+                item['download'] = True
+                item['preview'] = True
             # Directories
             elif item['meta_type'] == 'Directory':
                 item['order'] = 2
                 item['plugin'] = self._dir_plugin
-                dir_table.append(row_template.render(item))
             # Files/Other
             else:
                 item['order'] = 3
                 item['target'] = 'target="_top"'
                 item['plugin'] = self._file_plugin
-                item['download'] = download_template.render(item)
-                item['preview'] = preview_template.render(item)
-                file_table.append(row_template.render(item))
+                item['download'] = True
+                item['preview'] = True
 
-        # Presorts the tables
-        dir_table.sort()
-        file_table.sort()
+            directory_list.append(item)
 
         # Gets the up directory option ".."
         parent_pathspec = helper.pathspec_helper.get_parent_pathspec(initial_pathspec)
@@ -222,154 +366,9 @@ class Directory(IPlugin):
             parent_item['order'] = 1
             parent_item['plugin'] = self._dir_plugin
             parent_item['url_query'] = parent_item['url_query'] + '&up=True'
-            dir_table.insert(0, row_template.render(parent_item))
+            # Make human readable size
+            if 'size' in parent_item:
+                parent_item['size'] = Directory.human_readable_size(int(parent_item['size']))
+            directory_list.append(parent_item)
 
-        return '''
-                <!DOCTYPE html>
-                <html>
-                <head>
-                        <script src="/static/jquery-1.11.3.min.js"></script>
-                        <script src="/static/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
-                        <link rel="stylesheet" type="text/css" href="/static/themes/icon.css">
-                        <link rel="stylesheet" type="text/css" href="/static/themes/jquery.dataTables.min.css">
-                        <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
-                        <script type="text/javascript" src="/static/jquery.dataTables.min.js"></script>
-                        <script type="text/javascript" class="init">
-                            jQuery.extend( jQuery.fn.dataTableExt.oSort, {
-                                "alt-string-pre": function ( a ) {
-                                    return a.match(/alt="(.*?)"/)[1].toLowerCase();
-                                },
-
-                                "alt-string-asc": function( a, b ) {
-                                    return ((a < b) ? -1 : ((a > b) ? 1 : 0));
-                                },
-
-                                "alt-string-desc": function(a,b) {
-                                    return ((a < b) ? 1 : ((a > b) ? -1 : 0));
-                                }
-                            } );
-                            jQuery.fn.dataTable.ext.type.order['file-size-pre'] = function ( data ) {
-                                var matches = data.match( /^(\d+(?:\.\d+)?)\s*([a-z]+)/i );
-                                var multipliers = {
-                                    b:  1,
-                                    kb: 1000,
-                                    kib: 1024,
-                                    mb: 1000000,
-                                    mib: 1048576,
-                                    gb: 1000000000,
-                                    gib: 1073741824,
-                                    tb: 1000000000000,
-                                    tib: 1099511627776,
-                                    pb: 1000000000000000,
-                                    pib: 1125899906842624
-                                };
-
-                                if (matches) {
-                                    var multiplier = multipliers[matches[2].toLowerCase()];
-                                    return parseFloat( matches[1] ) * multiplier;
-                                } else {
-                                    return -1;
-                                };
-                            };
-                            $(document).ready(function() {
-                                    $('#t01').DataTable({
-                                            "paging": false,
-                                            "info": false,
-                                            "orderClasses": false,
-                                            "searching": false,
-                                            "columnDefs": [
-                                                    { type: 'alt-string', targets: 0 },
-                                                    { type: 'file-size', targets: 6 }
-                                                ]
-                                            }
-                                    );
-                            } );
-                        </script>
-                <style>
-                    table.dataTable thead th {
-                        position: relative;
-                        background-image: none !important;
-                    }
-                    table.dataTable thead th.sorting:after,
-                    table.dataTable thead th.sorting_asc:after,
-                    table.dataTable thead th.sorting_desc:after {
-                        position: absolute;
-                        top: 12px;
-                        right: 8px;
-                        display: block;
-                        font-family: FontAwesome;
-                    }
-                    table.dataTable thead th.sorting:after {
-                        content: "\\f0dc";
-                        color: #ddd;
-                        font-size: 0.8em;
-                        padding-top: 0.12em;
-                    }
-                    table.dataTable thead th.sorting_asc:after {
-                        content: "\\f0de";
-                    }
-                    table.dataTable thead th.sorting_desc:after {
-                        content: "\\f0dd";
-                    }
-                    table {
-                        overflow-y: scroll;
-                        width: 100%;
-                    }
-                    table, th, td {
-                        border: 0px;
-                        border-collapse: collapse;
-                    }
-                    th, td {
-                        padding: 5px;
-                        text-align: left;
-                    }
-                    table#t01 tr:nth-child(even) {
-                        background-color: #fff;
-                    }
-                    table#t01 tr:nth-child(odd) {
-                       background-color:#eee;
-                    }
-                    table#t01 th {
-                        background-color: #444;
-                        color: white;
-                    }
-                    html{
-                        height: 100%;
-                    }
-                    body {
-                        min-height: 100%;
-                        margin: 0px;
-                    }
-                    a {
-                        text-decoration: none;
-                    }
-                    a:link {
-                        color: #0c006b;
-                    }
-                    a:visited {
-                        color: #0c006b;
-                    }
-                    a:hover {
-                        color: rgb(153, 193, 255);
-                    }
-
-                </style>
-                </head>
-                    <body>
-                       <table id="t01" class="display">
-                            <thead>
-                            <tr>
-                                <th>Icon</th>
-                                <th>File Name</th>
-                                <th>Modified</th>
-                                <th>Accessed</th>
-                                <th>Changed</th>
-                                <th>Created</th>
-                                <th>Size</th>
-                                <th>Options</th>
-                            </tr>
-                            </thead>
-                            <tbody>'''\
-                            + '\n'.join(dir_table) + '\n'.join(file_table) + '</tbody><table>' + \
-               '''  </body>
-               </html>'''
+        return render_template_string(TEMPLATE, directory_list=directory_list)
