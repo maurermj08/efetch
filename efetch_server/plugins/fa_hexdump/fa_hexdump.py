@@ -19,6 +19,12 @@ TEMPLATE = """
             function get_hex() {
                 $.ajax({
                       url: "/plugins/fa_hexdump?pathspec={{ pathspec | urlencode }}&buffer=" + buffer,
+                      beforeSend: function() {
+                           $('#loading_icon').show()
+                      },
+                      complete: function() {
+                           $('#loading_icon').hide()
+                      },
                       success: function (data) {
                           hex_object = JSON.parse(data)
                           for (var i in hex_object.hexadecimals){
@@ -47,35 +53,37 @@ TEMPLATE = """
             body {
                 margin: 0px;
             }
-
             table {
                 width: 100%;
             }
-
             td, th {
                 text-align: left;
                 padding-left: 8px;
                 padding-right: 8px;
             }
-
             td:last-child{
                 width:100%;
                 white-space:nowrap;
                 background-color: white;
             }
-
             tr:nth-child(even) {
                 background-color: #f1f1f1;
             }
-
             xmp {
                 margin: 0px;
+            }
+            img#loading_icon {
+                top: 50%;
+                left: 50%;
+                position: fixed;
+                transform: translate(-50%, -50%);
             }
         </style>
     </head>
     <body>
         <table>
         </table>
+        <img id="loading_icon" src="/static/images/loading.gif" alt="Loading...">
     </body>
 </html>
 """

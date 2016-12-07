@@ -151,7 +151,7 @@ class EfetchHelper(object):
         # If the file is an image create a thumbnail
         if evidence['mimetype'].startswith('image') and resource:
             return '/plugins/thumbnail?' + evidence['url_query']
-        elif evidence['mimetype'].startswith('image'):
+        elif evidence['mimetype'].startswith('image') and self.pathspec_helper.use_thumbnails():
             self.pathspec_helper.create_thumbnail(evidence)
 
             if os.path.isfile(evidence['thumbnail_cache_path']):

@@ -31,7 +31,10 @@ from dfvfs.serializer.json_serializer import JsonPathSpecSerializer
 from dfvfs.lib import definitions as dfvfs_definitions
 from dfvfs.path import factory as path_spec_factory
 from dfvfs.analyzer.analyzer import Analyzer
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 from urllib import urlencode
 from efetch_server.utils.dfvfs_util import DfvfsUtil
 
@@ -113,7 +116,7 @@ class PathspecHelper(object):
         del file_entry
         PathspecHelper._close_file_entry(encoded_pathspec)
 
-        return  evidence_item
+        return evidence_item
 
     def _get_stat_information_from_file_entry(self, file_entry):
         """Creates a dictionary of information about the file_entry"""
@@ -304,6 +307,10 @@ class PathspecHelper(object):
         self.create_thumbnail(evidence_item, file_entry)
 
         return True
+
+    def use_thumbnails(self):
+        """Returns False if it cannot use PIL's Image object"""
+        return Image is not None
 
     def create_thumbnail(self, evidence_item, file_entry=False):
         """Creates a thumbnail for the evidence item"""

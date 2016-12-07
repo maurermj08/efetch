@@ -13,8 +13,10 @@ except ImportError:
 import logging
 import os
 from yapsy.IPlugin import IPlugin
-from PIL import Image
-
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 class FaImageOcr(IPlugin):
 
@@ -39,7 +41,7 @@ class FaImageOcr(IPlugin):
         """Checks if the file is compatible with this plugin"""
         allowed_prefix = ['image']
 
-        if not pytesseract:
+        if not pytesseract or not Image:
             return False
 
         return str(evidence['mimetype'].split('/')[0]).lower() in allowed_prefix \

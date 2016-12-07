@@ -73,13 +73,20 @@ TEMPLATE = """
                     );
             } );
 
+            $('#loading_icon').hide()
             var directory_index = 0
             var directory_done = false;
 
             function get_items() {
                 $.ajax({
                       url: "/plugins/directory?pathspec={{ pathspec | urlencode }}&up={{ up }}&directory_index=" + directory_index,
-                      success: function (data) {
+                      beforeSend: function() {
+                           $('#loading_icon').show()
+                      },
+                      complete: function() {
+                           $('#loading_icon').hide()
+                      },
+                      success: function(data) {
                           list = JSON.parse(data)
                           for (var i in list.rows){
                             var analyze = ''
@@ -211,6 +218,12 @@ TEMPLATE = """
     a:hover {
         color: rgb(153, 193, 255);
     }
+    img#loading_icon {
+        top: 50%;
+        left: 50%;
+        position: fixed;
+        transform: translate(-50%, -50%);
+    }
 
 </style>
 </head>
@@ -229,6 +242,7 @@ TEMPLATE = """
             </tr>
             </thead>
         </table>
+        <img id="loading_icon" src="/static/images/loading.gif" alt="Loading...">
     </body>
 </html>
 """
@@ -276,7 +290,7 @@ class Directory(IPlugin):
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
         directory_index = helper.get_request_value(request, 'directory_index', None)
-        up = helper.get_request_value(request, 'up', False)
+        up = str(helper.get_request_value(request, 'up', False)) == 'True'
 
         # Initial call, just return the Template; else AJAX
         if directory_index is None:

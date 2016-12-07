@@ -22,6 +22,12 @@ TEMPLATE = """
             function get_strings() {
                 $.ajax({
                       url: "/plugins/fa_strings?pathspec={{ pathspec | urlencode }}&buffer=" + buffer + "&index_in_buffer=" + index_in_buffer,
+                      beforeSend: function() {
+                           $('#loading_icon').show()
+                      },
+                      complete: function() {
+                           $('#loading_icon').hide()
+                      },
                       success: function (data) {
                           string_object = JSON.parse(data)
                           for (var i in string_object.strings){
@@ -46,29 +52,32 @@ TEMPLATE = """
             body {
                 margin: 0px;
             }
-
             table {
                 font-family: arial, sans-serif;
                 width: 100%;
             }
-
             td, th {
                 text-align: left;
                 padding-left: 8px;
             }
-
             tr:nth-child(even) {
                 background-color: #f1f1f1;
             }
-
             xmp {
                 margin: 0px;
+            }
+            img#loading_icon {
+                top: 50%;
+                left: 50%;
+                position: fixed;
+                transform: translate(-50%, -50%);
             }
         </style>
     </head>
     <body>
         <table>
         </table>
+        <img id="loading_icon" src="/static/images/loading.gif" alt="Loading...">
     </body>
 </html>
 """
