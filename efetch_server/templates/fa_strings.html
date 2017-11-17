@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="/static/core/css/efetch-simple.css">
+        <script src="/static/core/js/jquery-1.11.3.min.js"></script>
+        <script>
+            var buffer = 0
+            var index_in_buffer = 0
+
+            function get_strings() {
+                $.ajax({
+                      url: "/plugins/fa_strings?pathspec={{ pathspec | urlencode }}&buffer=" + buffer + "&index_in_buffer=" + index_in_buffer,
+                      beforeSend: function() {
+                           $('#loading_icon').show()
+                      },
+                      complete: function() {
+                           $('#loading_icon').hide()
+                      },
+                      success: function (data) {
+                          string_object = JSON.parse(data)
+                          for (var i in string_object.strings){
+                            $('table').append('<tr><td><xmp>' + string_object.strings[i] + '</xmp></td></tr>');
+                          }
+                          buffer = string_object.buffer;
+                          index_in_buffer = string_object.index_in_buffer;
+                      },
+                      dataType: 'html'
+                });
+            }
+
+            $(window).scroll(function(){
+                if ($(window).scrollTop() == $(document).height()-$(window).height()){
+                    get_strings()
+                }
+            });
+
+            window.onload = get_strings()
+        </script>
+		<style>
+			html{
+				height: 100%;
+			}
+			body {
+				min-height: 100%;
+				margin: 0px;
+			}
+		</style>
+    </head>
+    <body>
+        <table>
+        </table>
+        <img id="loading_icon" src="/static/images/loading.gif" alt="Loading...">
+    </body>
+</html>

@@ -1,0 +1,27 @@
+table {
+	width: 100%;
+}
+table#t01 {
+	overflow-y: scroll;
+	width: 100%;
+}
+table th {
+	background-color: #444;
+	color: white;
+}
+td, th {
+	text-align: left;
+	padding-left: 8px;
+}
+tr:nth-child(odd) {
+	background-color: #f1f1f1;
+}
+xmp {
+	margin: 0px;
+}
+img#loading_icon {
+	top: 50%;
+	left: 50%;
+	position: fixed;
+	transform: translate(-50%, -50%);
+}

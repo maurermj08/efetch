@@ -1,0 +1,45 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <link rel="stylesheet" type="text/css" href="/static/core/css/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/static/core/css/themes/{{ theme }}/easyui.css">
+    <link rel="stylesheet" href="/static/core/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/static/core/css/efetch.css">
+    <meta http-equiv="content-type" content="text/html; charset=us-ascii" />
+    <script src="/static/core/js/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="/static/core/js/jquery.easyui.min.js"></script>
+    
+    <title>Analyze</title>
+</head>
+
+<body>
+        <div class="easyui-layout" style="width:100%;height:100%;">
+            <div data-options="region:'west',hideCollapsedContent:false,split:true" title="Plugins" style="width:200px;background-color: #414244;">
+            <div id="nav">
+                <p><b>
+                    {{ evidence.file_name }}
+                </b><br /></p>
+                <p align="right">
+                    {{ evidence.mimetype }}
+                <br />
+                    {{ evidence.size }} Bytes
+                <br /></p>
+                <hr />
+                <br />
+                <a class="plugin" href="/plugins/overview?{{ evidence.url_query }}" target="frame">
+                    <i class="fa fa-info-circle" style="font-size:24px;padding-bottom:5px"></i><br>Information
+                </a>
+                <br>
+                    {% for plugin in plugins %}
+                        <a class="plugin" href="/plugins/{{ plugin.name }}?{{ evidence.url_query }}" target="frame">
+                            <i class="fa {{ plugin.icon }}" style="font-size:24px;padding-bottom:5px"></i><br>
+                            {{ plugin.display_name }}
+                        </a><br>
+                    {% endfor %}
+                </div>
+            </div>
+            <div data-options="region:'center',title:''">
+                <iframe name="frame" id="iframe" src="/plugins/overview?{{ evidence.url_query }}"></iframe>
+            </div>
+        </div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+[Core]
+Name = fa_raw
+Module = fa_raw
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Displays the printable characters of the file
+Copyright = 2017

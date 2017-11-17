@@ -2,92 +2,11 @@
 Returns a static HTML page with the hexdump output, similar to Hexdump -C
 """
 
-from flask import render_template_string, jsonify
+from flask import render_template, jsonify
 from yapsy.IPlugin import IPlugin
 
 
 BUFFER_SIZE = 1024 * 8
-
-TEMPLATE = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <script src="/static/jquery-1.11.3.min.js"></script>
-        <script>
-            var buffer = 0
-
-            function get_hex() {
-                $.ajax({
-                      url: "/plugins/fa_hexdump?pathspec={{ pathspec | urlencode }}&buffer=" + buffer,
-                      beforeSend: function() {
-                           $('#loading_icon').show()
-                      },
-                      complete: function() {
-                           $('#loading_icon').hide()
-                      },
-                      success: function (data) {
-                          hex_object = JSON.parse(data)
-                          for (var i in hex_object.hexadecimals){
-                            $('table').append('<tr>' +
-                                '<td><xmp>' + hex_object.offsets[i] + '</xmp></td>' +
-                                '<td><xmp>' + hex_object.hexadecimals[i] + '</xmp></td>' +
-                                '<td><xmp>' + hex_object.printables[i] + '</xmp></td>' +
-                                '<td></td>' +
-                                '</tr>');
-                          }
-                          buffer = hex_object.buffer;
-                      },
-                      dataType: 'html'
-                });
-            }
-
-            $(window).scroll(function(){
-                if ($(window).scrollTop() == $(document).height()-$(window).height()){
-                    get_hex();
-                }
-            });
-
-            window.onload = get_hex();
-        </script>
-        <style>
-            body {
-                margin: 0px;
-            }
-            table {
-                width: 100%;
-            }
-            td, th {
-                text-align: left;
-                padding-left: 8px;
-                padding-right: 8px;
-            }
-            td:last-child{
-                width:100%;
-                white-space:nowrap;
-                background-color: white;
-            }
-            tr:nth-child(even) {
-                background-color: #f1f1f1;
-            }
-            xmp {
-                margin: 0px;
-            }
-            img#loading_icon {
-                top: 50%;
-                left: 50%;
-                position: fixed;
-                transform: translate(-50%, -50%);
-            }
-        </style>
-    </head>
-    <body>
-        <table>
-        </table>
-        <img id="loading_icon" src="/static/images/loading.gif" alt="Loading...">
-    </body>
-</html>
-"""
-
 
 class FaHexdump(IPlugin):
     def __init__(self):
@@ -120,7 +39,7 @@ class FaHexdump(IPlugin):
         buffer = helper.get_request_value(request, 'buffer', None)
 
         if buffer is None:
-            return render_template_string(TEMPLATE, pathspec=evidence['pathspec'])
+            return render_template('fa_hexdump.html', pathspec=evidence['pathspec'])
 
         buffer = int(buffer)
         hex_data = self.hex_dump(helper.pathspec_helper.read_file(evidence['pathspec'],

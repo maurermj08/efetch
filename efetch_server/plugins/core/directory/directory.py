@@ -3,250 +3,13 @@ Simple directory tree view
 """
 
 from yapsy.IPlugin import IPlugin
-from flask import render_template_string, jsonify
+from flask import render_template, jsonify
 import json
 import logging
 import os
 
 
 LISTING_INTERVAL = 256
-TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-        <link rel="stylesheet" type="text/css" href="/static/themes/jquery.dataTables.min.css">
-        <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
-        <script src="/static/jquery-1.11.3.min.js"></script>
-        <script src="/static/jquery-ui-1.11.4/jquery-ui.min.js" type="text/javascript"></script>
-        <script type="text/javascript" src="/static/jquery.dataTables.min.js"></script>
-        <script type="text/javascript" class="init">
-            jQuery.extend( jQuery.fn.dataTableExt.oSort, {
-                "alt-string-pre": function ( a ) {
-                    return a.match(/alt="(.*?)"/)[1].toLowerCase();
-                },
-
-                "alt-string-asc": function( a, b ) {
-                    return ((a < b) ? -1 : ((a > b) ? 1 : 0));
-                },
-
-                "alt-string-desc": function(a,b) {
-                    return ((a < b) ? 1 : ((a > b) ? -1 : 0));
-                }
-            } );
-            jQuery.fn.dataTable.ext.type.order['file-size-pre'] = function ( data ) {
-                var matches = data.match( /^(\d+(?:\.\d+)?)\s*([a-z]+)/i );
-                var multipliers = {
-                    b:  1,
-                    kb: 1000,
-                    kib: 1024,
-                    mb: 1000000,
-                    mib: 1048576,
-                    gb: 1000000000,
-                    gib: 1073741824,
-                    tb: 1000000000000,
-                    tib: 1099511627776,
-                    pb: 1000000000000000,
-                    pib: 1125899906842624
-                };
-
-                if (matches) {
-                    var multiplier = multipliers[matches[2].toLowerCase()];
-                    return parseFloat( matches[1] ) * multiplier;
-                } else {
-                    return -1;
-                };
-            };
-            $(document).ready(function() {
-                    $('#t01').DataTable({
-                            "paging": false,
-                            "info": false,
-                            "orderClasses": false,
-                            "searching": false,
-                            "language": {
-                                "emptyTable": "Loading..."
-                            },
-                            "columnDefs": [
-                                    { type: 'alt-string', targets: 0 },
-                                    { type: 'file-size', targets: 6 }
-                                ]
-                            }
-                    );
-            } );
-
-            $('#loading_icon').hide()
-            var directory_index = 0
-            var directory_done = false;
-
-            function get_items() {
-                $.ajax({
-                      url: "/plugins/directory?pathspec={{ pathspec | urlencode }}&up={{ up }}&directory_index=" + directory_index,
-                      beforeSend: function() {
-                           $('#loading_icon').show()
-                      },
-                      complete: function() {
-                           $('#loading_icon').hide()
-                      },
-                      success: function(data) {
-                          list = JSON.parse(data)
-                          for (var i in list.rows){
-                            var analyze = ''
-                            var download = ''
-                            var preview = ''
-
-                            if (list.rows[i].analyze) {
-                                analyze =
-                                    '<a href="/plugins/analyze?' +  list.rows[i].url_query + '" target="_top" style="padding-right:10px">' +
-                                    '    <span class="fa-stack fa-md">' +
-                                    '        <i class="fa fa-square fa-stack-2x"></i>' +
-                                    '        <i class="fa fa-info-circle fa-stack-1x fa-inverse"></i>' +
-                                    '    </span>' +
-                                    '</a>'
-                            }
-                            if (list.rows[i].preview) {
-                                preview =
-                                    '<a href="/plugins/preview?' + list.rows[i].url_query + '&redirect=True" target="_blank" style="padding-right:10px">' +
-                                    '    <span class="fa-stack fa-md">' +
-                                    '        <i class="fa fa-square fa-stack-2x"></i>' +
-                                    '        <i class="fa fa-eye fa-stack-1x fa-inverse"></i>' +
-                                    '    </span>' +
-                                    '</a>'
-                            }
-                            if (list.rows[i].download) {
-                                download =
-                                    '<a href="/plugins/download?' + list.rows[i].url_query + '">' +
-                                    '    <span class="fa-stack fa-md">' +
-                                    '        <i class="fa fa-square fa-stack-2x"></i>' +
-                                    '        <i class="fa fa-download fa-stack-1x fa-inverse"></i>' +
-                                    '    </span>' +
-                                    '</a> '
-                            }
-                            $('#t01').DataTable().row.add($(
-                                '<tr>' +
-                                    '<!-- ' + list.rows[i].file_name + ' -->' +
-                                    '<td style="padding-left: 24px;"><a href="/plugins/' + list.rows[i].plugin + '?' + list.rows[i].url_query + '" ' + list.rows[i].target + '>' +
-                                    '    <img src="' + list.rows[i].icon + '" style="width:32px;height:32px;"' +
-                                    '    alt="' + list.rows[i].order + ' ' + list.rows[i].file_name + '"></a></td>' +
-                                    '<td><a href="/plugins/' + list.rows[i].plugin + '?' + list.rows[i].url_query + '" ' + list.rows[i].target + '>' + list.rows[i].file_name + '</a></td>' +
-                                    '<td>' + list.rows[i].mtime_no_nano + '</td>' +
-                                    '<td>' + list.rows[i].atime_no_nano + '</td>' +
-                                    '<td>' + list.rows[i].ctime_no_nano + '</td>' +
-                                    '<td>' + list.rows[i].crtime_no_nano + '</td>' +
-                                    '<td>' + list.rows[i].size + '</td>' +
-                                    '<td>' + analyze + preview + download +
-                                    '</td></tr>'
-                            )[0]).draw();
-                          }
-                          directory_index = list.directory_index;
-                          directory_done = list.directory_done;
-                      },
-                      dataType: 'html'
-                });
-            }
-
-            $(window).scroll(function(){
-                if ($(window).scrollTop() == $(document).height()-$(window).height() && !(directory_done)){
-                    get_items();
-                }
-            });
-
-            window.onload = get_items();
-        </script>
-<style>
-    table.dataTable thead th {
-        position: relative;
-        background-image: none !important;
-    }
-    table.dataTable thead th.sorting:after,
-    table.dataTable thead th.sorting_asc:after,
-    table.dataTable thead th.sorting_desc:after {
-        position: absolute;
-        top: 12px;
-        right: 8px;
-        display: block;
-        font-family: FontAwesome;
-    }
-    table.dataTable thead th.sorting:after {
-        content: "\\f0dc";
-        color: #ddd;
-        font-size: 0.8em;
-        padding-top: 0.12em;
-    }
-    table.dataTable thead th.sorting_asc:after {
-        content: "\\f0de";
-    }
-    table.dataTable thead th.sorting_desc:after {
-        content: "\\f0dd";
-    }
-    table {
-        overflow-y: scroll;
-        width: 100%;
-    }
-    table, th, td {
-        border: 0px;
-        border-collapse: collapse;
-    }
-    th, td {
-        padding: 5px;
-        text-align: left;
-    }
-    table#t01 tr:nth-child(even) {
-        background-color: #fff;
-    }
-    table#t01 tr:nth-child(odd) {
-       background-color:#eee;
-    }
-    table#t01 th {
-        background-color: #444;
-        color: white;
-    }
-    html{
-        height: 100%;
-    }
-    body {
-        min-height: 100%;
-        margin: 0px;
-    }
-    a {
-        text-decoration: none;
-    }
-    a:link {
-        color: #0c006b;
-    }
-    a:visited {
-        color: #0c006b;
-    }
-    a:hover {
-        color: rgb(153, 193, 255);
-    }
-    img#loading_icon {
-        top: 50%;
-        left: 50%;
-        position: fixed;
-        transform: translate(-50%, -50%);
-    }
-
-</style>
-</head>
-    <body>
-       <table id="t01" class="display">
-            <thead>
-            <tr>
-                <th>Icon</th>
-                <th>File Name</th>
-                <th>Modified</th>
-                <th>Accessed</th>
-                <th>Changed</th>
-                <th>Created</th>
-                <th>Size</th>
-                <th>Options</th>
-            </tr>
-            </thead>
-        </table>
-        <img id="loading_icon" src="/static/images/loading.gif" alt="Loading...">
-    </body>
-</html>
-"""
-
 
 class Directory(IPlugin):
 
@@ -279,13 +42,6 @@ class Directory(IPlugin):
         """Returns the mimetype of this plugins get command"""
         return "text/plain"
 
-    @staticmethod
-    def human_readable_size(num, suffix='B'):
-        for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
-            if abs(num) < 1000.0:
-                return "%3.1f%s%s" % (num, unit, suffix)
-            num /= 1000.0
-        return "%.1f%s%s" % (num, 'Yi', suffix)
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
@@ -294,7 +50,7 @@ class Directory(IPlugin):
 
         # Initial call, just return the Template; else AJAX
         if directory_index is None:
-            return render_template_string(TEMPLATE, pathspec=evidence['pathspec'], up=up)
+            return render_template('directory.html', pathspec=evidence['pathspec'], up=up)
         else:
             directory_index = int(directory_index)
 
@@ -304,13 +60,6 @@ class Directory(IPlugin):
         #   1 - Up
         #   2 - Folders
         #   3 - Evidence and files
-
-        # if ('volume_type' in evidence or 'storage_type' in evidence or 'compression_type' in evidence or \
-        #        'archive_type' in evidence) and not evidence['mimetype'].startswith('application/vnd'):
-        #     if u'archive_type' in evidence and u'ZIP' in evidence['archive_type']:
-        #         initial_pathspec = [helper.pathspec_helper.get_zip_base_pathspec(evidence['pathspec'])]
-        #     else:
-        #         initial_pathspec = helper.pathspec_helper.get_new_base_pathspecs(evidence['pathspec'])
 
         # Forces volumes and partitions to be seen as expandable evidence
         force_expand = False
@@ -443,3 +192,11 @@ class Directory(IPlugin):
 
         # TODO directory_done will tell it to stop trying to load when it goes to the bottom
         return jsonify({'rows': directory_list, 'directory_index': directory_index, 'directory_done': directory_done})
+
+    @staticmethod
+    def human_readable_size(num, suffix='B'):
+        for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
+            if abs(num) < 1000.0:
+                return "%3.1f%s%s" % (num, unit, suffix)
+            num /= 1000.0
+        return "%.1f%s%s" % (num, 'Yi', suffix)

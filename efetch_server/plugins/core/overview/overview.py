@@ -3,65 +3,9 @@ Gets an overview of the file without using cache
 """
 
 from collections import OrderedDict
-from flask import render_template_string
+from flask import render_template
 from yapsy.IPlugin import IPlugin
 
-
-TEMPLATE = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <style>
-        table {
-            overflow-y: scroll;
-            width: 100%;
-        }
-        table, th, td {
-            border: 0px;
-            border-collapse: collapse;
-        }
-        th, td {
-            text-align: left;
-            padding: 10px;
-        }
-        table#t01 tr:nth-child(even) {
-            background-color: #fff;
-        }
-        table#t01 tr:nth-child(odd) {
-           background-color:#eee;
-        }
-        table#t01 th {
-            background-color: #444;
-            color: white;
-        }
-        html{
-            height: 100%;
-        }
-
-        body {
-            min-height: 100%;
-            margin: 0px;
-        }
-
-    </style>
-    </head>
-        <body>
-            <table id="t01" class="display">
-                <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Value</th>
-                </tr>
-                </thead>
-                <tbody>
-                    {% for key, value in evidence %}
-                        <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </body>
-    </html>
-"""
 
 class Overview(IPlugin):
     def __init__(self):
@@ -111,4 +55,4 @@ class Overview(IPlugin):
         # Order the evidence
         ordered_evidence = OrderedDict(sorted(evidence.items(), key=lambda i:self._key_order.index(i[0])))
 
-        return render_template_string(TEMPLATE, evidence=ordered_evidence.items())
+        return render_template('overview.html', evidence=ordered_evidence.items())

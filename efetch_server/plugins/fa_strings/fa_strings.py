@@ -2,85 +2,13 @@
 A simple plugin that takes a file and returns the Strings in it
 """
 
-from flask import render_template_string, jsonify
+from flask import render_template, jsonify
 from yapsy.IPlugin import IPlugin
 
 
 BUFFER_SIZE = 1024 * 1024
 NUMBER_OF_STRINGS = 256
 MINIMUM_CHARACTERS = 4
-
-TEMPLATE = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <script src="/static/jquery-1.11.3.min.js"></script>
-        <script>
-            var buffer = 0
-            var index_in_buffer = 0
-
-            function get_strings() {
-                $.ajax({
-                      url: "/plugins/fa_strings?pathspec={{ pathspec | urlencode }}&buffer=" + buffer + "&index_in_buffer=" + index_in_buffer,
-                      beforeSend: function() {
-                           $('#loading_icon').show()
-                      },
-                      complete: function() {
-                           $('#loading_icon').hide()
-                      },
-                      success: function (data) {
-                          string_object = JSON.parse(data)
-                          for (var i in string_object.strings){
-                            $('table').append('<tr><td><xmp>' + string_object.strings[i] + '</xmp></td></tr>');
-                          }
-                          buffer = string_object.buffer;
-                          index_in_buffer = string_object.index_in_buffer;
-                      },
-                      dataType: 'html'
-                });
-            }
-
-            $(window).scroll(function(){
-                if ($(window).scrollTop() == $(document).height()-$(window).height()){
-                    get_strings()
-                }
-            });
-
-            window.onload = get_strings()
-        </script>
-        <style>
-            body {
-                margin: 0px;
-            }
-            table {
-                font-family: arial, sans-serif;
-                width: 100%;
-            }
-            td, th {
-                text-align: left;
-                padding-left: 8px;
-            }
-            tr:nth-child(even) {
-                background-color: #f1f1f1;
-            }
-            xmp {
-                margin: 0px;
-            }
-            img#loading_icon {
-                top: 50%;
-                left: 50%;
-                position: fixed;
-                transform: translate(-50%, -50%);
-            }
-        </style>
-    </head>
-    <body>
-        <table>
-        </table>
-        <img id="loading_icon" src="/static/images/loading.gif" alt="Loading...">
-    </body>
-</html>
-"""
 
 # TODO: Boundary strings... Any strings at a buffer Boundary will be broken up and some small strings will be ingored
 class FaStrings(IPlugin):
@@ -117,7 +45,7 @@ class FaStrings(IPlugin):
         list_of_strings = []
 
         if buffer is None:
-            return render_template_string(TEMPLATE, pathspec=evidence['pathspec'])
+            return render_template('fa_strings.html', pathspec=evidence['pathspec'])
 
         buffer = int(buffer)
         index_in_buffer = int(index_in_buffer)

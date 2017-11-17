@@ -32,7 +32,6 @@ setup(
                       u'Registry>=0.4.2',
                       u'python_magic>=0.4.12',
                       u'Requests>=2.10.0',
-                      u'Rocket>=1.2.0',
                       u'ExifRead>=2.1.0',
                       u'Jinja2>=2.1',
                       u'rison>=1.0',
