@@ -8,7 +8,7 @@ DEFAULTS = {'index': '*'}
 
 def create_app(elastic_url, cache_directory, max_file_size, plugins_file, debug):
     """Creates the core efetch flask app"""
-    app = Flask(__name__, static_path=u'/static')
+    app = Flask(__name__, static_url_path=u'/static')
 
     if debug:
         logging.basicConfig(level=logging.DEBUG)
