@@ -1,5 +1,7 @@
 include LICENSE README efetch_plugins.yml
 recursive-include efetch_server/resources *
 recursive-include efetch_server/plugins *
+recursive-include efetch_server/static *
+recursive-include efetch_server/templates *
 exclude *.pyc
 exclude .gitignore
