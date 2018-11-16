@@ -16,6 +16,7 @@ class Directory(IPlugin):
     def __init__(self):
         self.display_name = 'Navigate'
         self.popularity = 9
+        self.category = 'misc'
         self.cache = False
         self.fast = False
         self.action = False

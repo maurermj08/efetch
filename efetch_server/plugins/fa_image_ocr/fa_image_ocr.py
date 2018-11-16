@@ -23,6 +23,7 @@ class FaImageOcr(IPlugin):
     def __init__(self):
         self.display_name = 'Image OCR'
         self.popularity = 3
+        self.category = 'multimedia'
         self.cache = False
         self.fast = False
         self.action = True

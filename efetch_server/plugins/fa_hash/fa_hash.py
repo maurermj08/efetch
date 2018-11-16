@@ -13,6 +13,7 @@ import os
 class FaHash(IPlugin):
     def __init__(self):
         self.display_name = 'File Hasher'
+        self.category = 'data'
         self.popularity = 0
         self.cache = True
         self.fast = False

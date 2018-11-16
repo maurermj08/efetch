@@ -11,6 +11,7 @@ class FaPlaso(IPlugin):
     def __init__(self):
         self.display_name = 'Create Timeline'
         self.popularity = 5
+        self.category = 'misc'
         self.cache = False
         self.fast = False
         self.action = False

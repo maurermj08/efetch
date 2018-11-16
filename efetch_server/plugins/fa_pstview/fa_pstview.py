@@ -10,6 +10,7 @@ class FaPstview(IPlugin):
     def __init__(self):
         self.display_name = 'PST Viewer'
         self.popularity = 8
+        self.category = 'misc'
         self.cache = True
         self.fast = False
         self.action = False

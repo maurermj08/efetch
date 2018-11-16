@@ -68,3 +68,6 @@ target/
 
 # Pycharm files
 .idea/
+
+# Quick Docker File
+Dockerfilefastubuntu

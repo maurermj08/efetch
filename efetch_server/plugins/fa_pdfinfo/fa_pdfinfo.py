@@ -10,6 +10,7 @@ class FaPdfinfo(IPlugin):
     def __init__(self):
         self.display_name = 'PDF Info'
         self.popularity = 5
+        self.category = 'office'
         self.cache = True
         self.fast = False
         self.action = False

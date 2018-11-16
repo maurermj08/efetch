@@ -13,7 +13,8 @@ class FaRaw(IPlugin):
 
     def __init__(self):
         self.display_name = 'Raw View'
-        self.popularity = 2
+        self.popularity = 7
+        self.category = 'common'
         self.cache = False
         self.fast = False
         self.action = False
@@ -38,7 +39,7 @@ class FaRaw(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-	data = PathspecHelper.read_file(evidence['pathspec'], size=0, seek=0)	
+        data = PathspecHelper.read_file(evidence['pathspec'], size=0, seek=0)	
         chars = ''.join(map(unichr, range(0,9) + range(11,32) + range(127,160)))
         regexp = re.compile('[%s]' % re.escape(chars))
         return render_template('fa_raw.html', data=regexp.sub('', data.decode('utf8', 'ignore')).split('\n', -1))

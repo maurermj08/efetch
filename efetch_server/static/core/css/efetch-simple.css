@@ -13,6 +13,9 @@ td, th {
 	text-align: left;
 	padding-left: 8px;
 }
+tr {
+    height: 15px;
+}
 tr:nth-child(odd) {
 	background-color: #f1f1f1;
 }

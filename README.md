@@ -21,7 +21,7 @@ Below is a list of dependencies for **efetch**:
 * libjpeg
 * libtff
     
-On Ubuntu 14.04 these packages can be installed using the following commands:
+On Ubuntu 16.04 these packages can be installed using the following commands:
 
 ```bash
 sudo add-apt-repository -y ppa:gift/stable
@@ -46,7 +46,7 @@ After installation run the command **efetch** in the terminal and navigate to **
 The **efetch** command supports the following arguments:
 ```
 usage: efetch [-h] [-d] [-v] [-a ADDRESS] [-p PORT] [-e ELASTIC] [-c CACHE]
-              [-m MAXFILESIZE] [-f PLUGINSFILE]
+              [-m MAXFILESIZE] [-u DEFAULTPATH] [-f PLUGINSFILE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -61,9 +61,10 @@ optional arguments:
                         Directory to store cached files
   -m MAXFILESIZE, --maxfilesize MAXFILESIZE
                         Max file size to cache in Megabytes, default 1GB
+  -u DEFAULTPATH, --defaultpath DEFAULTPATH
+                        Default path used by the home page
   -f PLUGINSFILE, --pluginsfile PLUGINSFILE
                         Path to the plugins config file
-
 ```
 
 # Plugins

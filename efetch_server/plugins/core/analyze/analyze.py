@@ -10,6 +10,7 @@ class Analyze(IPlugin):
     def __init__(self):
         self.display_name = 'File Analyze'
         self.popularity = 0
+        self.category = 'misc'
         self.cache = False
         self.fast = False
         self.action = False
@@ -41,6 +42,7 @@ class Analyze(IPlugin):
 
         # Add Directoy link
         plugins = []
+        other_plugins = {}
 
         size = evidence.get('size', 0)
         if isinstance(size, list):
@@ -61,11 +63,21 @@ class Analyze(IPlugin):
                            'name': plugin_name,
                            'display_name': getattr(plugin, 'display_name', plugin_name)
                         })
-                    else:
-                        logging.debug("Check did not match, NOT adding plugin " + plugin_name)
+                    elif plugin.display_name != 'Overview':
+                        category = getattr(plugin, 'category', 'misc').lower()
+                        if not category in other_plugins:
+                            other_plugins[category] = []
+                        other_plugins[category].append({
+                           'icon': getattr(plugin, 'icon', 'fa-file-o'),
+                           'category': category,
+                           'name': plugin_name,
+                           'display_name': getattr(plugin, 'display_name', plugin_name)
+                        })
+                        logging.debug("Check did not match, NOT adding plugin to matched " + plugin_name)
 
         theme = 'black'
         home = '/plugins/overview?' + evidence['url_query']
 
         # Modifies HTML
-        return render_template('analyze.html', evidence=evidence, theme=theme, plugins=plugins, home=home)
+        return render_template('analyze.html', evidence=evidence, theme=theme, plugins=plugins, 
+                other_plugins=other_plugins, home=home)

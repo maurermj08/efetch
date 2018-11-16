@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <style>
+         html{
+         height: 100%;
+         background: url(/static/core/images/efetch_background.png);
+         background-position: bottom;
+         background-color: #444;         
+         }
+         body {
+         margin: 0px;
+         }
+         .inputs {
+         padding: 10px;
+         text-align: center;
+         background-color: #dadadacf;
+         margin: 40px;
+         max-width: 600px;
+         min-width: 200px;
+         border-radius: 25px;
+         font-family: Arial, Helvetica, sans-serif;
+         }
+         #submit_button {
+         color: white;
+         font-weight: bold;
+         background-color: darkgrey;
+         border-radius: 25px;
+         height: 30px;
+         width: 200px;
+         }
+      </style>
+   </head>
+   <body>
+      <form class="inputs" method="POST" {% if openwith == 'analyze' %}target="_top"{% endif %}>
+         <input type = "hidden" name = "pathspec" value = "{{pathspec}}" />
+         {% for key, value in inputs.items() %}
+            {% if key == 'h1' %}
+                <h1>{{value}}</h1>
+                <br>
+            {% elif key == 'h2' %}
+                <h2>{{value}}</h2>
+                <br>
+            {% elif key == 'h3' %}
+                <h3>{{value}}</h3>
+                <br>
+            {% elif key == 'label' %}
+                <label>{{value}}</label> 
+            {% elif key == 'text' %}
+                <input class="form-control" name="{{value}}">
+                <br>
+            {% endif %}
+         {% endfor %} 
+         <br>
+         <br>
+         <button id="submit_button" type="submit" class="btn btn-default">Submit</button> 
+      </form>
+   </body>
+</html>

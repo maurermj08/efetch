@@ -45,6 +45,7 @@ class FaAttach(IPlugin):
 
     def __init__(self):
         self.display_name = 'Index'
+        self.category = 'misc'
         self.popularity = 0
         self.cache = False
         self.fast = False

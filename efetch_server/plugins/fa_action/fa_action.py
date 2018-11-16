@@ -10,6 +10,7 @@ class FaAction(IPlugin):
 
     def __init__(self):
         self.display_name = 'Action'
+        self.category = 'misc'
         self.popularity = 0
         self.cache = False
         self.fast = True

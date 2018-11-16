@@ -9,8 +9,9 @@ import os
 
 class FaOffice(IPlugin):
     def __init__(self):
-        self.display_name = 'Adv. Preview'
+        self.display_name = 'Office Preview'
         self.popularity = 8
+        self.category = 'office'
         self.cache = True
         self.fast = False
         self.action = False

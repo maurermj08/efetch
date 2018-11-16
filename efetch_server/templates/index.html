@@ -2,7 +2,6 @@
 <html>
 <head>
         <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
-
 <style>
 div.container {
     width: 100%;
@@ -44,6 +43,9 @@ a {
 }
 
 a:hover, a:active {
+    color: rgb(153, 193, 255);
+}
+label:hover, label:active {
     color: rgb(153, 193, 255);
 }
 nav ul {
@@ -100,11 +102,16 @@ input[type="submit"] {
         <article>
             <div id="analyze">
                 <a href="/plugins/directory" style="padding-top:8px;width:272px;height:79px;font-size:28px;background:url(/static/core/images/box.png);margin-left:16px">
-                    <i class="fa fa-folder-open-o" aria-hidden="true"></i>
-                    <br>
+                    <i class="fa fa-folder-open-o" aria-hidden="true" style="margin-top: 15px;"></i>
                     BROWSE
                 </a>
-                <img src="/static/core/images/or.png" alt="or" style="margin-top:32px; margin-bottom:32px;">
+                <form id="uploadfile" style="padding-top:8px;padding-bottom:5px;width:272px;height:79px;font-size:28px;background:url(/static/core/images/box.png);margin-left:16px" method="post" enctype="multipart/form-data">
+                    <input type="file" name="file" id="file" style="opacity: 0;position: absolute;height: 60px;z-index:-1;">
+                    <label for="file" style="cursor: pointer;">
+                        <i class="fa fa-upload" aria-hidden="true" style="margin-top: 15px;"></i>
+                        UPLOAD
+                    </label>
+                </form>                
                 <form action="/plugins/analyze" target="_blank"  style="padding-top:5px;width:272px;height:79px;font-size:28px;background:url(/static/core/images/box.png);margin-left:16px">
                     PATHSPEC
                     <br>
@@ -125,5 +132,10 @@ input[type="submit"] {
             </table>
         </div>
     </div>
-</body>
+        <script>
+            document.getElementById("file").onchange = function() {
+                    document.getElementById("uploadfile").submit();
+            };
+        </script>
+    </body>
 </html>

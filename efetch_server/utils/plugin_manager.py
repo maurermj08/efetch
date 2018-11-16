@@ -17,9 +17,13 @@ import logging
 import os
 import glob
 import platform
-import yaml
+import oyaml
 from jinja2 import Template
 from flask import send_from_directory
+from flask import render_template
+from flask import redirect
+from flask import url_for
+from werkzeug.utils import secure_filename
 from yapsy.PluginManager import PluginManager
 
 
@@ -52,8 +56,8 @@ class EfetchPluginManager(object):
 
         with open(plugins_file, 'r') as stream:
             try:
-                return yaml.load(stream)
-            except yaml.YAMLError as exc:
+                return oyaml.load(stream)
+            except oyaml.YAMLError as exc:
                 logging.error(u'Failed to parse Plugin Configuration File')
                 logging.error(exc)
 
@@ -90,7 +94,10 @@ class EfetchPluginManager(object):
                           plugin.get('format', 'Text'),
                           plugin.get('file', False),
                           plugin.get('openwith', False),
-                          plugin.get('icon', 'fa-file-o'))
+                          plugin.get('icon', 'fa-file-o'),
+                          plugin.get('category', 'misc').lower(),
+                          plugin.get('display', 'xmp').lower(),
+                          plugin.get('inputs', False))
         else:
             return plugin.plugin_object
 
@@ -98,8 +105,8 @@ class EfetchPluginManager(object):
 class Plugin(object):
     """Simple dynamically created plugin object"""
 
-    def __init__(self, display_name, description, cache, popularity, fast, store, mimetypes,
-                 extensions, operating_systems, command, format, file, openwith, icon):
+    def __init__(self, display_name, description, cache, popularity, fast, store, mimetypes, extensions,
+                 operating_systems, command, format, file, openwith, icon, category, display, inputs):
         self.display_name = display_name
         self.description = description
         self.popularity = popularity
@@ -107,6 +114,7 @@ class Plugin(object):
         self.fast = fast
         self.action = bool(store)
         self.icon = icon
+        self.category = category
         self._store = store
         self._mimetypes = mimetypes
         self._extensions = extensions
@@ -115,7 +123,8 @@ class Plugin(object):
         self._format = format
         self._file = file
         self._openwith = openwith
-
+        self._display = display
+        self._inputs = inputs
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
@@ -135,6 +144,18 @@ class Plugin(object):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
+        # REMOVE ME
+        logging.info('METHOD "' + str(request.method) + '", INPUTS "' + str(self._inputs) + '"')
+        
+        if self._inputs and request.method == 'GET':
+            return render_template('input.html', inputs=self._inputs, pathspec=evidence['pathspec'], openwith=self._openwith)
+        elif self._inputs and request.method == 'POST':
+            for key in request.form:
+                if key not in evidence:
+                    evidence[key] = secure_filename(request.form[key])
+                else:
+                    logging.warn('Key conflict in input, bad key "' + key + '"')
+
         evidence['plugin_command'] = Template(self._command).render(evidence)
 
         if self._command:
@@ -145,7 +166,9 @@ class Plugin(object):
 
         if self._file:
             file_name = str(Template(self._file).render(evidence))
-            if not os.path.isdir(file_name):
+            if os.path.isfile(file_name):
+                file_name = file_name
+            elif not os.path.isdir(file_name):
                 file_name = glob.glob(file_name)
                 if isinstance(file_name, list):
                     file_name = file_name[0]
@@ -153,9 +176,8 @@ class Plugin(object):
             if self._openwith:
                 # TODO Figure out if this is the best method, because it may result in duplicate caching
                 # TODO remove any reference to evidence['cache_path'] and instead always use path on disk
-                plugin = helper.plugin_manager.get_plugin_by_name(self._openwith)
                 new_pathspec = helper.pathspec_helper.get_encoded_pathspec(file_name)
-                print(new_pathspec)
+                plugin = helper.plugin_manager.get_plugin_by_name(self._openwith)
                 new_evidence = helper.pathspec_helper.get_evidence_item(new_pathspec,
                                                                         helper.get_request_value(request, 'index', '*'),
                                                                         False,
@@ -176,9 +198,12 @@ class Plugin(object):
         except:
             output_string = output
 
-        results = u'<p style="font-family:Courier New, Courier, monospace;">' \
-               + unicode(evidence['plugin_command']) + u'</p><hr><xmp>' + output_string\
-               + u'</xmp>'
+        if self._display == 'raw':
+            results = output_string
+        else:
+            results = u'<p style="font-family:Courier New, Courier, monospace;">' \
+                   + unicode(evidence['plugin_command']) + u'</p><hr><xmp>' + output_string\
+                   + u'</xmp>'
 
         return results
 

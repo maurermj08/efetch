@@ -1,0 +1,10 @@
+[Core]
+Name = fa_cyberchef
+Module = fa_cyberchef
+
+[Documentation]
+Author = Michael Maurer Credit Andy Wick
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = A Cyber Chef plugin, based on code by Andy Wick's Moloch contribution
+Copyright = 2016

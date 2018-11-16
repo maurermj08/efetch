@@ -11,6 +11,7 @@ class Preview(IPlugin):
     def __init__(self):
         self.display_name = 'Preview'
         self.popularity = 8
+        category = 'misc'
         self.cache = True
         self.fast = False
         self.action = False
@@ -27,10 +28,12 @@ class Preview(IPlugin):
 
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
+        #TODO: Whitelist mimetypes only
         allowed_mimetype = ['application/xml', 'application/pdf', 'message/rfc822']
-        allowed_prefix = ['image', 'text', 'video', 'audio']
+        allowed_prefix = ['image', 'video', 'audio']
+        exclude = [ 'image/tiff', 'video/x-ms-asf', 'image/x-ms-bmp' ]
         return (str(evidence['mimetype'].split('/')[0]).lower() in allowed_prefix
-                or evidence['mimetype'] in allowed_mimetype ) and evidence['meta_type'] != 'Directory'
+                or evidence['mimetype'] in allowed_mimetype ) and evidence['meta_type'] != 'Directory' and evidence['mimetype'] not in exclude
 
     def mimetype(self, mimetype):
         """Returns the mimetype of this plugins get command"""

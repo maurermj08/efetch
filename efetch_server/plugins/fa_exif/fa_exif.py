@@ -73,6 +73,7 @@ class FaExif(IPlugin):
     def __init__(self):
         self.display_name = 'EXIF'
         self.popularity = 6
+        self.category = 'multimedia'
         self.cache = True
         self.fast = False
         self.action = False

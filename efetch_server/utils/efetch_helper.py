@@ -25,7 +25,7 @@ class EfetchHelper(object):
     """This class provides helper methods to be used in Efetch and its plugins"""
 
 
-    def __init__(self, curr_directory, output_directory, max_file_size, plugins_file, es_url):
+    def __init__(self, curr_directory, output_directory, max_file_size, plugins_file, es_url, default_path):
         """Initializes the Efetch Helper"""
         # Setup directory references
         self.curr_dir = curr_directory
@@ -33,6 +33,7 @@ class EfetchHelper(object):
         self.icon_dir = self.resource_dir + u'icons' + os.path.sep
         self.output_dir = output_directory
         self.max_file_size = max_file_size
+        self.default_path = default_path
         if not os.path.isdir(self.icon_dir):
             logging.error(u'Could not find icon directory ' + self.icon_dir)
 
@@ -85,6 +86,10 @@ class EfetchHelper(object):
                                         self.get_request_value(request, '_g', '()'),
                                         self.get_request_value(request, 'timefield', 'datetime'),
                                         must, must_not)
+
+    def get_default_path(self):
+        """Gets the default os path to use if none specified"""
+        return self.default_path
 
     def is_expandable_evidence(self, evidence):
         """Returns True if evidence should be expandable and false if not"""

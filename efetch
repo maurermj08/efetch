@@ -48,6 +48,10 @@ if __name__ == u'__main__':
                         help=u'Max file size to cache in Megabytes, default 1GB',
                         action=u'store',
                         default=1000)
+    parser.add_argument(u'-u', u'--defaultpath',
+                        help=u'Default path used by the home page',
+                        action=u'store',
+                        default=u'~')
     parser.add_argument(u'-f', u'--pluginsfile', type=unicode,
                         help=u'Path to the plugins config file',
                         action=u'store',
@@ -60,5 +64,5 @@ if __name__ == u'__main__':
     if args.version:
         print args.version
 
-    efetch_app.create_app(args.elastic, args.cache, args.maxfilesize, args.pluginsfile, args.debug)\
+    efetch_app.create_app(args.elastic, args.cache, args.maxfilesize, args.pluginsfile, args.defaultpath, args.debug)\
         .run(host=args.address, port=args.port, debug=args.debug)

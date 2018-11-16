@@ -11,6 +11,7 @@ class FaTimeline(IPlugin):
     def __init__(self):
         self.display_name = 'Log2Timeline'
         self.popularity = 0
+        self.category = 'misc'
         self.cache = False
         self._default_plugin = 'analyze/'
         self.fast = True
