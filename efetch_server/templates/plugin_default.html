@@ -1,0 +1,26 @@
+{% extends "efetch_layout.html" %}
+i
+{% block head %}
+<style> 
+    table { 
+        overflow-y: scroll; 
+        width: 100%; 
+        font-family: monospace;
+    } 
+</style>
+{% endblock %}
+
+{% block body %}
+<table>
+    <thead>
+    <tr>
+        <th>{{ command }}</th>
+    </tr>
+    </thead>
+    <tbody>
+        {% for line in output %}
+        <tr><td>{{ line }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

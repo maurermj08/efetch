@@ -84,12 +84,12 @@ class EfetchPluginManager(object):
             return Plugin(plugin.get('name', 'None'),
                           plugin.get('description', 'None'),
                           plugin.get('cache', True),
-                          plugin.get('popularity', 5),
+                          plugin.get('popularity', 6),
                           plugin.get('fast', False),
                           plugin.get('store', False),
                           map(str.lower, plugin.get('mimetypes', [])),
                           map(str.lower, plugin.get('extensions', [])),
-                          map(str.lower, plugin.get('os', [])),
+                          map(str.lower, plugin.get('os', [ 'linux' ])),
                           plugin.get('command', False),
                           plugin.get('format', 'Text'),
                           plugin.get('file', False),
@@ -144,9 +144,6 @@ class Plugin(object):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        # REMOVE ME
-        logging.info('METHOD "' + str(request.method) + '", INPUTS "' + str(self._inputs) + '"')
-        
         if self._inputs and request.method == 'GET':
             return render_template('input.html', inputs=self._inputs, pathspec=evidence['pathspec'], openwith=self._openwith)
         elif self._inputs and request.method == 'POST':
@@ -200,10 +197,10 @@ class Plugin(object):
 
         if self._display == 'raw':
             results = output_string
+        elif self._display == 'noheader': 
+            results = render_template('plugin_noheader.html', output=output_string.split('\n')) 
         else:
-            results = u'<p style="font-family:Courier New, Courier, monospace;">' \
-                   + unicode(evidence['plugin_command']) + u'</p><hr><xmp>' + output_string\
-                   + u'</xmp>'
+            results = render_template('plugin_default.html', command=unicode(evidence['plugin_command']), output=output_string.split('\n')) 
 
         return results
 

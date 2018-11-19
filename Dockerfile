@@ -7,9 +7,17 @@ RUN add-apt-repository -y ppa:gift/stable
 RUN add-apt-repository -y ppa:sift/stable
 RUN apt-get update
 RUN apt-get -y install python-plaso python-dev python-setuptools unoconv libpff libpff-python zlib1g-dev libjpeg-dev libtiff5-dev python-pip
-RUN apt-get -y install ffmpeg poppler-utils readpst unzip libxml2-utils foremost wget 
-RUN apt-get -y install imagemagick ssdeep wkhtmltopdf
+RUN apt-get -y install ffmpeg poppler-utils readpst unzip libxml2-utils foremost wget
+RUN apt-get -y install imagemagick ssdeep wkhtmltopdf libevtx-utils
 RUN pip install setuptools -U
+
+# Win10 Prefetch
+RUN mkdir /opt/w10pf/
+RUN wget https://raw.githubusercontent.com/bromiley/tools/master/win10_prefetch/w10pf_parse.py -O /opt/w10pf/w10pf_parse.py
+
+# Prefetch
+RUN mkdir /opt/prefetch/
+RUN wget https://raw.githubusercontent.com/PoorBillionaire/Windows-Prefetch-Parser/master/windowsprefetch/prefetch.py -O /opt/prefetch/prefetch.py
 
 # JD-CLI
 RUN apt-get -y install default-jre

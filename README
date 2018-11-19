@@ -7,6 +7,25 @@ image, and SQLite files. Efetch supports navigating RAW, E01, ZIP, GZ, TAR,
 VMDK, VHD, QCOW, and BZ2 files thanks to dfVFS.
 
 
+DOCKER
+--------
+
+The fastest way to get started with Efetch is using Docker. Download efetch and navigate to its direcotry. Then create the Docker image:
+
+```
+docker build -t efetch -f Dockerfile .
+```
+
+
+Then run the Docker container in a directory with your evidence:
+
+```
+docker run -p 8080:8080 -v $(pwd):$(pwd) -w $(pwd) efetch efetch --address=0.0.0.0 --defaultpath=$(pwd)
+```
+
+Finaly navigate to "http://localhost:8080"    
+
+
 INSTALL
 ---------
 

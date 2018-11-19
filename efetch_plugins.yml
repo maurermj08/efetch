@@ -10,7 +10,7 @@
 #       description: List the strings   # Optional
 #       icon: fa-eye                    # Font Awesome 4 icon, default fa-file
 #       cache: True                     # Defaults to True, so not necessary
-#       popularity: 2                   # Defaults to 5, changes list order, 0 is hidden
+#       popularity: 2                   # Defaults to 6, changes list order, 0 is hidden
 #       category: Office                # Defaults to Misc, changes category in analyst view
 #       os:                             # Defaults to all, list of supported operating systems (Windows and Linux)
 #           - linux
@@ -26,6 +26,10 @@
 #           - docx
 #       command: "unoconv -f pdf -o '{{ file_cache_path }}.pdf' '{{ file_cache_path }}' "
 #		file: "{{ file_cache_path }}.pdf"
+#
+# Popularity: 9 - Navigate, 5 - Raw, 4 - Strings, 3 - Hex, 1 - Download, 0 - Hidden
+#   Therefore file specific plugins should normally be between 6-8
+#   And generic/universal plugins should either have a mimetype of none to be searched or 2
 #
 # The COMMAND and FILE options use JINJA2 templating
 #
@@ -47,22 +51,19 @@ base64:
   name: Base64
   icon: fa-file-code-o
   category: misc
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
-  display: raw
+  display: noheader
   command: "base64 '{{ file_cache_path }}'"
 
 #clamscan:
 #  name: Clam Scan
 #  icon: fa-bug
-#  os: [ 'linux' ]
 #  command: "clamscan '{{ file_cache_path }}'"
 
 cleanjson:
   name: Clean JSON
   icon: fa-file-text-o
   category: misc
-  os: [ 'linux' ]
   extensions: [ 'json' ]
   command: "cat '{{ file_cache_path }}' | python -m json.tool"
 
@@ -70,7 +71,6 @@ cleanxml:
   name: Clean XML
   icon: fa-file-code-o
   category: misc
-  os: [ 'linux' ]
   mimetypes: [ 'application/xml' ]
   command: "cat '{{ file_cache_path }}' | xmllint --format --recover -"
 
@@ -78,7 +78,6 @@ corexml:
   name: Core.xml
   icon: fa-file-code-o
   category: office
-  os: [ 'linux' ]
   extensions: [ 'pptx', 'xlsx', 'docx' ]
   command: "unzip -qc '{{ file_cache_path }}' docProps/core.xml | xmllint --format  -"
 
@@ -86,8 +85,7 @@ certificate_info:
   name: Cert. Info
   icon: fa-certificate
   category: misc
-  popularity: 8
-  os: [ 'linux' ]
+  popularity: 7
   extensions: [ 'crt' ]
   command: "openssl x509 -in '{{ file_cache_path }}' -noout -text"
 
@@ -95,8 +93,7 @@ certificate_info_private:
   name: Key. Info
   icon: fa-certificate
   category: misc
-  popularity: 8
-  os: [ 'linux' ]
+  popularity: 7
   extensions: [ 'key' ]
   command: "openssl rsa -in '{{ file_cache_path }}' -check"
 
@@ -104,8 +101,7 @@ certificate_info_pkcs12:
   name: PKCS#12 Info
   icon: fa-certificate
   category: misc
-  popularity: 8
-  os: [ 'linux' ]
+  popularity: 7
   extensions: [ 'pfx', 'p12' ]
   inputs:
     h2: Password
@@ -113,12 +109,27 @@ certificate_info_pkcs12:
     text: password
   command: "openssl pkcs12 -info -in '{{ file_cache_path }}' -password pass:{{ password }}"
 
+evtxinfo:
+  name: EVTX Info
+  icon: fa-info
+  category: misc
+  popularity: 7
+  extensions: [ 'evtx' ]
+  command: "evtxinfo '{{ file_cache_path }}'"
+
+evtxexport:
+  name: EVTX Export
+  icon: fa-list
+  category: misc
+  popularity: 6
+  extensions: [ 'evtx' ]
+  command: "evtxexport '{{ file_cache_path }}'"
+
 ffmpeg:
   name: Video Preview
   icon: fa-file-video-o
   category: multimedia
   popularity: 8
-  os: [ 'linux' ]
   mimetypes: [ 'video/x-ms-asf', 'video/x-msvideo', 'video/x-ms-wmv', 'video/x-flv' ]
   command: "ffmpeg -y -i '{{ file_cache_path }}' -strict -2 -preset superfast '{{ file_cache_path }}.mp4' -hide_banner"
   file: "{{ file_cache_path }}.mp4"
@@ -127,7 +138,6 @@ ffmpeg:
 file:
   name: File
   category: common
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "file -b '{{ file_cache_path }}' | tr ',' '\n'"
 
@@ -135,7 +145,6 @@ floss:
   name: FLOSS
   category: executable
   icon: fa-file-code-o
-  os: [ 'linux' ]
   mimetypes: [ 'application/x-dosexec' ]
   command: "floss '{{ file_cache_path }}'"
 
@@ -143,7 +152,6 @@ foremost:
   name: Foremost
   icon: fa-scissors
   category: common
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "foremost '{{ file_cache_path }}' -o '{{ file_cache_path }}-foremost'"
   file: '{{ file_cache_path }}-foremost' 
@@ -153,7 +161,6 @@ hash_md5:
   name: MD5 Hash
   icon: fa-hashtag
   category: common
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "md5sum '{{ file_cache_path }}'"
 
@@ -161,7 +168,6 @@ hash_sha1:
   name: SHA1 Hash
   icon: fa-hashtag
   category: common
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "sha1sum '{{ file_cache_path }}'"
 
@@ -169,7 +175,6 @@ hash_sha256:
   name: SHA256 Hash
   icon: fa-hashtag
   category: common
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "sha256sum '{{ file_cache_path }}'"
 
@@ -177,7 +182,6 @@ hash_sha512:
   name: SHA512 Hash
   icon: fa-hashtag
   category: common
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "sha512sum '{{ file_cache_path }}'"
 
@@ -185,7 +189,6 @@ hash_ssdeep:
   name: Ssdeep
   icon: fa-hashtag
   category: common
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "ssdeep '{{ file_cache_path }}'"
 
@@ -194,7 +197,6 @@ htmltopdf:
   icon: fa-eye-slash
   category: misc
   popularity: 8
-  os: [ 'linux' ]
   mimetypes: [ 'text/html' ]
   command: "wkhtmltopdf '{{ file_cache_path }}' '{{ file_cache_path }}-htmltopdf.pdf'"
   file: '{{ file_cache_path }}-htmltopdf.pdf'
@@ -203,7 +205,6 @@ imagepreview:
   name: Image Preview
   icon: fa-eye
   category: multimedia
-  os: [ 'linux' ]
   popularity: 8
   mimetypes: [ 'image/tiff', 'image/bmp', 'image/x-ms-bmp' ]
   command: "mogrify -format jpg -write '{{ file_cache_path }}-imagepreview.jpg' '{{ file_cache_path }}'"
@@ -213,7 +214,6 @@ lnk:
   name: Parse LNK
   icon: fa-link
   category: misc
-  os: [ 'linux' ]
   extensions: [ 'lnk' ]
   command: "python /opt/pylnker.py '{{ file_cache_path }}'"
 
@@ -221,7 +221,6 @@ officeparser:
   name: Macro Extract
   icon: fa-file-code-o
   category: office
-  os: [ 'linux' ]
   extensions: [ 'none' ]
   command: "mkdir '{{ file_cache_path }}-officeparser'; python /opt/officeparser/officeparser.py --extract-macros -o '{{ file_cache_path }}-officeparser' '{{ file_cache_path }}'"
   file: '{{ file_cache_path }}-officeparser'
@@ -230,8 +229,8 @@ officeparser:
 olevba:
   name: Macro Details
   icon: fa-file-code-o
+  popularity: 6
   category: office
-  os: [ 'linux' ]
   extensions: [ 'ppt', 'pptx', 'pptm', 'xls', 'xlsx', 'xlsm', 'doc', 'docx', 'docm' ]
   command: "olevba '{{ file_cache_path }}'"
       
@@ -249,7 +248,6 @@ pdftotext:
   name: PDF to Text
   icon: fa-file-pdf-o
   category: office
-  os: [ 'linux' ]
   mimetypes: [ 'application/pdf' ]
   command: "pdftotext '{{ file_cache_path }}' -"
 
@@ -257,15 +255,27 @@ psxray:
   name: PS Xray
   icon: fa-file-code-o
   category: misc
-  os: [ 'linux' ]
   extensions: [ 'ps1' ]
   command: "/usr/bin/python /opt/psxray/psx.py --apidb /opt/psxray/apihashes.db --file '{{ file_cache_path }}'"
+
+prefetch:
+  name: Prefetch
+  icon: fa-windows
+  category: misc
+  extensions: [ 'pf' ]
+  command: "/usr/bin/python /opt/prefetch/prefetch.py -f '{{ file_cache_path }}'"
+
+prefetchw10:
+  name: Win10 Prefetch
+  icon: fa-windows
+  category: misc
+  extensions: [ 'pf' ]
+  command: "/usr/bin/python /opt/w10pf/w10pf_parse.py -f '{{ file_cache_path }}'"
 
 #readpst:
 #  name: Read PST
 #  icon: fa-envelope
 #  popularity: 4
-#  os: [ 'linux' ]
 #  extensions: [ 'pst' ]
 #  command: "mkdir {{ file_cache_path }}_readpst; readpst -w -D -S -o '{{ file_cache_path }}_readpst' {{ file_cache_path }}"
 #  file: "{{ file_cache_path }}_readpst"
@@ -288,7 +298,6 @@ scalpel:
   name: Scalpel
   icon: fa-scissors
   category: misc
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "scalpel -o '{{ file_cache_path }}-scalpel' '{{ file_cache_path }}'"
   file: '{{ file_cache_path }}-scalpel' 
@@ -298,7 +307,6 @@ strings_a:
   name: Strings ASCII
   icon: fa-file-text
   category: common
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "strings -a '{{ file_cache_path }}'"
 
@@ -306,16 +314,14 @@ strings_el:
   name: Strings Unicode (el)
   icon: fa-file-text
   category: common
-  os: [ 'linux' ]
   mimetypes: [ 'none' ]
   command: "strings -a -el '{{ file_cache_path }}'"
 
 unzip:
   name: Cache Unzip
-  popularity: 4
+  popularity: 6
   icon:  fa-file-archive-o
   category: misc
-  os: [ 'linux' ]
   mimetypes: [ 'application/zip' ]
   command: "unzip -u '{{ file_cache_path }}' -d '{{ file_cache_path }}_unzip'"
   file: "{{ file_cache_path }}_unzip"
@@ -324,12 +330,10 @@ unzip:
 #virus_total:
 #  name: Virus Total
 #  icon: fa-bug
-#  os: [ 'linux' ]
 #  command: "virustotal-search.py -m '{{ file_cache_path }}'"
 
 #ziplist:
 #  name: ZIP List
 #  icon: fa-archive
-#  os: [ 'linux' ]
 #  mimetypes: [ 'application/zip' ]
 #  command: "unzip -l '{{ file_cache_path }}'"

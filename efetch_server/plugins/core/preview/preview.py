@@ -29,7 +29,7 @@ class Preview(IPlugin):
     def check(self, evidence, path_on_disk):
         """Checks if the file is compatible with this plugin"""
         #TODO: Whitelist mimetypes only
-        allowed_mimetype = ['application/xml', 'application/pdf', 'message/rfc822']
+        allowed_mimetype = ['application/pdf', 'message/rfc822']
         allowed_prefix = ['image', 'video', 'audio']
         exclude = [ 'image/tiff', 'video/x-ms-asf', 'image/x-ms-bmp' ]
         return (str(evidence['mimetype'].split('/')[0]).lower() in allowed_prefix

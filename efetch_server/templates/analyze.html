@@ -8,11 +8,30 @@
     <script src="/static/core/js/jquery-1.11.3.min.js"></script>
     <script type="text/javascript" src="/static/core/js/jquery.easyui.min.js"></script>
     <style>
+        html {
+          scrollbar-face-color: #646464;
+          scrollbar-base-color: #646464;
+          scrollbar-3dlight-color: #646464;
+          scrollbar-highlight-color: #646464;
+          scrollbar-track-color: #000;
+          scrollbar-arrow-color: #000;
+          scrollbar-shadow-color: #646464;
+          scrollbar-dark-shadow-color: #646464;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 3px;}
+        ::-webkit-scrollbar-button {  background-color: #666; }
+        ::-webkit-scrollbar-track {  background-color: #646464;}
+        ::-webkit-scrollbar-track-piece { background-color: #000;}
+        ::-webkit-scrollbar-thumb { height: 50px; background-color: #666; border-radius: 3px;}
+        ::-webkit-scrollbar-corner { background-color: #646464;}}
+        ::-webkit-resizer { background-color: #666;}        
+
         .efetchAccordion {
             background-color: #a9a9a9;
             color: #444;
             cursor: pointer;
-            padding: 10px;
+            padding: 8px 10px 8px 10px;
             width: 100%;
             border: none;
             text-align: left;
@@ -40,17 +59,6 @@
           background:url(/static/images/loading.gif) center center no-repeat;
         }
 
-        #filterInput {
-          background-position: 10px 12px;
-          background-repeat: no-repeat;
-          width: 100%;
-          font-size: 16px;
-          padding: 12px 20px 12px 20px;
-          border: 1px solid #ddd;
-          margin-top: 12px;
-          margin-bottom: 12px;
-        }
-        
         .efetchshortlist {
           list-style-type: none;
           padding: 0;
@@ -58,10 +66,12 @@
         }
 
         .efetchshortlist li a {
-          margin-top: -1px; /* Prevent double borders */
+          border: #585858;
+          border-width: 1px;
+          border-style: solid; 
           background-color: #3f4042;
           color: white;
-          padding: 12px;
+          padding: 8px 10px 8px 10px;
           text-decoration: none;
           font-size: 18px;
           display: block
@@ -69,6 +79,35 @@
 
         .efetchshortlist li a:hover:not(.header) {
           color: #95b8e7;
+        }
+      
+        #search-form {
+          padding-top: 10px;
+          width: 100%;
+        }
+
+        .text-input-wrapper {
+          display:inline-block;
+          background-color: white; 
+          width: 100%;
+        }
+
+        .text-input-wrapper input {
+          border:none;
+          background:none;
+          outline:none;
+          padding:0 0;
+          margin:0 0;
+          font:inherit;
+          width: calc(100% - 20px);
+          padding: 3px;
+        }
+
+        .text-input-wrapper span {
+          cursor:pointer;
+          color:blue;
+          font-weight:bold;
+          visibility:hidden;
         }
     </style>
     <title>Analyze</title>
@@ -87,9 +126,39 @@
                     {{ evidence.size }} Bytes
                 <br /></p>
                 
-                <input type="text" id="filterInput" onkeyup="efetchFilterList()" placeholder="Search for plugin.." title="Filter">
+                <form id="search-form" action="javascript:void(0);">
+                        <span class="text-input-wrapper"><input id="filterInput" onkeyup="efetchFilterList()" placeholder="Search for plugin.." type="text" name="q" autocomplete="off" size="18"/><span onclick="clearButton(this)" title="Clear">&times;</span></span>
+                </form>
 
                 <div id="efetchfilterlist">
+                    <div class="panel" style="display:block">
+                      <ul id="searchlist" class="efetchshortlist">
+                        <li style="display:none">
+                            <a href="/plugins/overview?{{ evidence.url_query }}" target="frame" onclick='return loading()'>
+                                <i class="fa fa-info-circle fa-fw" style="font-size:20px;padding-bottom:5px"></i> Information
+                            </a>
+                        </li>
+                        {% for plugin in plugins %}
+                          <li style="display:none">
+                            <a href="/plugins/{{ plugin.name }}?{{ evidence.url_query }}" target="frame" onclick='return loading()'>
+                                <i class="fa {{ plugin.icon }} fa-fw" style="font-size:20px;padding-bottom:5px"></i>
+                                {{ plugin.display_name }}
+                            </a>
+                          </li>
+                        {% endfor %}
+                        {% for key, value in other_plugins.iteritems() %}
+                            {% for plugin in value %}
+                              <li style="display:none">
+                                <a href="/plugins/{{ plugin.name }}?{{ evidence.url_query }}" target="frame" onclick='return loading()'>
+                                    <i class="fa {{ plugin.icon }} fa-fw" style="font-size:20px;padding-bottom:5px"></i>
+                                    {{ plugin.display_name }}
+                                </a>
+                              </li>
+                            {% endfor %}
+                        {% endfor %}
+                      </ul>
+                    </div>
+
                     <button class="efetchAccordion">Matched</button>
                     <div class="panel" style="display:block">
                       <ul id="favoritelist" class="efetchshortlist">
@@ -108,7 +177,6 @@
                         {% endfor %}
                       </ul>
                     </div>
-                   
 
                     {% for key, value in other_plugins.iteritems() %}
                     <button class="efetchAccordion">{{ key }}</button>
@@ -144,27 +212,32 @@
 
         function efetchFilterList() {
             var input, filter, ul, li, a, i;
+            var searchForm = document.getElementById('search-form');
             input = document.getElementById("filterInput");
+            clearBtn = input.nextSibling;
             filter = input.value.toUpperCase();
-            filterDiv = document.getElementById("efetchfilterlist");
+            filterDiv = document.getElementById("searchlist");
             li = filterDiv.getElementsByTagName("li");
             for (i = 0; i < li.length; i++) {
                 a = li[i].getElementsByTagName("a")[0];
-                if (a.innerHTML.toUpperCase().indexOf(filter) > -1) {
+                if (filter == '') {
+                    li[i].style.display = "none";
+                }
+                else if (a.innerHTML.toUpperCase().indexOf(filter) > -1) {
                     li[i].style.display = "";
                 } else {
                     li[i].style.display = "none";
                 }
             }
-            accordians = filterDiv.getElementsByClassName("efetchAccordion");
-            if (filter == '') {
-                for (i = 1; i < accordians.length; i++) {
-                    accordians[i].nextElementSibling.style.display = "";
-                }
-            } else {
+      
+            accordians = document.getElementsByClassName("efetchAccordion");
+            if (filter != '') {
                 for (i = 0; i < accordians.length; i++) {
-                    accordians[i].nextElementSibling.style.display = "block";
+                    accordians[i].nextElementSibling.style.display = "none";
                 }
+                clearBtn.style.visibility = "visible";
+            } else {
+                clearBtn.style.visibility = "hidden";
             }
         }
 
@@ -182,6 +255,12 @@
                 }
             });
         }
+
+        function clearButton(button) {
+            button.style.visibility = "hidden";
+            document.getElementById("filterInput").value = "";
+            efetchFilterList();
+        };
     </script>
 </body>
 </html>

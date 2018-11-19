@@ -1,22 +1,9 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <link rel="stylesheet" href="/static/core/css/efetch-simple.css">
-        <style>
-            html{
-                height: 100%;
-            }
-            body {
-                min-height: 100%;
-                margin: 0px;
-            }
-        </style>
-    </head>
-    <body>
-        <table>
-            {% for line in data %}
-                <tr><td><xmp>{{ line | safe }}</xmp></td></tr>
-            {% endfor %}
-        </table>
-    </body>
-</html>
+{% extends "efetch_layout.html" %}
+
+{% block body %}            
+<table>
+    {% for line in data %}
+        <tr><td><xmp>{{ line | safe }}</xmp></td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

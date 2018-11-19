@@ -1,42 +1,34 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <link rel="stylesheet" href="/static/core/css/efetch-simple.css">
-        <style>
-            table {
-                overflow-y: scroll;
-                width: 100%;
-            }
-            table, th, td {
-                border: 0px;
-                border-collapse: collapse;
-            }
-            th, td {
-                text-align: left;
-                padding: 10px;
-            }
-            html{
-                height: 100%;
-            }
-            body {
-                min-height: 100%;
-                margin: 0px;
-            }
-        </style>
-    </head>
-    <body>
-        <table id="t01" class="display">
-            <thead>
-            <tr>
-                <th>Name</th>
-                <th>Value</th>
-            </tr>
-            </thead>
-            <tbody>
-                {% for key, value in evidence %}
-                    <tr><td>{{ key }}</td><td>{{ value | safe }}</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </body>
-</html>
+{% extends "efetch_layout.html" %}
+
+{% block head %}
+<style>
+    table {
+        overflow-y: scroll;
+        width: 100%;
+    }
+    table, th, td {
+        border: 0px;
+        border-collapse: collapse;
+    }
+    th, td {
+        text-align: left;
+        padding: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<table id="t01" class="display">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Value</th>
+    </tr>
+    </thead>
+    <tbody>
+        {% for key, value in evidence %}
+            <tr><td>{{ key }}</td><td>{{ value | safe }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

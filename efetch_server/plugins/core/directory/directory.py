@@ -9,7 +9,7 @@ import logging
 import os
 
 
-LISTING_INTERVAL = 256
+LISTING_INTERVAL = 1024
 
 class Directory(IPlugin):
 
