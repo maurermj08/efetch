@@ -12,6 +12,7 @@ from base64 import b64encode
 from yapsy.IPlugin import IPlugin
 from efetch_server.utils.pathspec_helper import PathspecHelper
 from flask import render_template
+import logging
 
 
 class FaCyberChef(IPlugin):
@@ -24,6 +25,8 @@ class FaCyberChef(IPlugin):
         self.fast = False
         self.action = False
         self.icon = 'fa-cutlery'
+        self.plaintext_mimetypes = [ u'application/xml', u'application/javascript',
+                u'application/json', u'application/typescript' ]
         IPlugin.__init__(self)
 
     def activate(self):
@@ -45,4 +48,8 @@ class FaCyberChef(IPlugin):
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
         data = PathspecHelper.read_file(evidence['pathspec'], size=0, seek=0)
-        return render_template('fa_cyberchef.html', data=b64encode(data))
+        
+        mimetype = evidence['mimetype'] = helper.pathspec_helper.get_mimetype(evidence['pathspec'])
+        decode = mimetype.startswith('text/') or mimetype in self.plaintext_mimetypes
+
+        return render_template('fa_cyberchef.html', data=b64encode(data), decode=decode)

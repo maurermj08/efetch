@@ -199,6 +199,14 @@ class Plugin(object):
             results = output_string
         elif self._display == 'noheader': 
             results = render_template('plugin_noheader.html', output=output_string.split('\n')) 
+        elif self._display == 'csv': 
+            table = output_string.split('\n')
+            header = table[0]
+            body = table[1:]
+            rows = []
+            for line in body:
+                rows.append(line.split(','))
+            results = render_template('plugin_csv.html', header=header.split(','), rows=rows) 
         else:
             results = render_template('plugin_default.html', command=unicode(evidence['plugin_command']), output=output_string.split('\n')) 
 

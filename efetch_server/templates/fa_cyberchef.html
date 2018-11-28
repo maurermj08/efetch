@@ -31,7 +31,11 @@
             var link = document.querySelector('link[rel="import"]');
             var cyberchef = link.import.querySelector('body');
             document.body.parentNode.replaceChild(cyberchef, document.body);
-            document.getElementById('input-text').value = '{{ data }}';
+            {% if decode %}
+                document.getElementById('input-text').value = atob(`{{ data }}`);
+            {% else %}
+                document.getElementById('input-text').value = `{{ data }}`;
+            {% endif %} 
         } else { // use iFrame for bad browsers
             var iframe = document.createElement('iframe');
             iframe.src = '/static/cyberchef.htm';
@@ -41,7 +45,11 @@
             document.getElementById('content').appendChild(iframe);
             iframe.addEventListener('load', function() {
                 var innerDoc = iframe.contentDocument || iframe.contentWindow.document;
-                innerDoc.getElementById('input-text').value = '{{ data }}';
+                {% if decode %}
+                    innerDoc.getElementById('input-text').value = atob(`{{ data }}`);
+                {% else %}
+                    innerDoc.getElementById('input-text').value = `{{ data }}`;
+                {% endif %} 
             });
         }
     </script>

@@ -109,6 +109,14 @@ certificate_info_pkcs12:
     text: password
   command: "openssl pkcs12 -info -in '{{ file_cache_path }}' -password pass:{{ password }}"
 
+entropy:
+  name: Entropy
+  icon: fa-tachometer
+  category: common
+  popularity: 1
+  mimetypes: [ 'none' ]
+  command: "ent '{{ file_cache_path }}'"
+
 evtxinfo:
   name: EVTX Info
   icon: fa-info
@@ -256,7 +264,7 @@ psxray:
   icon: fa-file-code-o
   category: misc
   extensions: [ 'ps1' ]
-  command: "/usr/bin/python /opt/psxray/psx.py --apidb /opt/psxray/apihashes.db --file '{{ file_cache_path }}'"
+  command: "/usr/bin/python /opt/psxray/psx.py -r --apidb /opt/psxray/apihashes.db --file '{{ file_cache_path }}'"
 
 prefetch:
   name: Prefetch
@@ -271,6 +279,7 @@ prefetchw10:
   category: misc
   extensions: [ 'pf' ]
   command: "/usr/bin/python /opt/w10pf/w10pf_parse.py -f '{{ file_cache_path }}'"
+  display: csv
 
 #readpst:
 #  name: Read PST
@@ -326,6 +335,27 @@ unzip:
   command: "unzip -u '{{ file_cache_path }}' -d '{{ file_cache_path }}_unzip'"
   file: "{{ file_cache_path }}_unzip"
   openwith: directory
+
+unzip_password:
+  name: Password Unzip
+  icon:  fa-file-archive-o
+  category: misc
+  mimetypes: [ 'none' ]
+  inputs:
+    h2: Password Protected Zip
+    label: Password
+    text: password
+  command: "unzip -P {{ password }} -u '{{ file_cache_path }}' -d '{{ file_cache_path }}_passwordunzip'"
+  file: "{{ file_cache_path }}_passwordunzip"
+  openwith: directory
+
+viper_monkey:
+  name: ViperMonkey
+  popularity: 1
+  icon: fa-file-code-o
+  category: office
+  mimetypes: [ 'none' ]
+  command: "vmonkey '{{ file_cache_path }}'"
 
 #virus_total:
 #  name: Virus Total

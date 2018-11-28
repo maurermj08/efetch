@@ -1,5 +1,5 @@
 {% extends "efetch_layout.html" %}
-i
+
 {% block head %}
 <style> 
     table { 
@@ -15,12 +15,18 @@ i
 <table>
     <thead>
     <tr>
-        <th>{{ command }}</th>
+        {% for item in header %}
+            <th>{{ item }}</th>
+        {% endfor %}
     </tr>
     </thead>
     <tbody>
-        {% for line in output %}
-        <tr><td>{{ line }}</td></tr>
+        {% for row in rows %}
+            <tr>
+                {% for item in row %}
+                    <td>{{ item }}</td>
+                {% endfor %}
+            </tr>
         {% endfor %}
     </tbody>
 </table>

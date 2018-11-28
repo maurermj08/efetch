@@ -699,18 +699,36 @@ class PathspecHelper(object):
         return False
 
     @staticmethod
+    def set_pathspec_location(encoded_pathspec, location):
+        """Returns the updated pathspec if the location exists, else it returns false"""
+        pathspec = PathspecHelper._decode_pathspec(encoded_pathspec)
+        setattr(pathspec, 'location', location)
+        if getattr(pathspec, 'inode', False):
+            delattr(pathspec, 'inode')
+
+        try:
+            new_encoded_pathspec = JsonPathSpecSerializer.WriteSerialized(pathspec)
+            PathspecHelper._open_file_entry(new_encoded_pathspec)
+        # TODO Make less generic, Runtime?
+        except:
+            return False
+
+        return new_encoded_pathspec
+
+    @staticmethod
     def get_encoded_parent_base_pathspec_manually(encoded_pathspec):
         """Returns the encoded parent pathspec, by decoding and getting the 'parent' attribute"""
         return JsonPathSpecSerializer.WriteSerialized(PathspecHelper.get_parent_pathspec_manually(encoded_pathspec))
 
     @staticmethod
-    def get_parent_pathspec(encoded_pathspec):
+    def get_parent_pathspec(encoded_pathspec, skip_to_type_indicator=False):
         '''Gets the parent pathspec of the provided pathspec'''
-        file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
-        parent_entry = file_entry.GetParentFileEntry()
-        PathspecHelper._close_file_entry(encoded_pathspec)
+        if not skip_to_type_indicator:
+            file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
+            parent_entry = file_entry.GetParentFileEntry()
+            PathspecHelper._close_file_entry(encoded_pathspec)
 
-        if not parent_entry:
+        if skip_to_type_indicator or not parent_entry:
             parent_path_spec = PathspecHelper.get_parent_pathspec_manually(encoded_pathspec)
         else:
             parent_path_spec = parent_entry.path_spec

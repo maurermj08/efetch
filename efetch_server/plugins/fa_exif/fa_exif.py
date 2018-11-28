@@ -61,6 +61,10 @@ TEMPLATE = """
                     {% for key, value in table %}
                         <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
                     {% endfor %}
+                    {% for key, value in safe_table %}
+                        <tr><td>{{ key }}</td><td>{{ value | safe }}</td></tr>
+                    {% endfor %}
+                </tbody>
                 </tbody>
             </table>
         </body>
@@ -113,15 +117,16 @@ class FaExif(IPlugin):
         }
 
         table = []
+        safe_table = []
 
         for key, value in exif_data.iteritems():
             table.append((key, value))
             if key == 'GPSInfo':
                 lat_long = get_lat_lon(value)
-                table.append(('Google Maps', '<a target="_blank" href="https://maps.google.com/?q=loc:'
+                safe_table.append(('Google Maps', '<a target="_blank" href="https://maps.google.com/?q=loc:'
                               + str(lat_long[0]) + ',' + str(lat_long[1]) + '">Link to Google Maps</a>'))
 
-        return render_template_string(TEMPLATE, table=table)
+        return render_template_string(TEMPLATE, table=table, safe_table=safe_table)
 
 
 def get_exif_data(image):

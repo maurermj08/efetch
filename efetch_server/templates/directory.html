@@ -51,7 +51,7 @@
                             "orderClasses": false,
                             "searching": false,
                             "language": {
-                                "emptyTable": "Loading..."
+                                "emptyTable": " "
                             },
                             "columnDefs": [
                                     { type: 'alt-string', targets: 0 },
@@ -212,10 +212,105 @@
         position: fixed;
         transform: translate(-50%, -50%);
     }
-
+    #inputpath {
+        width: calc(100% - 48px);
+    }
+    .disabled {
+        cursor: not-allowed;
+        color: grey !important;
+    }
+    .pathbar {
+        vertical-align: middle;
+        width: 100%;
+        font-family: monospace;
+        background-color: black;
+    }
+    .pathbar a {
+        color: white;
+    }
+    .pathbar a:hover {
+        color: rgb(153, 193, 255);
+    }
+    .pathbar ul {
+        width: calc(100% - 20px);
+        display: flex;
+        flex-wrap: nowrap;
+        margin: 0px;
+        padding: 0px;
+    }
+    .pathbar li {
+      background: none repeat scroll 0 0 #6b6b6b;
+      position: relative;
+      list-style: none outside none;
+      margin-right: 3px;
+      line-height: 18px;
+      padding: 8px 8px 8px 28px;
+      color: white;
+    }
+    .pathbar li:first-child {
+      padding-left: 12px;
+    }
+    .pathbar li:first-child:before {
+      border: 0 none;
+    }
+    .pathbar li:before {
+      content:"";
+      position: absolute;
+      top: 0;
+      height: 0;
+      border-left: 17px solid grey;
+      border-bottom: 17px inset transparent;
+      border-top: 17px inset transparent;
+      width: 0;
+      left: 0;
+    }
+    .pathbar li:after {
+      content:"";
+      height: 0;
+      border-left: 17px solid #6b6b6b;
+      right: -17px;
+      border-top: 17px inset transparent;
+      border-bottom: 17px inset transparent;
+      z-index: 2;
+      width: 0;
+      position: absolute;
+      top: 0;
+    }
+    .pathbar input {
+        background-color: grey;
+        border: none;
+        font-size: 14px;
+        color: white;
+        border-radius: 4px;
+        padding-left: 4px;
+        width: 100%;
+    }
 </style>
 </head>
     <body>
+       <div id="navigation" class="pathbar">
+       <ul>
+           {% if parent %}
+             <li><a href="/plugins/directory?pathspec={{ parent }}&up=True" id="up"><i class="fa fa-arrow-up"></i></a></li>
+           {% else %}
+             <li class="disabled"><i class="fa fa-arrow-up"></i></li>
+           {% endif %}
+           <li><a href="/plugins/directory"><i class="fa fa-home"></i></a></li>
+           {% for path in path_list %}
+             {% if path[0] %}
+               <li style="flex-grow: 8">
+                 <form>
+                   <input id="location" type="text" name="location" value="{{ path[2] }}" />
+                   <input type="text" name="pathspec" value="{{ path[1] }}" style="display: none" />
+                   <input type="submit" style="display: none" />
+                 </form>
+               </li>
+             {% else %}
+               <li><a href="/plugins/directory?pathspec={{ path[1] }}">{{ path[2] }}</a></li>
+             {% endif %}
+           {% endfor %}
+       </ul>
+       </div>
        <table id="t01" class="display">
             <thead>
             <tr>
@@ -232,4 +327,10 @@
         </table>
         <img id="loading_icon" src="/static/core/images/loading.gif" alt="Loading...">
     </body>
+    {% if bad_location %}
+    <script>
+        document.getElementById("location").style.backgroundColor = "red";
+        window.setTimeout( function(){document.getElementById("location").style.backgroundColor = "";}, 1000);
+    </script>
+    {% endif %}
 </html>

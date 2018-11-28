@@ -64,6 +64,12 @@ RUN unzip /opt/psxray.zip -d /opt/
 RUN rm /opt/psxray.zip
 RUN mv /opt/PyPowerShellXray* /opt/psxray
 
+# Ent
+RUN apt-get install ent
+
+# Viper Monkey
+RUN pip install -U https://github.com/decalage2/ViperMonkey/archive/master.zip
+
 # Install Efetch
 WORKDIR /usr/local/src/
 COPY . .

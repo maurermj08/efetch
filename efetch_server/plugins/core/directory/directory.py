@@ -4,12 +4,13 @@ Simple directory tree view
 
 from yapsy.IPlugin import IPlugin
 from flask import render_template, jsonify
+from efetch_server.utils.pathspec_helper import PathspecHelper
 import json
 import logging
 import os
 
 
-LISTING_INTERVAL = 1024
+LISTING_INTERVAL = 512
 
 class Directory(IPlugin):
 
@@ -48,10 +49,37 @@ class Directory(IPlugin):
         """Returns the result of this plugin to be displayed in a browser"""
         directory_index = helper.get_request_value(request, 'directory_index', None)
         up = str(helper.get_request_value(request, 'up', False)) == 'True'
+        location = helper.get_request_value(request, 'location', False)
+        bad_location = False
+
+        # Change location if modified
+        if location == '':
+            location = '/'
+        if location:
+            new_pathspec = PathspecHelper.set_pathspec_location(evidence['pathspec'], location)
+            if new_pathspec:
+                evidence['pathspec'] = new_pathspec
+            else:
+                bad_location = True
 
         # Initial call, just return the Template; else AJAX
         if directory_index is None:
-            return render_template('directory.html', pathspec=evidence['pathspec'], up=up)
+            path_list = [ (True, evidence['pathspec'], PathspecHelper.get_file_path(evidence['pathspec'])) ]
+            parent = PathspecHelper.get_parent_pathspec(evidence['pathspec'], True)
+
+            while parent:
+                path_list.append((False, parent, PathspecHelper.get_file_name(parent)))
+                parent = PathspecHelper.get_parent_pathspec(parent, True)  
+
+            path_list.reverse()
+            
+            # Up arrow parent
+            parent = PathspecHelper.get_parent_pathspec(evidence['pathspec'])
+            if evidence['meta_type'] != 'Directory':
+                parent = PathspecHelper.get_parent_pathspec(parent)
+
+            return render_template('directory.html', pathspec=evidence['pathspec'], 
+                    path_list=path_list, parent=parent,up=up, bad_location=bad_location)
         else:
             directory_index = int(directory_index)
 
@@ -164,28 +192,28 @@ class Directory(IPlugin):
             directory_list.append(item)
 
         # Gets the up directory option ".." if it is the first listing
-        if directory_index == 0:
-            parent_pathspec = helper.pathspec_helper.get_parent_pathspec(initial_pathspec)
-            if parent_pathspec:
-                try:
-                    parent_item = helper.pathspec_helper.get_evidence_item(parent_pathspec)
-                # Manually move up to the parent if getting the evidence item fails
-                except RuntimeError:
-                    logging.warn('Failed to get parent pathspec evidence item, manually moving up another pathspec')
-                    parent_pathspec = json.loads(parent_pathspec)['parent']
-                    parent_item = helper.pathspec_helper.get_evidence_item(json.dumps(parent_pathspec))
-            if parent_pathspec and parent_item:
-                parent_item['file_name'] = '..'
-                parent_item['icon'] = '/static/icons/_folder_up.png'
-                parent_item['order'] = 1
-                parent_item['plugin'] = self._dir_plugin
-                parent_item['url_query'] = parent_item['url_query'] + '&up=True'
-                for time in ['mtime', 'atime', 'ctime', 'crtime']:
-                    parent_item[time + '_no_nano'] = ''
-                # Make human readable size
-                if 'size' in parent_item:
-                    parent_item['size'] = Directory.human_readable_size(int(parent_item['size']))
-                directory_list.append(parent_item)
+        #if directory_index == 0:
+            #parent_pathspec = helper.pathspec_helper.get_parent_pathspec(initial_pathspec)
+            #if parent_pathspec:
+            #    try:
+            #        parent_item = helper.pathspec_helper.get_evidence_item(parent_pathspec)
+            #    # Manually move up to the parent if getting the evidence item fails
+            #    except RuntimeError:
+            #        logging.warn('Failed to get parent pathspec evidence item, manually moving up another pathspec')
+            #        parent_pathspec = json.loads(parent_pathspec)['parent']
+            #        parent_item = helper.pathspec_helper.get_evidence_item(json.dumps(parent_pathspec))
+            #if parent_pathspec and parent_item:
+            #    parent_item['file_name'] = '..'
+            #    parent_item['icon'] = '/static/icons/_folder_up.png'
+            #    parent_item['order'] = 1
+            #    parent_item['plugin'] = self._dir_plugin
+            #    parent_item['url_query'] = parent_item['url_query'] + '&up=True'
+            #    for time in ['mtime', 'atime', 'ctime', 'crtime']:
+            #        parent_item[time + '_no_nano'] = ''
+            #    # Make human readable size
+            #    if 'size' in parent_item:
+            #        parent_item['size'] = Directory.human_readable_size(int(parent_item['size']))
+            #    directory_list.append(parent_item)
 
         # If there is nothing left to list, set directory_done to True
         directory_done = len(directory_list) == 0
