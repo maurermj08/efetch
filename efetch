@@ -65,4 +65,4 @@ if __name__ == u'__main__':
         print args.version
 
     efetch_app.create_app(args.elastic, args.cache, args.maxfilesize, args.pluginsfile, args.defaultpath, args.debug)\
-        .run(host=args.address, port=args.port, debug=args.debug)
+        .run(host=args.address, port=args.port, debug=args.debug, threaded=True)

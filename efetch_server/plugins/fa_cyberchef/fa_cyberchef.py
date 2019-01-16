@@ -47,7 +47,7 @@ class FaCyberChef(IPlugin):
 
     def get(self, evidence, helper, path_on_disk, request):
         """Returns the result of this plugin to be displayed in a browser"""
-        data = PathspecHelper.read_file(evidence['pathspec'], size=0, seek=0)
+        data = PathspecHelper.read_file(evidence['pathspec'], size=evidence['size'], seek=0)
         
         mimetype = evidence['mimetype'] = helper.pathspec_helper.get_mimetype(evidence['pathspec'])
         decode = mimetype.startswith('text/') or mimetype in self.plaintext_mimetypes

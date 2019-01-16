@@ -8,7 +8,10 @@ RUN add-apt-repository -y ppa:sift/stable
 RUN apt-get update
 RUN apt-get -y install python-plaso python-dev python-setuptools unoconv libpff libpff-python zlib1g-dev libjpeg-dev libtiff5-dev python-pip
 RUN apt-get -y install ffmpeg poppler-utils readpst unzip libxml2-utils foremost wget
-RUN apt-get -y install imagemagick ssdeep wkhtmltopdf libevtx-utils
+RUN apt-get -y install imagemagick ssdeep 
+RUN apt-get -y install wkhtmltopdf
+RUN apt-get -y install p7zip-full rar unace-nonfree cabextract
+RUN apt-get -y install libevtx-tools
 RUN pip install setuptools -U
 
 # Win10 Prefetch
@@ -64,11 +67,28 @@ RUN unzip /opt/psxray.zip -d /opt/
 RUN rm /opt/psxray.zip
 RUN mv /opt/PyPowerShellXray* /opt/psxray
 
+# BMC Tools
+RUN wget https://github.com/ANSSI-FR/bmc-tools/archive/master.zip -O /opt/bmc-tools.zip
+RUN unzip /opt/bmc-tools.zip -d /opt/
+RUN rm /opt/bmc-tools.zip
+RUN mv /opt/bmc-tools* /opt/bmc-tools
 # Ent
-RUN apt-get install ent
+RUN apt-get -y install ent
 
 # Viper Monkey
 RUN pip install -U https://github.com/decalage2/ViperMonkey/archive/master.zip
+
+# Origami (PDF Parse)
+RUN apt-get -y install rubygems
+RUN apt-get -y install ruby-dev
+RUN gem install therubyracer
+RUN gem install origami
+
+# Sflock 
+RUN pip install sflock
+
+# Change ImageMagic Policy to allow convert
+RUN sed -i 's/none/read|write/' /etc/ImageMagick-6/policy.xml 
 
 # Install Efetch
 WORKDIR /usr/local/src/

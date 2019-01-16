@@ -1,0 +1,10 @@
+[Core]
+Name = fa_extract
+Module = fa_extract
+
+[Documentation]
+Author = Michael Maurer
+Version = 0.1
+Website = http://diftdisk.blogspot.com
+Description = Extracts 7z, ace, cab, gzip, iso, lzh, and rar using sflock
+Copyright = 2019

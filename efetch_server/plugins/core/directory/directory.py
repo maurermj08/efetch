@@ -65,16 +65,24 @@ class Directory(IPlugin):
         # Initial call, just return the Template; else AJAX
         if directory_index is None:
             path_list = [ (True, evidence['pathspec'], PathspecHelper.get_file_path(evidence['pathspec'])) ]
-            parent = PathspecHelper.get_parent_pathspec(evidence['pathspec'], True)
 
+            # Create filepath listing at top
+            parent = PathspecHelper.get_parent_pathspec(evidence['pathspec'], True)
             while parent:
-                path_list.append((False, parent, PathspecHelper.get_file_name(parent)))
+                file_name = PathspecHelper.get_file_name(parent)
+                if file_name.lower() != 'none':
+                    path_list.append((False, parent, PathspecHelper.get_file_name(parent)))
                 parent = PathspecHelper.get_parent_pathspec(parent, True)  
 
             path_list.reverse()
             
             # Up arrow parent
             parent = PathspecHelper.get_parent_pathspec(evidence['pathspec'])
+            # Prevents expandable evidence from being treated as a simple file
+            if helper.is_expandable_evidence(evidence):
+                pathspecs = helper.pathspec_helper.list_base_pathspecs(evidence)
+                if len(pathspecs) > 0:
+                    parent = PathspecHelper.get_parent_pathspec(pathspecs[0]['pathspec'])
             if evidence['meta_type'] != 'Directory':
                 parent = PathspecHelper.get_parent_pathspec(parent)
 

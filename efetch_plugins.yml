@@ -55,6 +55,15 @@ base64:
   display: noheader
   command: "base64 '{{ file_cache_path }}'"
 
+bmctools:
+  name: RDP Cache
+  icon: fa-desktop
+  category: misc
+  extensions: [ 'bmc' ]
+  command: "mkdir '{{ file_cache_path }}_bmctools'; python /opt/bmc-tools/bmc-tools.py -s '{{ file_cache_path }}' -d '{{ file_cache_path }}_bmctools' -b"
+  file: '{{ file_cache_path }}_bmctools'
+  openwith: directory
+
 #clamscan:
 #  name: Clam Scan
 #  icon: fa-bug
@@ -241,7 +250,30 @@ olevba:
   category: office
   extensions: [ 'ppt', 'pptx', 'pptm', 'xls', 'xlsx', 'xlsm', 'doc', 'docx', 'docm' ]
   command: "olevba '{{ file_cache_path }}'"
-      
+
+pdfextract:
+  name: PDF Extract
+  icon: fa-archive
+  category: office
+  mimetypes: [ 'application/pdf' ]
+  command: "rm -rf '{{ file_cache_path }}-pdfextract'; mkdir '{{ file_cache_path }}-pdfextract'; pdfextract '{{ file_cache_path }}' -d '{{ file_cache_path }}-pdfextract'"
+  file: '{{ file_cache_path }}-pdfextract'
+  openwith: directory
+
+pdfinfo:
+  name: PDF Info
+  icon: fa-file-pdf-o
+  category: office
+  mimetypes: [ 'application/pdf' ]
+  command: "pdfinfo -js '{{ file_cache_path }}'"
+
+pdfmetadata:
+  name: PDF Metadata
+  icon: fa-file-pdf-o
+  category: office
+  mimetypes: [ 'none' ]
+  command: "pdfmetadata '{{ file_cache_path }}'"
+
 #pdfocr:
 #  name: PDF OCR
 #  icon: fa-file-pdf-o
@@ -251,6 +283,16 @@ olevba:
 #  mimetypes: [ 'application/pdf' ]
 #  command: "pypdfocr '{{ file_cache_path }}'"
 #  file: "{{ file_cache_dir }}*_ocr.pdf"
+
+pdftojpg:
+  name: Safe Preview
+  icon: fa-eye-slash
+  popularity: 8
+  category: office
+  mimetypes: [ 'application/pdf' ]
+  command: "mkdir '{{ file_cache_path }}-pdftojpg'; convert -density 200 '{{ file_cache_path }}' '{{ file_cache_path }}-pdftojpg/{{ file_name }}.jpg'"
+  file: '{{ file_cache_path }}-pdftojpg'
+  openwith: directory
 
 pdftotext:
   name: PDF to Text

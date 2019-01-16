@@ -101,6 +101,23 @@ class EfetchPluginManager(object):
         else:
             return plugin.plugin_object
 
+    def run_plugin_from_cache(self, name, cache_path, helper, request, index='*', cache=False, fast=False):
+        """Runs specified plugin using a file cached on disk"""
+        pathspec = helper.pathspec_helper.get_encoded_pathspec(cache_path)
+        return self.run_plugin(name, pathspec, helper, request, cache_path, index, cache, fast)
+
+    def run_plugin(self, name, pathspec, helper, request, cache_path=False, index='*', cache=False, fast=False):
+        """Runs specified plugin on pathspec and returns the results"""
+        plugin = self.get_plugin_by_name(name)
+        new_evidence = helper.pathspec_helper.get_evidence_item(pathspec,
+                                                                helper.get_request_value(request, 'index', '*'),
+                                                                False,
+                                                                hasattr(plugin, 'fast') and plugin.fast)
+        # Attempt to avoid double caching
+        if not cache_path:
+            cache_path = new_evidence['file_cache_path']
+
+        return plugin.get(new_evidence, helper, cache_path, request)
 
 class Plugin(object):
     """Simple dynamically created plugin object"""
@@ -173,13 +190,9 @@ class Plugin(object):
             if self._openwith:
                 # TODO Figure out if this is the best method, because it may result in duplicate caching
                 # TODO remove any reference to evidence['cache_path'] and instead always use path on disk
-                new_pathspec = helper.pathspec_helper.get_encoded_pathspec(file_name)
-                plugin = helper.plugin_manager.get_plugin_by_name(self._openwith)
-                new_evidence = helper.pathspec_helper.get_evidence_item(new_pathspec,
-                                                                        helper.get_request_value(request, 'index', '*'),
-                                                                        False,
-                                                                        hasattr(plugin, 'fast') and plugin.fast)
-                return plugin.get(new_evidence, helper, file_name, request)
+                return helper.plugin_manager.run_plugin_from_cache(self._openwith, file_name, helper, request,
+                                                                   helper.get_request_value(request, 'index', '*'),
+                                                                   False)
             else:
                 return send_from_directory(os.path.dirname(file_name), os.path.basename(file_name))
 
