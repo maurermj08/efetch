@@ -288,11 +288,12 @@ class PathspecHelper(object):
         while not os.path.isfile(evidence_item['file_cache_path']) and repeat > 0:
             with PathspecHelper._cache_lock:
                 repeat = repeat - 1
-                #try:
+                
                 PathspecHelper._caching.append(evidence_item['pathspec'])
                 in_file = PathspecHelper._open_file_object(evidence_item['pathspec'])
                 out_file = open(evidence_item['file_cache_path'], "wb")
                 with PathspecHelper._file_read_lock:
+                    in_file.seek(0)
                     data = in_file.read(PathspecHelper._cache_chunk_size)
                     while data:
                         out_file.write(data)
@@ -301,8 +302,6 @@ class PathspecHelper(object):
                 PathspecHelper._close_file_object(evidence_item['pathspec'])
                 out_file.close()
                 PathspecHelper._caching.remove(evidence_item['pathspec'])
-                #except:
-                #    logging.warn('File failed to cache, attempting ' + str(repeat) + ' more times')
 
         self.create_thumbnail(evidence_item, file_entry)
 
@@ -510,18 +509,18 @@ class PathspecHelper(object):
                     PathspecHelper._open_file_entries[encoded_pathspec] = \
                         resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(encoded_pathspec))
 
-                if not PathspecHelper._open_file_entries[encoded_pathspec]:
-                    # TODO There appears to be a bug in dfVFS
-                    # TODO     for compressed formats ZIP, etc.
-                    logging.warn('Attempting compression error fix...')
-                    type_indicator_list = ['ZIP', 'GZIP']
-                    pathspec_dictionary = json.loads(encoded_pathspec)
-                    # TODO add levels to repeat current_level = 0
-                    if pathspec_dictionary['type_indicator'] in type_indicator_list:
-                        pathspec_dictionary['location'] = pathspec_dictionary['location'] + u'/'
-                    new_encoded_pathspec = json.dumps(pathspec_dictionary)
-                    PathspecHelper._open_file_entries[encoded_pathspec] = \
-                        resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(new_encoded_pathspec))
+                #if not PathspecHelper._open_file_entries[encoded_pathspec]:
+                #    # TODO There appears to be a bug in dfVFS
+                #    # TODO     for compressed formats ZIP, etc.
+                #    logging.warn('Attempting compression error fix...')
+                #    type_indicator_list = ['ZIP', 'GZIP']
+                #    pathspec_dictionary = json.loads(encoded_pathspec)
+                #    # TODO add levels to repeat current_level = 0
+                #    if pathspec_dictionary['type_indicator'] in type_indicator_list:
+                #        pathspec_dictionary['location'] = pathspec_dictionary['location'] + u'/'
+                #    new_encoded_pathspec = json.dumps(pathspec_dictionary)
+                #    PathspecHelper._open_file_entries[encoded_pathspec] = \
+                #        resolver.Resolver.OpenFileEntry(PathspecHelper._decode_pathspec(new_encoded_pathspec))
                 if PathspecHelper._open_file_entries[encoded_pathspec]:
                     return PathspecHelper._open_file_entries[encoded_pathspec]
             except Exception as e:
@@ -725,7 +724,11 @@ class PathspecHelper(object):
         '''Gets the parent pathspec of the provided pathspec'''
         if not skip_to_type_indicator:
             file_entry = PathspecHelper._open_file_entry(encoded_pathspec)
-            parent_entry = file_entry.GetParentFileEntry()
+            try:
+                parent_entry = file_entry.GetParentFileEntry()
+            except KeyError:
+                parent_entry = False
+                logging.warn('Failed to GetParentFileEntry using dfvfs, trying manually.')
             PathspecHelper._close_file_entry(encoded_pathspec)
 
         if skip_to_type_indicator or not parent_entry:

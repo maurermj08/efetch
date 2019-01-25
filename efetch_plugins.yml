@@ -391,6 +391,28 @@ unzip_password:
   file: "{{ file_cache_path }}_passwordunzip"
   openwith: directory
 
+7zip_password:
+  name: 7zip Password
+  icon:  fa-file-archive-o
+  category: misc
+  extensions: [ '7z' ]
+  inputs:
+    h2: Password Protected Zip
+    label: Password
+    text: password
+  command: "7z x -y -p'{{ password }}' -o'{{ file_cache_path }}_7zip_password' '{{ file_cache_path }}'"
+  file: "{{ file_cache_path }}_7zip_password"
+  openwith: directory
+
+7zip:
+  name: 7zip
+  icon:  fa-file-archive-o
+  category: misc
+  extensions: [ '7z' ]
+  command: "7z x -y -p'{{ password }}' -o'{{ file_cache_path }}_7zip' '{{ file_cache_path }}'"
+  file: "{{ file_cache_path }}_7zip"
+  openwith: directory
+
 viper_monkey:
   name: ViperMonkey
   popularity: 1
