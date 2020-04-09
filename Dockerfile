@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # Install Dependencies
 RUN apt-get update
@@ -6,14 +6,18 @@ RUN apt-get -y install software-properties-common
 RUN add-apt-repository -y ppa:gift/stable
 RUN add-apt-repository -y ppa:sift/stable
 RUN apt-get update
-RUN apt-get -y install python-plaso python-dev python-setuptools unoconv libpff libpff-python zlib1g-dev libjpeg-dev libtiff5-dev python-pip
-RUN apt-get -y install ffmpeg poppler-utils readpst unzip libxml2-utils foremost wget
+RUN apt install -y python-plaso
+RUN apt -y install  python-dev python-setuptools unoconv zlib1g-dev libjpeg-dev libtiff5-dev python-pip
+RUN apt-get -y install ffmpeg poppler-utils unzip libxml2-utils foremost wget
 RUN apt-get -y install imagemagick ssdeep 
 RUN apt-get -y install wkhtmltopdf
 RUN apt-get -y install p7zip-full rar unace-nonfree cabextract
 RUN apt-get -y install libevtx-tools
 RUN pip install setuptools -U
-
+RUN apt-get -y install pst-utils
+RUN apt -y install  libpff1
+RUN pip install libpff-python
+#
 # Win10 Prefetch
 RUN mkdir /opt/w10pf/
 RUN wget https://raw.githubusercontent.com/bromiley/tools/master/win10_prefetch/w10pf_parse.py -O /opt/w10pf/w10pf_parse.py
