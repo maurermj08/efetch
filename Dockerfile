@@ -10,7 +10,7 @@ RUN apt install -y python-plaso
 RUN apt -y install  python-dev python-setuptools unoconv zlib1g-dev libjpeg-dev libtiff5-dev python-pip
 RUN apt-get -y install ffmpeg poppler-utils unzip libxml2-utils foremost wget
 RUN apt-get -y install imagemagick ssdeep 
-RUN apt-get -y install wkhtmltopdf
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install wkhtmltopd
 RUN apt-get -y install p7zip-full rar unace-nonfree cabextract
 RUN apt-get -y install libevtx-tools
 RUN pip install setuptools -U
