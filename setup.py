@@ -28,7 +28,7 @@ setup(
                       u'elasticsearch>=2.1.0,<3.0.0',
                       u'pefile>=1.2.10_139',
                       u'Yapsy>=1.11.223',
-                      u'Pillow>=5.1.0',
+                      u'Pillow<=5.1.0',
                       u'Registry>=0.4.2',
                       u'python_magic>=0.4.12',
                       u'Requests>=2.10.0',
