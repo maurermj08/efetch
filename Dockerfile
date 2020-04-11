@@ -94,8 +94,10 @@ RUN pip install sflock
 # Change ImageMagic Policy to allow convert
 RUN sed -i 's/none/read|write/' /etc/ImageMagick-6/policy.xml 
 
+RUN pip install Jinja2
+
 # Install Efetch
 WORKDIR /usr/local/src/
 COPY . .
 RUN python setup.py build
-#RUN python setup.py install
+RUN python setup.py install
