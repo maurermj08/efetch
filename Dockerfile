@@ -98,4 +98,4 @@ RUN sed -i 's/none/read|write/' /etc/ImageMagick-6/policy.xml
 WORKDIR /usr/local/src/
 COPY . .
 RUN python setup.py build
-RUN python setup.py install
+#RUN python setup.py install
